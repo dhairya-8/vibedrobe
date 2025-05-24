@@ -1,0 +1,36 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="light" data-bs-theme="light">
+
+<head>    
+
+    <meta charset="utf-8" />
+         <title>{% block title %} {% endblock %}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
+            <meta content="" name="author" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+            <!-- Css's links -->
+            {% block css %} {% endblock %}
+
+</head>
+
+<body>
+   {% comment %} adding topbar {% endcomment %}
+   {% include "topbar.html" %} 
+
+   {% comment %} adding leftbar {% endcomment %}
+   {% include "leftbar.html" %} 
+
+   <!-- start page-wrapper -->
+   {% block content %}
+   {% endblock %}
+   <!-- end page-wrapper -->
+
+   <!-- Javascript  -->
+   {% block script %} {% endblock %}
+</body>
+
+</html>

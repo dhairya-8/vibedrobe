@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Dashboard | VibeDrobe
+{% endblock %}
+
+<!-- App favicon -->
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/jsvectormap/css/jsvectormap.min.css' %}" />
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        <div class="row justify-content-center">
+          <div class="col-md-6 col-lg-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="row d-flex justify-content-center border-dashed-bottom pb-3">
+                  <div class="col-9">
+                    <p class="text-dark mb-0 fw-semibold fs-14">Products</p>
+                    <h3 class="mt-2 mb-0 fw-bold">24</h3>
+                  </div>
+                  <!-- end col -->
+                  <div class="col-3 align-self-center">
+                    <div class="d-flex justify-content-center align-items-center thumb-xl bg-light rounded-circle mx-auto">
+                      <i class="iconoir-hexagon-dice h1 align-self-center mb-0 text-secondary"></i>
+                    </div>
+                  </div>
+                  <!-- end col -->
+                </div>
+                <!-- end row -->
+                <p class="mb-0 text-truncate text-muted mt-3">
+                  <span class="text-success">15</span>
+                  New Products Last week
+                </p>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div>
+          <!-- end col -->
+          <div class="col-md-6 col-lg-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="row d-flex justify-content-center border-dashed-bottom pb-3">
+                  <div class="col-9">
+                    <p class="text-dark mb-0 fw-semibold fs-14">Active Users</p>
+                    <h3 class="mt-2 mb-0 fw-bold">18</h3>
+                  </div>
+                  <!-- end col -->
+                  <div class="col-3 align-self-center">
+                    <div class="d-flex justify-content-center align-items-center thumb-xl bg-light rounded-circle mx-auto">
+                      <i class="iconoir-clock h1 align-self-center mb-0 text-secondary"></i>
+                    </div>
+                  </div>
+                  <!-- end col -->
+                </div>
+                <!-- end row -->
+                <p class="mb-0 text-truncate text-muted mt-3">
+                  <span class="text-success">10</span>
+                  New users last week
+                </p>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div>
+          <!-- end col -->
+          <div class="col-md-6 col-lg-4">
+            <div class="card">
+              <div class="card-body">
+                <div class="row d-flex justify-content-center border-dashed-bottom pb-3">
+                  <div class="col-9">
+                    <p class="text-dark mb-0 fw-semibold fs-14">Orders</p>
+                    <h3 class="mt-2 mb-0 fw-bold">30</h3>
+                  </div>
+                  <!-- end col -->
+                  <div class="col-3 align-self-center">
+                    <div class="d-flex justify-content-center align-items-center thumb-xl bg-light rounded-circle mx-auto">
+                      <i class="iconoir-percentage-circle h1 align-self-center mb-0 text-secondary"></i>
+                    </div>
+                  </div>
+                  <!-- end col -->
+                </div>
+                <!-- end row -->
+                <p class="mb-0 text-truncate text-muted mt-3">
+                  <span class="text-danger">8%</span>
+                  Up Bounce Weekly
+                </p>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div>
+          <!-- end col -->
+        </div>
+        <!-- end row -->
+
+        <!-- end row -->
+
+        <!-- end row -->
+
+        <!-- end row -->
+      </div>
+      <!-- container -->
+
+      <!-- Start Rightbar -->
+      <!-- Start Rightbar/offcanvas -->
+     
+      <!-- end Rightbar/offcanvas -->
+      <!-- end Rightbar -->
+      <!-- Start Footer -->
+
+      <footer class="footer text-center text-sm-start d-print-none">
+        <div class="container-xxl">
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-0 rounded-bottom-0">
+                <div class="card-body">
+                  <p class="text-muted mb-0">
+                    {% comment %} ©<script>
+                       document.write(new Date().getFullYear())
+                     </script> {% endcomment %}
+                    <span class="text-muted d-none d-sm-inline-block float-end">
+                      VibeDrobe
+                      <i class="iconoir-heart text-danger"></i>
+                   
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- end footer -->
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+{% endblock %}
+
+<!-- Javascript -->
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+
+  <script src="{% static 'admin/assets/libs/apexcharts/apexcharts.min.js' %}"></script>
+  <script src="{% static 'admin/assets/data/stock-prices.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/jsvectormap/js/jsvectormap.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/jsvectormap/maps/world.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/index.init.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Edit Order Status | VibeDrobe
+{% endblock %}
+
+<!-- App favicon -->
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
+  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Products</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <form action="#" method="post" id="custom-step">
+                  <nav>
+                    <div class="nav nav-tabs" id="nav-tab"></div>
+                  </nav>
+                  <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane active" id="step1">
+                      <h4 class="card-title my-4 fs-15">Edit Product</h4>
+                      <div class="row">
+                        
+                        <!-- end col -->
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="ddlCreditCardType" class="col-lg-3 col-form-label text-end">Select Order Status</label>
+                            <div class="col-lg-9">
+                              <select id="ddlCreditCardType" name="ddlCreditCardType" class="form-select">
+                                <option value="">Sucessfull</option>
+                                <option value="AE">Pending</option>
+                                <option value="VI">Cancelled</option>
+                                <option value="MC">Delivered </option>
+                              </select>
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                      </div>
+                  
+                       
+                      
+                      
+                    </div>
+                    
+                  </div>
+                  <div class="text-center mt-1">
+                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Submit</button>
+                  </div>
+                  {% comment %} <div class="text-center mt-1">
+                    <button type="submit" class="btn btn-secondary btn-lg px-5">Submit</button>
+                  </div> {% endcomment %}
+                </form>
+                <!-- end form -->
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Start Rightbar -->
+      <!-- Start Rightbar/offcanvas -->
+      
+      <!-- end Rightbar/offcanvas -->
+      <!-- end Rightbar -->
+      <!-- Start Footer -->
+
+      <footer class="footer text-center text-sm-start d-print-none">
+        <div class="container-xxl">
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-0 rounded-bottom-0">
+                <div class="card-body">
+                  <p class="text-muted mb-0">
+                    {% comment %} ©<script>
+                       document.write(new Date().getFullYear())
+                     </script> {% endcomment %}
+                    <span class="text-muted d-none d-sm-inline-block float-end">
+                      VibeDrobe
+                      <i class="iconoir-heart text-danger"></i>
+                   
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- end footer -->
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+{% endblock %}
+
+<!-- Javascript -->
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/form-wizard.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/uppy/uppy.legacy.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/file-upload.init.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/huebee/huebee.pkgd.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanillajs-datepicker/js/datepicker-full.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/moment.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/imask/imask.min.js' %}"></script>
+
+  <!-- end body -->
+{% endblock %}

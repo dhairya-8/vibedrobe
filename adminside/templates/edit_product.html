@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Edit Product | VibeDrobe
+{% endblock %}
+
+<!-- App favicon -->
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
+  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Products</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <form action="#" method="post" id="custom-step">
+                  <nav>
+                    <div class="nav nav-tabs" id="nav-tab"></div>
+                  </nav>
+                  <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane active" id="step1">
+                      <h4 class="card-title my-4 fs-15">Edit Product</h4>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="txtFirstNameBilling" class="col-lg-3 col-form-label text-end">Product Name</label>
+                            <div class="col-lg-9">
+                              <input id="txtFirstNameBilling" name="txtFirstNameBilling" placeholder="Crop Top" type="text" class="form-control" />
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="ddlCreditCardType" class="col-lg-3 col-form-label text-end">Select Category</label>
+                            <div class="col-lg-9">
+                              <select id="ddlCreditCardType" name="ddlCreditCardType" class="form-select">
+                                <option value="">Top</option>
+                                <option value="AE">American Express</option>
+                                <option value="VI">Visa</option>
+                                <option value="MC">MasterCard</option>
+                                <option value="DI">Discover</option>
+                              </select>
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                      </div>
+                      <!-- end row -->
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="txtCompanyBilling" class="col-lg-3 col-form-label text-end">Product Price</label>
+                            <div class="col-lg-9">
+                              <input id="txtCompanyBilling" name="txtCompanyBilling" placeholder="299" type="text" class="form-control" />
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="ddlCreditCardType" class="col-lg-3 col-form-label text-end">Select Brand</label>
+                            <div class="col-lg-9">
+                              <select id="ddlCreditCardType" name="ddlCreditCardType" class="form-select">
+                                <option value="">Zara</option>
+                                <option value="AE">American Express</option>
+                                <option value="VI">Visa</option>
+                                <option value="MC">MasterCard</option>
+                                <option value="DI">Discover</option>
+                              </select>
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                      </div>
+                      <!-- end row -->
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="txtAddress1Billing" class="col-lg-3 col-form-label text-end">Product Details</label>
+                            <div class="col-lg-9">
+                              <textarea id="txtAddress1Billing" name="txtAddress1Billing" placeholder="Top" rows="4" class="form-control"></textarea>
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label class="col-lg-3 col-form-label text-end">Available Sizes</label>
+                            <div class="col-lg-2">
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size-xs" value="XS">
+                                <label class="form-check-label" for="size-xs">XS</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size-s" value="S">
+                                <label class="form-check-label" for="size-s">S</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size-m" value="M">
+                                <label class="form-check-label" for="size-m">M</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size-l" value="L">
+                                <label class="form-check-label" for="size-l">L</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size-xl" value="XL">
+                                <label class="form-check-label" for="size-xl">XL</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {% comment %} <div class="col-md-4">
+                          <label class="col-lg-4 col-form-label text-end">Product Size</label>
+                          <select id="default">
+                            <option value="value-1">Value 1</option>
+                            <option value="value-2">Value 2</option>
+                            <option value="value-3">Value 3</option>
+                          </select>
+                        </div> {% endcomment %}
+                        <!-- end col -->
+                      </div>
+                      <!-- end row -->
+
+                      <!-- end row -->
+                      <!-- end row -->
+
+                      <div class="row">
+                        <!-- end col -->
+
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="txtFaxBilling" class="col-lg-3 col-form-label text-end">Fabric Type</label>
+                            <div class="col-lg-9">
+                              <input id="txtFaxBilling" name="txtFaxBilling" type="text" placeholder="Cotton" class="form-control" />
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="input-file" class="col-lg-3 col-form-label text-end">Product Photo</label>
+                            <div class="col-lg-9">
+                              <div class="d-flex align-items-center">
+                                <div class="preview-box me-3 d-flex align-items-center justify-content-center rounded border-dashed border-theme-color overflow-hidden" style="width: 80px; height: 80px; border: 1px dashed #ccc;">
+                                  <i class="iconoir-camera" style="font-size: 24px; color: #ccc;"></i>
+                                </div>
+                                <div>
+                                  <input type="file" id="input-file" name="input-file" accept="image/*" onchange={handleChange()} hidden />
+                                  <label class="btn btn-secondary" for="input-file">Replace Image</label>
+                                  <small class="d-block text-muted mt-1">JPG, PNG (Max 2MB)</small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        {% comment %} <div class="card-body pt-1">
+                          <div class="d-grid">
+                            <label for="txtFaxBilling" class="col-lg-1 col-form-label text-end">Product Photo</label>
+                              <div class="preview-box d-block justify-content-center rounded  border-dashed border-theme-color overflow-hidden p-3"></div>
+                              <input type="file" id="input-file" name="input-file" accept="image/*" onchange={handleChange()} hidden />
+                              <label class="btn-upload btn btn-primary mt-3 col-md-4" for="input-file">Upload Image</label>
+                          </div>             
+                      </div><!--end card-body-->  {% endcomment %}
+                      </div>
+                      <!-- end row -->
+                       
+                      
+                      
+                    </div>
+                    
+                  </div>
+                  <div class="text-center mt-1">
+                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Submit</button>
+                  </div>
+                  {% comment %} <div class="text-center mt-1">
+                    <button type="submit" class="btn btn-secondary btn-lg px-5">Submit</button>
+                  </div> {% endcomment %}
+                </form>
+                <!-- end form -->
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Start Rightbar -->
+      <!-- Start Rightbar/offcanvas -->
+      
+      <!-- end Rightbar/offcanvas -->
+      <!-- end Rightbar -->
+      <!-- Start Footer -->
+
+      <footer class="footer text-center text-sm-start d-print-none">
+        <div class="container-xxl">
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-0 rounded-bottom-0">
+                <div class="card-body">
+                  <p class="text-muted mb-0">
+                    {% comment %} ©<script>
+                       document.write(new Date().getFullYear())
+                     </script> {% endcomment %}
+                    <span class="text-muted d-none d-sm-inline-block float-end">
+                      VibeDrobe
+                      <i class="iconoir-heart text-danger"></i>
+                   
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- end footer -->
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+{% endblock %}
+
+<!-- Javascript -->
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/form-wizard.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/uppy/uppy.legacy.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/file-upload.init.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/huebee/huebee.pkgd.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanillajs-datepicker/js/datepicker-full.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/moment.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/imask/imask.min.js' %}"></script>
+
+  <!-- end body -->
+{% endblock %}
