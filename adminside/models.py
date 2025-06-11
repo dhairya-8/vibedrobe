@@ -37,7 +37,7 @@ class User(models.Model):
     last_name = models.CharField(max_length=50, null=False, blank=False)
     contact = models.BigIntegerField(null=False, blank=False)
     date_of_birth = models.DateField(null=False, blank=False)
-    gender = models.CharField(max_length=20, choices=[('super_admin', 'Super Admin'), ('admin', 'Admin'),('moderator', 'Moderator')], default='admin')
+    gender = models.CharField(max_length=20, choices=[('Male', 'Female')])
     profile_image = models.ImageField(upload_to='user_profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)

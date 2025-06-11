@@ -16,6 +16,29 @@
     <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <style>
+      .error-popup {
+        background-color: #ffdddd;
+        border: 1px solid #f44336;
+        color: #a94442;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
   </head>
 
   <!-- Top Bar Start -->
@@ -34,25 +57,27 @@
                       <p class="text-muted fw-medium mb-0">Sign in to continue</p>
                     </div>
                   </div>
+
                   <div class="card-body pt-0">
-                    <form class="my-4" action="index.html">
+                    <form class="my-4" method="post" action="/adminside/login" enctype="multipart/form-data">
+                      {% csrf_token %}
                       <div class="form-group mb-2">
-                        <label class="form-label" for="username">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" />
+                        <label class="form-label" for="identifier">Username or Email</label>
+                        <input type="text" class="form-control" id="identifier" name="identifier" placeholder="Enter username or email" />
                       </div>
                       <!-- end form-group -->
 
                       <div class="form-group">
-                        <label class="form-label" for="userpassword">Password</label>
-                        <input type="password" class="form-control" name="password" id="userpassword" placeholder="Enter password" />
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Enter password" />
                       </div>
                       <!-- end form-group -->
 
                       <div class="form-group row mt-3">
                         <div class="col-sm-6">
                           <div class="form-check form-switch form-switch-success">
-                            <input class="form-check-input" type="checkbox" id="customSwitchSuccess" />
-                            <label class="form-check-label" for="customSwitchSuccess">Remember me</label>
+                            <input class="form-check-input" type="checkbox" id="remember" name="remember" />
+                            <label class="form-check-label" for="remember">Remember me</label>
                           </div>
                         </div>
                         <!-- end col -->
@@ -66,17 +91,20 @@
                       <div class="form-group mb-0 row">
                         <div class="col-12">
                           <div class="d-grid mt-3">
-                            <a href="index">
-                            <button class="btn btn-primary" type="button">Log In <i class="fas fa-sign-in-alt ms-1"></i></button>
-                            </a>
+                            <a href="index"><button class="btn btn-primary" type="submit">Log In <i class="fas fa-sign-in-alt ms-1"></i></button></a>
                           </div>
                         </div>
+
                         <!-- end col -->
                       </div> <!-- end form-group -->
                     </form>
+                    {% if messages %}
+                      {% for message in messages %}
+                        <div class="error-popup">{{ message }}</div>
+                      {% endfor %}
+                    {% endif %}
                     <!-- end form -->
                     <div class="text-center mb-2">
-                      
                       {% comment %} <h6 class="px-3 d-inline-block">Or Login With</h6> {% endcomment %}
                     </div>
                     {% comment %} <div class="d-flex justify-content-center">

@@ -1,10 +1,43 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Admin
 
 def index(request):
    return render(request, 'index.html')
 
 def login(request):
-   return render(request, 'login.html')
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier')  # username or email
+        password = request.POST.get('password')
+        remember_me = request.POST.get('remember')  # checkbox returns 'on' if checked
+
+        try:
+            # Try finding by username or email
+            admin = Admin.objects.get(username=identifier)
+        except Admin.DoesNotExist:
+            try:
+                admin = Admin.objects.get(email=identifier)
+            except Admin.DoesNotExist:
+                messages.error(request, 'Invalid username or email')
+                return render(request, 'login.html')
+
+        # Check password
+        if admin.check_password(password):
+            # Save admin ID in session
+            request.session['admin_id'] = admin.id
+
+            # Set session expiry based on "Remember Me"
+            if remember_me == 'on':
+                request.session.set_expiry(1209600)  # 2 weeks
+            else:
+                request.session.set_expiry(0)  # Until browser closes
+
+            return redirect('index')  # Replace with your destination view
+        else:
+            messages.error(request, 'Incorrect password')
+
+    # For GET or failed POST
+    return render(request, 'login.html')
 
 def resetpassword(request):
    return render(request, 'resetpassword.html')
