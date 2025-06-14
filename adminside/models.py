@@ -37,7 +37,7 @@ class User(models.Model):
     last_name = models.CharField(max_length=50, null=False, blank=False)
     contact = models.BigIntegerField(null=False, blank=False)
     date_of_birth = models.DateField(null=False, blank=False)
-    gender = models.CharField(max_length=20, choices=[('super_admin', 'Super Admin'), ('admin', 'Admin'),('moderator', 'Moderator')], default='admin')
+    gender = models.CharField(max_length=20, choices=[('Male', 'Female')])
     profile_image = models.ImageField(upload_to='user_profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)
@@ -68,7 +68,6 @@ class User_Address(models.Model):
     
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    description = models.TextField(max_length=500, null=False, blank=False)
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(null=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -79,7 +78,6 @@ class Category(models.Model):
 class Sub_Category(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    description = models.TextField(max_length=500, null=False, blank=False)
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(null=False, default=0)
     
@@ -88,17 +86,8 @@ class Sub_Category(models.Model):
 
 class Brand(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    description = models.TextField(max_length=500, null=False, blank=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
-    def _str_(self):
-        return self.name
-
-class Color(models.Model):
-    name = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    hex_code = models.CharField(max_length=7, null=False, blank=False)
-    is_active = models.BooleanField(default=True)
     
     def _str_(self):
         return self.name
@@ -126,6 +115,7 @@ class Product(models.Model):
     base_image = models.TextField(max_length=300, null=False, blank=False)
     subcategory_id = models.ForeignKey(Sub_Category, on_delete=models.CASCADE)
     brand_id = models.ForeignKey(Brand, on_delete=models.CASCADE)
+    color = models.CharField(max_length=15, null=False, blank=False)
     material_id = models.ForeignKey(Material, on_delete=models.CASCADE)
     gender = models.CharField(max_length=10, null=False, blank=False)
     sku = models.CharField(max_length=50, unique=True,null=False, blank=False)
@@ -137,7 +127,6 @@ class Product(models.Model):
     
 class Product_Variants(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
-    color_id = models.ForeignKey(Color, on_delete=models.CASCADE)
     size_id = models.ForeignKey(Size, on_delete=models.CASCADE)
     sku = models.CharField(max_length=50, unique=True,null=False, blank=False)
     stock_quantity = models.IntegerField(null=False,blank=False, default=0)

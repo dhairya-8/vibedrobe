@@ -35,7 +35,15 @@
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
-                <form action="#" method="post" id="custom-step">
+                <form action="{% url 'add_category' %}" method="post" id="custom-step" enctype="multipart/form-data">
+                  {% if messages %}
+                    {% for message in messages %}
+                      <div class="alert alert-{{ message.tags }} fade show error-popup" role="alert">
+                        {{ message }}
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                  {% csrf_token %}
                   <nav>
                     <div class="nav nav-tabs" id="nav-tab"></div>
                   </nav>
@@ -45,27 +53,15 @@
                       <div class="row">
                         <div class="col-md-6">
                           <div class="form-group row mb-2">
-                            <label for="txtFirstNameBilling" class="col-lg-3 col-form-label text-end">Category Name</label>
+                            <label for="name" class="col-lg-3 col-form-label text-end">Category Name</label>
                             <div class="col-lg-9">
-                              <input id="txtFirstNameBilling" name="txtFirstNameBilling" type="text" class="form-control" />
+                              <input id="name" name="name" type="text" class="form-control" />
                             </div>
                           </div>
                           <!-- end form-group -->
                         </div>
                         <!-- end col -->
-
-                        <!-- end col -->
                       </div>
-                      <!-- end row -->
-
-                      <!-- end row -->
-
-                      <!-- end row -->
-
-                      <!-- end row -->
-                      <!-- end row -->
-
-                      <!-- end row -->
                     </div>
                   </div>
                   <div class="text-center mt-2">

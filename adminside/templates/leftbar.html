@@ -8,11 +8,8 @@
   <!-- start brand -->
   <div class="brand">
     <a href="index.html" class="logo">
-      <span><img src="{% static 'admin/assets/images/rbg2.png' %}" alt="logo-large" class="logo-sm" width="150px"/></span>
-      <span class="">
-        <img src="{% static 'admin/assets/images/VibeDrobe_light.png' %}" alt="logo-large" class="logo-lg logo-light" />
-        
-      </span>
+      <span><img src="{% static 'admin/assets/images/rbg2.png' %}" alt="logo-large" class="logo-sm" width="150px" /></span>
+      <span class=""><img src="{% static 'admin/assets/images/VibeDrobe_light.png' %}" alt="logo-large" class="logo-lg logo-light" /></span>
     </a>
   </div>
   <!-- end brand -->
@@ -23,14 +20,14 @@
         <!-- Navigation -->
         <ul class="navbar-nav mb-auto w-100">
           <li class="menu-label pt-0 mt-0">
-            <!--     <small class="label-border">
+            <!--        <small class="label-border">
                               <div class="border_left hidden-xs"></div>
                               <div class="border_right"></div>
-                          </small>     -->
+                          </small>        -->
             <span>Main Menu</span>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="index">
+            <a class="nav-link" href="{% url 'index' %}">
               <i class="iconoir-home-simple menu-icon"></i>
               <span>Dashboards</span>
             </a>
@@ -44,6 +41,14 @@
             </small>
             <span>Components</span>
           </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="display_admin">
+              <i class="iconoir-trophy menu-icon"></i>
+              <span>View Admins</span>
+            </a>
+          </li>
+
           <li class="nav-item">
             <a class="nav-link" href="#sidebarForms" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarForms">
               <i class="iconoir-view-grid menu-icon"></i>
@@ -52,7 +57,7 @@
             <div class="collapse" id="sidebarForms">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="add_product">Add Products</a>
+                  <a class="nav-link" href="{% url "add_product" %}">Add Products</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
@@ -65,25 +70,115 @@
             <!-- end startbarForms -->
           </li>
 
+          <li class="nav-item">
+            <a class="nav-link" href="#sidebarBrand" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarBrand">
+              <i class="iconoir-view-grid menu-icon"></i>
+              <span>Brands</span>
+            </a>
+            <div class="collapse" id="sidebarBrand">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url "add_brand" %}">Add Brand</a>
+                </li>
+                <!-- end nav-item -->
+                <li class="nav-item">
+                  <a class="nav-link" href="display_brand">View Brands</a>
+                </li>
+                <!-- end nav-item -->
+              </ul>
+              <!-- end nav -->
+            </div>
+            <!-- end startbarForms -->
+          </li>
 
-        
+          <li class="nav-item">
+            <a class="nav-link" href="#sidebarCategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarCategory">
+              <i class="iconoir-view-grid menu-icon"></i>
+              <span>Categories</span>
+            </a>
+            <div class="collapse" id="sidebarCategory">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url "add_category" %}">Add Category</a>
+                </li>
+                <!-- end nav-item -->
+                <li class="nav-item">
+                  <a class="nav-link" href="display_category">View Categories</a>
+                </li>
+                <!-- end nav-item -->
+              </ul>
+              <!-- end nav -->
+            </div>
+            <!-- end startbarForms -->
+          </li>
 
+          <li class="nav-item">
+            <a class="nav-link" href="#sidebarSize" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSize">
+              <i class="iconoir-view-grid menu-icon"></i>
+              <span>Size</span>
+            </a>
+            <div class="collapse" id="sidebarSize">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="add_size">Add Size</a>
+                </li>
+                <!-- end nav-item -->
+                <li class="nav-item">
+                  <a class="nav-link" href="display_size">View Sizes</a>
+                </li>
+                <!-- end nav-item -->
+              </ul>
+              <!-- end nav -->
+            </div>
+            <!-- end startbarForms -->
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="#sidebarMaterial" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarMaterial">
+              <i class="iconoir-view-grid menu-icon"></i>
+              <span>Materials</span>
+            </a>
+            <div class="collapse" id="sidebarMaterial">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="add_material">Add Material</a>
+                </li>
+                <!-- end nav-item -->
+                <li class="nav-item">
+                  <a class="nav-link" href="display_material">View Materials</a>
+                </li>
+                <!-- end nav-item -->
+              </ul>
+              <!-- end nav -->
+            </div>
+            <!-- end startbarForms -->
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#sidebarsubcategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarsubcategory">
+              <i class="iconoir-view-grid menu-icon"></i>
+              <span>Sub Categories</span>
+            </a>
+            <div class="collapse" id="sidebarsubcategory">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="add_subcategory">Add Sub Category</a>
+                </li>
+                <!-- end nav-item -->
+                <li class="nav-item">
+                  <a class="nav-link" href="display_subcategory">View Sub Categories</a>
+                </li>
+                <!-- end nav-item -->
+              </ul>
+              <!-- end nav -->
+            </div>  
+            <!-- end startbarForms -->
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="display_user">
               <i class="iconoir-peace-hand menu-icon"></i>
               <span>View Users</span>
             </a>
           </li>
-
-         
-
-          <li class="nav-item">
-            <a class="nav-link" href="display_admin">
-              <i class="iconoir-trophy menu-icon"></i>
-              <span>View Admins</span>
-            </a>
-          </li>
-
           <li class="nav-item">
             <a class="nav-link" href="#sidebarTables" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarTables">
               <i class="iconoir-table-rows menu-icon"></i>
