@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Brand | VibeDrobe{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-content">
+    <div class="container-xxl">
+      {% include 'messages.html' %}
+      
+      <div class="row justify-content-center">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h4 class="card-title">Edit Brand</h4>
+            </div>
+            <div class="card-body pt-0">
+              <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Brand Name</label>
+                      <div class="col-lg-9">
+                        <input name="name" type="text" class="form-control" value="{{ brand.name }}" required>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-center mt-3">
+                  <button type="submit" class="btn btn-primary px-5">Update Brand</button>
+                  <a href="{% url 'display_brands' %}" class="btn btn-secondary px-5">Cancel</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

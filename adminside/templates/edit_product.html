@@ -19,194 +19,111 @@
 {% endblock %}
 {% block content %}
   <div class="page-wrapper">
-    <!-- Page Content -->
-    <div class="page-content">
-      <div class="container-xxl">
-        <div class="row justify-content-center">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-header">
-                <div class="row align-items-center">
-                  <div class="col">
-                    <h4 class="card-title">Products</h4>
-                  </div>
-                  <!-- end col -->
-                </div> <!-- end row -->
-              </div>
-              <!-- end card-header -->
-              <div class="card-body pt-0">
-                <form action="#" method="post" id="custom-step">
-                  <nav>
-                    <div class="nav nav-tabs" id="nav-tab"></div>
-                  </nav>
-                  <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane active" id="step1">
-                      <h4 class="card-title my-4 fs-15">Edit Product</h4>
-                      <div class="row">
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="txtFirstNameBilling" class="col-lg-3 col-form-label text-end">Product Name</label>
-                            <div class="col-lg-9">
-                              <input id="txtFirstNameBilling" name="txtFirstNameBilling" placeholder="Crop Top" type="text" class="form-control" />
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="ddlCreditCardType" class="col-lg-3 col-form-label text-end">Select Category</label>
-                            <div class="col-lg-9">
-                              <select id="ddlCreditCardType" name="ddlCreditCardType" class="form-select">
-                                <option value="">Top</option>
-                                <option value="AE">American Express</option>
-                                <option value="VI">Visa</option>
-                                <option value="MC">MasterCard</option>
-                                <option value="DI">Discover</option>
-                              </select>
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
+  <div class="page-content">
+    <div class="container-xxl">
+      {% include 'messages.html' %}
+      
+      <div class="row justify-content-center">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h4 class="card-title">Edit Product</h4>
+            </div>
+            <div class="card-body pt-0">
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-md-6">
+                    <!-- Basic Info -->
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Product Name</label>
+                      <div class="col-lg-9">
+                        <input name="name" type="text" class="form-control" value="{{ product.name }}" required>
                       </div>
-                      <!-- end row -->
-                      <div class="row">
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="txtCompanyBilling" class="col-lg-3 col-form-label text-end">Product Price</label>
-                            <div class="col-lg-9">
-                              <input id="txtCompanyBilling" name="txtCompanyBilling" placeholder="299" type="text" class="form-control" />
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="ddlCreditCardType" class="col-lg-3 col-form-label text-end">Select Brand</label>
-                            <div class="col-lg-9">
-                              <select id="ddlCreditCardType" name="ddlCreditCardType" class="form-select">
-                                <option value="">Zara</option>
-                                <option value="AE">American Express</option>
-                                <option value="VI">Visa</option>
-                                <option value="MC">MasterCard</option>
-                                <option value="DI">Discover</option>
-                              </select>
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
+                    </div>
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Description</label>
+                      <div class="col-lg-9">
+                        <textarea name="description" class="form-control" rows="3" required>{{ product.description }}</textarea>
                       </div>
-                      <!-- end row -->
-                      <div class="row">
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="txtAddress1Billing" class="col-lg-3 col-form-label text-end">Product Details</label>
-                            <div class="col-lg-9">
-                              <textarea id="txtAddress1Billing" name="txtAddress1Billing" placeholder="Top" rows="4" class="form-control"></textarea>
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label class="col-lg-3 col-form-label text-end">Available Sizes</label>
-                            <div class="col-lg-2">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="size-xs" value="XS">
-                                <label class="form-check-label" for="size-xs">XS</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="size-s" value="S">
-                                <label class="form-check-label" for="size-s">S</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="size-m" value="M">
-                                <label class="form-check-label" for="size-m">M</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="size-l" value="L">
-                                <label class="form-check-label" for="size-l">L</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="size-xl" value="XL">
-                                <label class="form-check-label" for="size-xl">XL</label>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {% comment %} <div class="col-md-4">
-                          <label class="col-lg-4 col-form-label text-end">Product Size</label>
-                          <select id="default">
-                            <option value="value-1">Value 1</option>
-                            <option value="value-2">Value 2</option>
-                            <option value="value-3">Value 3</option>
-                          </select>
-                        </div> {% endcomment %}
-                        <!-- end col -->
+                    </div>
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Price</label>
+                      <div class="col-lg-9">
+                        <input name="price" type="number" step="0.01" class="form-control" value="{{ product.price }}" required>
                       </div>
-                      <!-- end row -->
-
-                      <!-- end row -->
-                      <!-- end row -->
-
-                      <div class="row">
-                        <!-- end col -->
-
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="txtFaxBilling" class="col-lg-3 col-form-label text-end">Fabric Type</label>
-                            <div class="col-lg-9">
-                              <input id="txtFaxBilling" name="txtFaxBilling" type="text" placeholder="Cotton" class="form-control" />
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        <!-- end col -->
-                        <div class="col-md-6">
-                          <div class="form-group row mb-2">
-                            <label for="input-file" class="col-lg-3 col-form-label text-end">Product Photo</label>
-                            <div class="col-lg-9">
-                              <div class="d-flex align-items-center">
-                                <div class="preview-box me-3 d-flex align-items-center justify-content-center rounded border-dashed border-theme-color overflow-hidden" style="width: 80px; height: 80px; border: 1px dashed #ccc;">
-                                  <i class="iconoir-camera" style="font-size: 24px; color: #ccc;"></i>
-                                </div>
-                                <div>
-                                  <input type="file" id="input-file" name="input-file" accept="image/*" onchange={handleChange()} hidden />
-                                  <label class="btn btn-secondary" for="input-file">Replace Image</label>
-                                  <small class="d-block text-muted mt-1">JPG, PNG (Max 2MB)</small>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <!-- end form-group -->
-                        </div>
-                        {% comment %} <div class="card-body pt-1">
-                          <div class="d-grid">
-                            <label for="txtFaxBilling" class="col-lg-1 col-form-label text-end">Product Photo</label>
-                              <div class="preview-box d-block justify-content-center rounded  border-dashed border-theme-color overflow-hidden p-3"></div>
-                              <input type="file" id="input-file" name="input-file" accept="image/*" onchange={handleChange()} hidden />
-                              <label class="btn-upload btn btn-primary mt-3 col-md-4" for="input-file">Upload Image</label>
-                          </div>             
-                      </div><!--end card-body-->  {% endcomment %}
-                      </div>
-                      <!-- end row -->
-                       
-                      
-                      
                     </div>
                     
+                    <!-- Relationships -->
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Category</label>
+                      <div class="col-lg-9">
+                        <select name="subcategory_id" class="form-control" required>
+                          {% for category in categories %}
+                            <optgroup label="{{ category.name }}">
+                              {% for subcategory in category.subcategory_set.all %}
+                                <option value="{{ subcategory.id }}" {% if subcategory.id == product.subcategory_id.id %}selected{% endif %}>
+                                  {{ subcategory.name }}
+                                </option>
+                              {% endfor %}
+                            </optgroup>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-center mt-1">
-                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Submit</button>
+                  
+                  <div class="col-md-6">
+                    <!-- Additional Fields -->
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Brand</label>
+                      <div class="col-lg-9">
+                        <select name="brand_id" class="form-control" required>
+                          {% for brand in brands %}
+                            <option value="{{ brand.id }}" {% if brand.id == product.brand_id.id %}selected{% endif %}>{{ brand.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Material</label>
+                      <div class="col-lg-9">
+                        <select name="material_id" class="form-control" required>
+                          {% for material in materials %}
+                            <option value="{{ material.id }}" {% if material.id == product.material_id.id %}selected{% endif %}>{{ material.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Color</label>
+                      <div class="col-lg-9">
+                        <input name="color" type="text" class="form-control" value="{{ product.color }}" required>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Status</label>
+                      <div class="col-lg-9">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if product.is_active %}checked{% endif %}>
+                          <label class="form-check-label" for="is_active">
+                            {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {% comment %} <div class="text-center mt-1">
-                    <button type="submit" class="btn btn-secondary btn-lg px-5">Submit</button>
-                  </div> {% endcomment %}
-                </form>
+                </div>
+                
+                <div class="text-center mt-3">
+                  <button type="submit" class="btn btn-primary px-5">Update Product</button>
+                  <a href="{% url 'add_product_variants' product.id %}" class="btn btn-info px-5">Manage Variants</a>
+                  <a href="{% url 'display_products' %}" class="btn btn-secondary px-5">Cancel</a>
+                </div>
+              </form>
                 <!-- end form -->
               </div>
               <!-- end card-body -->
