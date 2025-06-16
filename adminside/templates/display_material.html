@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-  Display Category | VibeDrobe
+  Display Material | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -41,12 +41,12 @@
               <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col-auto">
-                    <h4 class="card-title">View Categories</h4>
+                    <h4 class="card-title">View Materials</h4>
                   </div>
                   <!-- end col -->
                   <div class="col-auto ms-auto">
-                    <a href="{% url 'add_category' %}" class="btn btn-primary">
-                      <i class="las la-plus me-1"></i> Add New Category
+                    <a href="{% url 'add_material' %}" class="btn btn-primary">
+                      <i class="las la-plus me-1"></i> Add New Material
                     </a>
                   </div>
                   <!-- end col -->
@@ -55,43 +55,41 @@
               <!-- end card-header -->
               <div class="card-body pt-0">
                 <div class="table-responsive">
-                  <table class="table" id="categoriesTable">
+                  <table class="table" id="materialsTable">
                     <thead class="table-light">
                       <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Sort Order</th>
+                        <th>Description</th>
                         <th>Status</th>
-                        <th>Created At</th>
                         <th>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {% for category in categories %}
+                      {% for material in materials %}
                       <tr>
-                        <td>{{ category.id }}</td>
-                        <td>{{ category.name }}</td>
-                        <td>{{ category.sort_order }}</td>
+                        <td>{{ material.id }}</td>
+                        <td>{{ material.name }}</td>
+                        <td>{{ material.description }}</td>
                         <td>
-                          {% if category.is_active %}
+                          {% if material.is_active %}
                             <span class="badge bg-success">Active</span>
                           {% else %}
                             <span class="badge bg-danger">Inactive</span>
                           {% endif %}
                         </td>
-                        <td>{{ category.created_at|date:"Y-m-d H:i" }}</td>
                         <td>
-                          <a href="{% url 'edit_category' category.id %}" class="me-2">
+                          <a href="{% url 'edit_material' material.id %}" class="me-2">
                             <i class="las la-pen text-secondary fs-18"></i>
                           </a>
-                          <a href="{% url 'delete_category' category.id %}" onclick="return confirm('Are you sure you want to delete this category?')">
+                          <a href="{% url 'delete_material' material.id %}" onclick="return confirm('Are you sure you want to delete this material?')">
                             <i class="las la-trash-alt text-danger fs-18"></i>
                           </a>
                         </td>
                       </tr>
                       {% empty %}
                       <tr>
-                        <td colspan="6" class="text-center">No categories found</td>
+                        <td colspan="6" class="text-center">No materials found</td>
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -122,7 +120,7 @@
   <script>
     // Initialize datatable
     document.addEventListener('DOMContentLoaded', function() {
-      new DataTable('#categoriesTable', {
+      new DataTable('#materialsTable', {
         responsive: true,
         dom: '<"top"f>rt<"bottom"lip><"clear">',
         pageLength: 10

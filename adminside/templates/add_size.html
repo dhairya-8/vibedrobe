@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-  Add Brand | VibeDrobe
+  Add Size | VibeDrobe
 {% endblock %}
 
 <!-- App favicon -->
@@ -29,27 +29,33 @@
               <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col">
-                    <h4 class="card-title">Brands</h4>
+                    <h4 class="card-title">Sizes</h4>
                   </div>
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
-                <form action="{% url 'add_brand' %}" method="post" id="custom-step">
+                <form action="{% url 'add_size' %}" method="post" id="custom-step">
                   {% csrf_token %}
                   <nav>
                     <div class="nav nav-tabs" id="nav-tab"></div>
                   </nav>
                   <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane active" id="step1">
-                      <h4 class="card-title my-4 fs-15">Add Brand</h4>
+                      <h4 class="card-title my-4 fs-15">Add Size</h4>
                       <div class="row">
                         <div class="col-md-6">
                           <div class="form-group row mb-2">
-                            <label for="name" class="col-lg-3 col-form-label text-end">Brand Name</label>
+                            <label for="name" class="col-lg-3 col-form-label text-end">Size Name</label>
                             <div class="col-lg-9">
                               <input id="name" name="name" type="text" class="form-control" />
+                            </div>
+                          </div>
+                          <div class="form-group row mb-2">
+                            <label for="sort_order" class="col-lg-3 col-form-label text-end">Sort Order</label>
+                            <div class="col-lg-9">
+                              <input id="sort_order" name="sort_order" type="text" class="form-control" />
                             </div>
                           </div>
                           <!-- end form-group -->
@@ -59,7 +65,7 @@
                     </div>
                   </div>
                   <div class="text-center mt-2">
-                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Add Brand</button>
+                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Add Size</button>
                   </div>
                   {% comment %} <div class="text-center mt-1">
                     <button type="submit" class="btn btn-secondary btn-lg px-5">Submit</button>

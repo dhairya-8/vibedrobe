@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Variant | VibeDrobe{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-content">
+    <div class="container-xxl">
+      {% include 'message.html' %}
+      
+      <div class="row justify-content-center">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h4 class="card-title">Edit Variant for {{ variant.product_id.name }}</h4>
+            </div>
+            <div class="card-body pt-0">
+              <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Size</label>
+                      <div class="col-lg-9">
+                        <select name="size_id" class="form-control" required>
+                          {% for size in sizes %}
+                            <option value="{{ size.id }}" {% if size.id == variant.size_id.id %}selected{% endif %}>{{ size.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">SKU</label>
+                      <div class="col-lg-9">
+                        <input name="sku" type="text" class="form-control" value="{{ variant.sku }}" required>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Stock</label>
+                      <div class="col-lg-9">
+                        <input name="stock_quantity" type="number" class="form-control" value="{{ variant.stock_quantity }}" required>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group row mb-2">
+                      <label class="col-lg-3 col-form-label text-end">Additional Price</label>
+                      <div class="col-lg-9">
+                        <input name="additional_price" type="number" step="0.01" class="form-control" value="{{ variant.additional_price }}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                  <button type="submit" class="btn btn-primary px-5">Update Variant</button>
+                  <a href="{% url 'display_product_variant' variant.product_id.id %}" class="btn btn-secondary px-5">Back to Variants</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

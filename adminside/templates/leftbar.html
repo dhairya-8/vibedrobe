@@ -20,15 +20,15 @@
         <!-- Navigation -->
         <ul class="navbar-nav mb-auto w-100">
           <li class="menu-label pt-0 mt-0">
-            <!--        <small class="label-border">
+            <!--         <small class="label-border">
                               <div class="border_left hidden-xs"></div>
                               <div class="border_right"></div>
-                          </small>        -->
+                          </small>         -->
             <span>Main Menu</span>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'index' %}">
-              <i class="iconoir-home-simple menu-icon"></i>
+              <i class="fas fa-home menu-icon"></i>
               <span>Dashboards</span>
             </a>
           </li>
@@ -43,27 +43,28 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="display_admin">
-              <i class="iconoir-trophy menu-icon"></i>
+            <a class="nav-link" href="{% url 'display_admin' %}">
+              <i class="fas fa-universal-access menu-icon"></i>
               <span>View Admins</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarForms" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarForms">
-              <i class="iconoir-view-grid menu-icon"></i>
+              <i class="fas fa-tshirt menu-icon"></i>
               <span>Products</span>
             </a>
             <div class="collapse" id="sidebarForms">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url "add_product" %}">Add Products</a>
+                  <a class="nav-link" href="{% url 'add_product' %}">Add Products</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_product">View Products</a>
+                  <a class="nav-link" href="{% url 'display_product' %}">View Products</a>
                 </li>
                 <!-- end nav-item -->
+                
               </ul>
               <!-- end nav -->
             </div>
@@ -72,17 +73,18 @@
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarBrand" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarBrand">
-              <i class="iconoir-view-grid menu-icon"></i>
+              {% comment %} <i class="iconoir-view-grid menu-icon"></i> {% endcomment %}
+              <i class="icofont-brand-puma menu-icon"></i>
               <span>Brands</span>
             </a>
             <div class="collapse" id="sidebarBrand">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url "add_brand" %}">Add Brand</a>
+                  <a class="nav-link" href="{% url 'add_brand' %}">Add Brand</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_brand">View Brands</a>
+                  <a class="nav-link" href="{% url 'display_brand' %}">View Brands</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
@@ -93,17 +95,17 @@
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarCategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarCategory">
-              <i class="iconoir-view-grid menu-icon"></i>
+              <i class="icofont-bow menu-icon"></i>
               <span>Categories</span>
             </a>
             <div class="collapse" id="sidebarCategory">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url "add_category" %}">Add Category</a>
+                  <a class="nav-link" href="{% url 'add_category' %}">Add Category</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_category">View Categories</a>
+                  <a class="nav-link" href="{% url 'display_category' %}">View Categories</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
@@ -114,17 +116,17 @@
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarSize" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSize">
-              <i class="iconoir-view-grid menu-icon"></i>
+              <i class="fas fa-ruler-combined menu-icon"></i>
               <span>Size</span>
             </a>
             <div class="collapse" id="sidebarSize">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="add_size">Add Size</a>
+                  <a class="nav-link" href="{% url 'add_size' %}">Add Size</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_size">View Sizes</a>
+                  <a class="nav-link" href="{% url 'display_size' %}">View Sizes</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
@@ -135,17 +137,17 @@
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarMaterial" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarMaterial">
-              <i class="iconoir-view-grid menu-icon"></i>
+              <i class="iconoir-flower menu-icon"></i>
               <span>Materials</span>
             </a>
             <div class="collapse" id="sidebarMaterial">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="add_material">Add Material</a>
+                  <a class="nav-link" href="{% url 'add_material' %}">Add Material</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_material">View Materials</a>
+                  <a class="nav-link" href="{% url 'display_material' %}">View Materials</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
@@ -155,27 +157,27 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#sidebarsubcategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarsubcategory">
-              <i class="iconoir-view-grid menu-icon"></i>
+              <i class="fas fa-project-diagram menu-icon"></i>
               <span>Sub Categories</span>
             </a>
             <div class="collapse" id="sidebarsubcategory">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="add_subcategory">Add Sub Category</a>
+                  <a class="nav-link" href="{% url 'add_subcategory' %}">Add Sub Category</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_subcategory">View Sub Categories</a>
+                  <a class="nav-link" href="{% url 'display_subcategory' %}">View Sub Categories</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
               <!-- end nav -->
-            </div>  
+            </div>
             <!-- end startbarForms -->
           </li>
           <li class="nav-item">
             <a class="nav-link" href="display_user">
-              <i class="iconoir-peace-hand menu-icon"></i>
+              <i class="fas fa-user-friends menu-icon"></i>
               <span>View Users</span>
             </a>
           </li>
@@ -187,11 +189,11 @@
             <div class="collapse" id="sidebarTables">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="display_orders">View Orders</a>
+                  <a class="nav-link" href="{% url 'display_orders' %}">View Orders</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="display_orderdetails">Order Details</a>
+                  <a class="nav-link" href="{% url 'display_orderdetails' %}">Order Details</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
@@ -201,42 +203,49 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="display_cart">
-              <i class="iconoir-navigator-alt menu-icon"></i>
+            <a class="nav-link" href="{% url 'display_cart' %}">
+              <i class="fas fa-shipping-fast menu-icon"></i>
+              <span>Shipping</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'display_cart' %}">
+              <i class="fas fa-cart-arrow-down menu-icon"></i>
               <span>Cart</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="display_wishlist">
-              <i class="iconoir-send-mail menu-icon"></i>
+            <a class="nav-link" href="{% url 'display_wishlist' %}">
+              <i class="fab fa-gratipay menu-icon"></i>
               <span>Wishlist</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="display_payment">
-              <i class="iconoir-page-star menu-icon"></i>
+            <a class="nav-link" href="{% url 'display_payment' %}">
+              <i class="iconoir-dollar-circle menu-icon"></i>
               <span>View Payment List</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" href="#sidebarReports" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarReports">
-              <i class="iconoir-journal-page menu-icon"></i>
+              <i class="iconoir-reports-solid menu-icon"></i>
               <span>Reports</span>
             </a>
             <div class="collapse" id="sidebarReports">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="report_FBT_Report">FBT Report</a>
+                  <a class="nav-link" href="{% url 'report_FBT' %}">FBT Report</a>
                 </li>
                 <!-- end nav-item -->
                 <li class="nav-item">
-                  <a class="nav-link" href="report_customer">Customer Report</a>
+                  <a class="nav-link" href="{% url 'report_customer' %}">Customer Report</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="report_sales">Sales Report</a>
+                  <a class="nav-link" href="repor{% url 'report_sales' %}t_sales">Sales Report</a>
                 </li>
                 <!-- end nav-item -->
               </ul>
