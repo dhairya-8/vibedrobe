@@ -76,7 +76,7 @@ class Category(models.Model):
         return self.name
 
 class Sub_Category(models.Model):
-    category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category_id = models.ForeignKey(Category, on_delete=models.CASCADE,related_name='subcategories')
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(null=False, default=0)
@@ -126,7 +126,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
 class Product_Variants(models.Model):
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
     size_id = models.ForeignKey(Size, on_delete=models.CASCADE)
     sku = models.CharField(max_length=50, unique=True,null=False, blank=False)
     stock_quantity = models.IntegerField(null=False,blank=False, default=0)

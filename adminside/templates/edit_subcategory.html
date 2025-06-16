@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-  Edit Material | VibeDrobe
+  Edit Sub Category | VibeDrobe
 {% endblock %}
 
 <!-- App favicon -->
@@ -16,6 +16,7 @@
   <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
   <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+
   <style>
     /* Message animation styles */
     .alert-auto-dismiss {
@@ -28,6 +29,7 @@
       to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; }
     }
   </style>
+
 {% endblock %}
 
 {% block content %}
@@ -35,27 +37,14 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
-        <!-- Messages display -->
-        {% if messages %}
-        <div class="row">
-          <div class="col-12">
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show alert-auto-dismiss">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        
+        {% include "message.html" %}
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col">
-                    <h4 class="card-title">Edit Material</h4>
+                    <h4 class="card-title">Edit Sub Category</h4>
                   </div>
                   <!-- end col -->
                 </div> <!-- end row -->
@@ -69,35 +58,52 @@
                   </nav>
                   <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane active" id="step1">
-                      <h4 class="card-title my-4 fs-15">Edit Material Details</h4>
+                      <h4 class="card-title my-4 fs-15">Edit Sub Category Details</h4>
                       <div class="row">
                         <div class="col-md-6">
+                          <!-- Category Selection -->
                           <div class="form-group row mb-2">
-                            <label for="name" class="col-lg-3 col-form-label text-end">Material Name</label>
+                            <label for="category_id" class="col-lg-3 col-form-label text-end">Category</label>
                             <div class="col-lg-9">
-                              <input id="name" name="name" type="text" class="form-control" value="{{ material.name }}" required />
+                              <select id="category_id" name="category_id" class="form-control" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                  <option value="{{ category.id }}" {% if category.id == subcategory.category_id.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                  </option>
+                                {% endfor %}
+                              </select>
                             </div>
                           </div>
-                          <!-- end form-group -->
+
+                          <!-- Sub Category Name -->
                           <div class="form-group row mb-2">
-                              <label class="col-lg-3 col-form-label text-end">Description</label>
-                              <div class="col-lg-9">
-                                <textarea name="description" class="form-control" rows="3" required>{{ material.description }}</textarea>
-                              </div>
+                            <label for="name" class="col-lg-3 col-form-label text-end">Sub Category Name</label>
+                            <div class="col-lg-9">
+                              <input id="name" name="name" type="text" class="form-control" value="{{ subcategory.name }}" required />
                             </div>
-                            <!-- end form-group -->
+                          </div>
+
+                          <!-- Sort Order -->
+                          <div class="form-group row mb-2">
+                            <label for="sort_order" class="col-lg-3 col-form-label text-end">Sort Order</label>
+                            <div class="col-lg-9">
+                              <input id="sort_order" name="sort_order" type="number" class="form-control" value="{{ subcategory.sort_order }}" required />
+                            </div>
+                          </div>
+
+                          <!-- Status -->
                           <div class="form-group row mb-2">
                             <label class="col-lg-3 col-form-label text-end">Status</label>
                             <div class="col-lg-9">
                               <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if material.is_active %}checked{% endif %} >
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if subcategory.is_active %}checked{% endif %}>
                                 <label class="form-check-label" for="is_active">
-                                  {% if material.is_active %}Active{% else %}Inactive{% endif %}
+                                  {% if subcategory.is_active %}Active{% else %}Inactive{% endif %}
                                 </label>
                               </div>
                             </div>
                           </div>
-                          <!-- end form-group -->
                         </div>
                         <!-- end col -->
                       </div>
@@ -105,8 +111,8 @@
                     </div>
                   </div>
                   <div class="text-center mt-2">
-                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Update Material</button>
-                    <a href="{% url 'display_material' %}" class="btn btn-lg px-5 btn-secondary ms-2">Cancel</a>
+                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Update Sub Category</button>
+                    <a href="{% url 'display_subcategory' %}" class="btn btn-secondary btn-lg px-5 ms-2">Cancel</a>
                   </div>
                 </form>
                 <!-- end form -->
@@ -158,15 +164,15 @@
   <script src="{% static 'admin/assets/libs/vanillajs-datepicker/js/datepicker-full.min.js' %}"></script>
   <script src="{% static 'admin/assets/js/moment.js' %}"></script>
   <script src="{% static 'admin/assets/libs/imask/imask.min.js' %}"></script>
-  
+
   <script>
     // Toggle switch label update
     document.getElementById('is_active').addEventListener('change', function() {
       const label = document.querySelector('label[for="is_active"]');
       label.textContent = this.checked ? 'Active' : 'Inactive';
     });
-    
-    // Auto-dismiss messages
+
+     // Auto-dismiss messages
     document.addEventListener('DOMContentLoaded', function() {
       setTimeout(function() {
         let alerts = document.querySelectorAll('.alert-auto-dismiss');

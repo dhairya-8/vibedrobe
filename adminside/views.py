@@ -1,7 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import *
 from .decorators import admin_login_required
+from decimal import Decimal
+from django.core.files.storage import FileSystemStorage
+import os
 
 @admin_login_required
 def index(request):
@@ -151,7 +154,7 @@ def edit_subcategory(request, id):
             subcategory.sort_order = request.POST.get('sort_order', 0)
             subcategory.save()
             messages.success(request, "SubCategory updated successfully!")
-            return redirect('display_subcategories')
+            return redirect('display_subcategory')
             
         return render(request, 'edit_subcategory.html', {
             'subcategory': subcategory,
@@ -160,10 +163,10 @@ def edit_subcategory(request, id):
     
     except Sub_Category.DoesNotExist:
         messages.error(request, "SubCategory not found")
-        return redirect('display_subcategories')
+        return redirect('display_subcategory')
     except Category.DoesNotExist:
         messages.error(request, "Invalid category selected")
-        return redirect('display_subcategories')
+        return redirect('display_subcategory')
 
 @admin_login_required
 def display_subcategory(request):
@@ -178,7 +181,7 @@ def delete_subcategory(request, id):
         messages.success(request, "SubCategory deleted successfully!")
     except Sub_Category.DoesNotExist:
         messages.error(request, "SubCategory not found")
-    return redirect('display_subcategories')
+    return redirect('display_subcategory')
 
 # Brand Views
 @admin_login_required
@@ -214,15 +217,16 @@ def edit_brand(request, id):
         
         if request.method == 'POST':
             brand.name = request.POST.get('name', '').strip()
+            brand.is_active = 'is_active' in request.POST 
             brand.save()
             messages.success(request, "Brand updated successfully!")
-            return redirect('display_brands')
+            return redirect('display_brand')
             
         return render(request, 'edit_brand.html', {'brand': brand})
     
     except Brand.DoesNotExist:
         messages.error(request, "Brand not found")
-        return redirect('display_brands')
+        return redirect('display_brand')
 
 @admin_login_required
 def display_brand(request):
@@ -237,7 +241,7 @@ def delete_brand(request, id):
         messages.success(request, "Brand deleted successfully!")
     except Brand.DoesNotExist:
         messages.error(request, "Brand not found")
-    return redirect('display_brands')
+    return redirect('display_brand')
  
 # Size Views
 @admin_login_required
@@ -276,15 +280,16 @@ def edit_size(request, id):
         if request.method == 'POST':
             size.name = request.POST.get('name', '').strip()
             size.sort_order = request.POST.get('sort_order', 0)
+            size.is_active = 'is_active' in request.POST
             size.save()
             messages.success(request, "Size updated successfully!")
-            return redirect('display_sizes')
+            return redirect('display_size')
             
         return render(request, 'edit_size.html', {'size': size})
     
     except Size.DoesNotExist:
         messages.error(request, "Size not found")
-        return redirect('display_sizes')
+        return redirect('display_size')
 
 @admin_login_required
 def display_size(request):
@@ -299,7 +304,7 @@ def delete_size(request, id):
         messages.success(request, "Size deleted successfully!")
     except Size.DoesNotExist:
         messages.error(request, "Size not found")
-    return redirect('display_sizes')
+    return redirect('display_size')
  
 # Material Views
 @admin_login_required
@@ -338,15 +343,16 @@ def edit_material(request, id):
         if request.method == 'POST':
             material.name = request.POST.get('name', '').strip()
             material.description = request.POST.get('description', '').strip()
+            material.is_active = 'is_active' in request.POST 
             material.save()
             messages.success(request, "Material updated successfully!")
-            return redirect('display_materials')
+            return redirect('display_material')
             
         return render(request, 'edit_material.html', {'material': material})
     
     except Material.DoesNotExist:
         messages.error(request, "Material not found")
-        return redirect('display_materials')
+        return redirect('display_material')
 
 @admin_login_required
 def display_material(request):
@@ -361,173 +367,223 @@ def delete_material(request, id):
         messages.success(request, "Material deleted successfully!")
     except Material.DoesNotExist:
         messages.error(request, "Material not found")
-    return redirect('display_materials')
+    return redirect('display_material')
 
 # Product Views
-@admin_login_required
 def add_product(request):
     if request.method == 'POST':
         try:
+            subcategory = get_object_or_404(Sub_Category, id=request.POST.get('subcategory_id'))
+            brand = get_object_or_404(Brand, id=request.POST.get('brand_id'))
+            material = get_object_or_404(Material, id=request.POST.get('material_id'))
+            # Create product with instances
             product = Product.objects.create(
-                name=request.POST.get('name', '').strip(),
-                description=request.POST.get('description', '').strip(),
-                price=request.POST.get('price', 0),
-                base_image=request.POST.get('base_image', '').strip(),
-                subcategory_id=Sub_Category.objects.get(id=request.POST.get('subcategory_id')),
-                brand_id=Brand.objects.get(id=request.POST.get('brand_id')),
-                color=request.POST.get('color', '').strip(),
-                material_id=Material.objects.get(id=request.POST.get('material_id')),
-                gender=request.POST.get('gender', '').strip(),
-                sku=request.POST.get('sku', '').strip(),
+                name=request.POST.get('name'),
+                description=request.POST.get('description'),
+                price=request.POST.get('price'),
+                subcategory_id=subcategory, 
+                brand_id=brand,
+                material_id=material,
+                color=request.POST.get('color'),
+                gender=request.POST.get('gender'),
+                sku=request.POST.get('sku'),
                 weight=request.POST.get('weight'),
-                dimensions=request.POST.get('dimensions', '').strip(),
-                is_active=True
+                dimensions=request.POST.get('dimensions'),
+                base_image=request.FILES.get('base_image')
             )
-            messages.success(request, "Product added successfully!")
-            return redirect('add_product_variants', product_id=product.id)
+            
+            messages.success(request, 'Product added successfully!')
+            return redirect('display_product')
+            
         except Exception as e:
-            messages.error(request, f"Error: {str(e)}")
-            return redirect('add_product')
+            messages.error(request, f'Error adding product: {str(e)}')
     
-    categories = Category.objects.filter(is_active=True)
-    brands = Brand.objects.filter(is_active=True)
-    materials = Material.objects.filter(is_active=True)
-    return render(request, 'add_product.html', {
+    # Get all categories, brands, and materials for the form
+    categories = Category.objects.prefetch_related('subcategories').all()
+    brands = Brand.objects.all()
+    materials = Material.objects.all()
+    
+    context = {
         'categories': categories,
         'brands': brands,
-        'materials': materials
-    })
-
-@admin_login_required
-def edit_product(request, id):
-    try:
-        product = Product.objects.get(id=id)
-        
-        if request.method == 'POST':
-            product.name = request.POST.get('name', '').strip()
-            product.description = request.POST.get('description', '').strip()
-            product.price = request.POST.get('price', 0)
-            product.base_image = request.POST.get('base_image', '').strip()
-            product.subcategory_id = Sub_Category.objects.get(id=request.POST.get('subcategory_id'))
-            product.brand_id = Brand.objects.get(id=request.POST.get('brand_id'))
-            product.color = request.POST.get('color', '').strip()
-            product.material_id = Material.objects.get(id=request.POST.get('material_id'))
-            product.gender = request.POST.get('gender', '').strip()
-            product.sku = request.POST.get('sku', '').strip()
-            product.weight = request.POST.get('weight')
-            product.dimensions = request.POST.get('dimensions', '').strip()
-            product.save()
-            
-            messages.success(request, "Product updated successfully!")
-            return redirect('display_products')
-            
-        categories = Category.objects.filter(is_active=True)
-        brands = Brand.objects.filter(is_active=True)
-        materials = Material.objects.filter(is_active=True)
-        subcategories = Sub_Category.objects.filter(category_id=product.subcategory_id.category_id)
-        
-        return render(request, 'edit_product.html', {
-            'product': product,
-            'categories': categories,
-            'subcategories': subcategories,
-            'brands': brands,
-            'materials': materials
-        })
-    
-    except Product.DoesNotExist:
-        messages.error(request, "Product not found")
-        return redirect('display_products')
-    except Exception as e:
-        messages.error(request, f"Error: {str(e)}")
-        return redirect('display_products')
+        'materials': materials,
+        'title': 'Add Product'
+    }
+    return render(request, 'add_product.html', context)
 
 @admin_login_required
 def display_product(request):
-    products = Product.objects.select_related(
-        'subcategory_id', 
-        'brand_id', 
-        'material_id'
-    ).all()
-    return render(request, 'display_products.html', {'products': products})
+    # Get all active products with their variant counts
+    products = Product.objects.filter(is_active=True).annotate(
+        variant_count=models.Count('variants')
+    ).order_by('name')
+    
+    return render(request, 'display_product.html', {
+        'products': products
+    })
+    
+def edit_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
+    if request.method == 'POST':
+        try:
+            # Get related instances first
+            subcategory = get_object_or_404(Sub_Category, id=request.POST.get('subcategory_id'))
+            brand = get_object_or_404(Brand, id=request.POST.get('brand_id'))
+            material = get_object_or_404(Material, id=request.POST.get('material_id'))
+            
+            # Update product fields
+            product.name = request.POST.get('name')
+            product.description = request.POST.get('description')
+            product.price = request.POST.get('price')
+            product.subcategory_id = subcategory  # Assign the instance, not just ID
+            product.brand_id = brand
+            product.material_id = material
+            product.color = request.POST.get('color')
+            product.gender = request.POST.get('gender')
+            product.sku = request.POST.get('sku')
+            product.weight = request.POST.get('weight')
+            product.dimensions = request.POST.get('dimensions')
+            
+            # Handle image update
+            new_image = request.FILES.get('base_image')
+            if new_image:
+                # Delete old image if exists
+                if product.base_image:
+                    if os.path.isfile(product.base_image.path):
+                        os.remove(product.base_image.path)
+                # Save new image
+                fs = FileSystemStorage()
+                filename = fs.save(new_image.name, new_image)
+                product.base_image = fs.url(filename)
+            
+            product.save()
+            messages.success(request, 'Product updated successfully!')
+            return redirect('display_product')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating product: {str(e)}')
+    
+    # Get all categories, brands, and materials for the form
+    categories = Category.objects.prefetch_related('subcategories').all()
+    brands = Brand.objects.all()
+    materials = Material.objects.all()
+    
+    context = {
+        'product': product,
+        'categories': categories,
+        'brands': brands,
+        'materials': materials,
+        'title': 'Edit Product'
+    }
+    return render(request, 'edit_product.html', context)
 
-@admin_login_required
-def delete_product(request, id):
+def delete_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
     try:
-        product = Product.objects.get(id=id)
+        # Delete associated image if exists
+        if product.base_image:
+            if os.path.isfile(product.base_image.path):
+                os.remove(product.base_image.path)
         product.delete()
-        messages.success(request, "Product deleted successfully!")
-    except Product.DoesNotExist:
-        messages.error(request, "Product not found")
+        messages.success(request, 'Product deleted successfully!')
+    except Exception as e:
+        messages.error(request, f'Error deleting product: {str(e)}')
+    
     return redirect('display_product')
  
 # Product Variant Views
 @admin_login_required
-def add_product_variants(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        
-        if request.method == 'POST':
+def add_product_variant(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    sizes = Size.objects.filter(is_active=True)
+    
+    if request.method == 'POST':
+        try:
             Product_Variants.objects.create(
                 product_id=product,
-                size_id=Size.objects.get(id=request.POST.get('size_id')),
+                size_id=get_object_or_404(Size, id=request.POST.get('size_id')),
                 sku=request.POST.get('sku', '').strip(),
-                stock_quantity=request.POST.get('stock_quantity', 0),
-                reserved_quantity=request.POST.get('reserved_quantity', 0),
-                additional_price=request.POST.get('additional_price', 0),
+                stock_quantity=int(request.POST.get('stock_quantity', 0)),
+                reserved_quantity=int(request.POST.get('reserved_quantity', 0)),
+                additional_price=Decimal(request.POST.get('additional_price', 0)),
                 is_active=True
             )
             messages.success(request, "Variant added successfully!")
-            return redirect('add_product_variants', product_id=product_id)
-        
-        sizes = Size.objects.filter(is_active=True)
-        variants = Product_Variants.objects.filter(product_id=product)
-        return render(request, 'add_product_variants.html', {
-            'product': product,
-            'sizes': sizes,
-            'variants': variants
-        })
+            if 'add_another' in request.POST:
+                return redirect('add_product_variant', product_id=product_id)
+            return redirect('display_product_variant', product_id=product_id)
+        except Exception as e:
+            messages.error(request, f"Error adding variant: {str(e)}")
     
-    except Product.DoesNotExist:
-        messages.error(request, "Product not found")
-        return redirect('display_product')
-
+    return render(request, 'add_product_variant.html', {
+        'product': product,
+        'sizes': sizes,
+        'variants': Product_Variants.objects.filter(product_id=product)
+    })
+    
 @admin_login_required
-def edit_product_variant(request, id):
-    try:
-        variant = Product_Variants.objects.get(id=id)
-        
-        if request.method == 'POST':
-            variant.size_id = Size.objects.get(id=request.POST.get('size_id'))
+def edit_product_variant(request, variant_id):
+    
+    variant = get_object_or_404(Product_Variants, id=variant_id)
+    sizes = Size.objects.filter(is_active=True)
+    
+    if request.method == 'POST':
+        try:
+            variant.size_id = get_object_or_404(Size, id=request.POST.get('size_id'))
             variant.sku = request.POST.get('sku', '').strip()
-            variant.stock_quantity = request.POST.get('stock_quantity', 0)
-            variant.reserved_quantity = request.POST.get('reserved_quantity', 0)
-            variant.additional_price = request.POST.get('additional_price', 0)
+            variant.stock_quantity = int(request.POST.get('stock_quantity', 0))
+            variant.reserved_quantity = int(request.POST.get('reserved_quantity', 0))
+            variant.additional_price = Decimal(request.POST.get('additional_price', 0))
+            variant.is_active = 'is_active' in request.POST
             variant.save()
             
             messages.success(request, "Variant updated successfully!")
-            return redirect('add_product_variants', product_id=variant.product_id.id)
-            
-        sizes = Size.objects.filter(is_active=True)
-        return render(request, 'edit_product_variant.html', {
-            'variant': variant,
-            'sizes': sizes
-        })
+            return redirect('display_product_variant', product_id=variant.product_id.id)
+        except Exception as e:
+            messages.error(request, f"Error updating variant: {str(e)}")
     
-    except Product_Variants.DoesNotExist:
-        messages.error(request, "Variant not found")
-        return redirect('display_products')
+    return render(request, 'edit_product_variant.html', {
+        'variant': variant,
+        'sizes': sizes,
+        'product': variant.product_id
+    })
 
 @admin_login_required
 def delete_product_variant(request, id):
+    """Delete a product variant"""
+    variant = get_object_or_404(Product_Variants, id=id)
+    product_id = variant.product_id.id
+    
     try:
-        variant = Product_Variants.objects.get(id=id)
-        product_id = variant.product_id.id
         variant.delete()
         messages.success(request, "Variant deleted successfully!")
-        return redirect('add_product_variants', product_id=product_id)
-    except Product_Variants.DoesNotExist:
-        messages.error(request, "Variant not found")
-        return redirect('display_products')
+    except Exception as e:
+        messages.error(request, f"Error deleting variant: {str(e)}")
+    
+    return redirect('display_product_variant', product_id=product_id)
+  
+@admin_login_required
+def display_product_variant(request, product_id):
+    product = get_object_or_404(
+        Product.objects.prefetch_related('variants__size_id'), 
+        id=product_id
+    )
+    
+    variants_data = []
+    for variant in product.variants.all():
+        variants_data.append({
+            'variant': variant,
+            'total_price': product.price + variant.additional_price,
+            'available': variant.stock_quantity - variant.reserved_quantity,
+            'size_name': variant.size_id.name
+        })
+    
+    return render(request, 'display_product_variant.html', {
+        'product': product,
+        'variants_data': variants_data
+    })
     
 def display_admin(request):
     return render(request, 'display_admin.html')

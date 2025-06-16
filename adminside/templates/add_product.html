@@ -20,8 +20,39 @@
       margin-top: 10px;
     }
     .required-field:after {
-      content: " *";
+      content: ' *';
       color: red;
+    }
+    .file-upload-wrapper {
+      position: relative;
+      margin-bottom: 15px;
+    }
+    .file-upload-input {
+      width: 100%;
+      height: 38px;
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      cursor: pointer;
+    }
+    .file-upload-label {
+      display: block;
+      padding: 8px 12px;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      position: relative;
+      z-index: 1;
+    }
+    .file-upload-button {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: #713ab7;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
     }
   </style>
 {% endblock %}
@@ -53,7 +84,7 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end required-field">Product Name</label>
                             <div class="col-lg-9">
-                              <input name="name" type="text" class="form-control" required maxlength="200">
+                              <input name="name" type="text" class="form-control" required maxlength="200" />
                             </div>
                           </div>
 
@@ -67,16 +98,22 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end required-field">Price (₹)</label>
                             <div class="col-lg-9">
-                              <input name="price" type="number" step="0.01" min="0" class="form-control" required>
+                              <input name="price" type="number" step="0.01" min="0" class="form-control" required />
                             </div>
                           </div>
 
                           <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Base Image URL</label>
+                            <label class="col-lg-3 col-form-label text-end required-field">Base Image</label>
                             <div class="col-lg-9">
-                              <input name="base_image" type="text" class="form-control" required maxlength="300">
-                              <small class="text-muted">Paste the image URL here</small>
+                              <div class="file-upload-wrapper">
+                                <input type="file" name="base_image" id="base_image" class="file-upload-input" accept="image/*" required />
+                                <label for="base_image" class="file-upload-label">
+                                  <span class="file-upload-button">Choose File</span>
+                                  <span id="file-name">No file chosen</span>
+                                </label>
+                              </div>
                               <div id="image-preview-container" class="mt-2"></div>
+                              <small class="text-muted">Upload product main image (Max 2MB)</small>
                             </div>
                           </div>
                         </div>
@@ -91,7 +128,7 @@
                                 <option value="">Select Subcategory</option>
                                 {% for category in categories %}
                                   <optgroup label="{{ category.name }}">
-                                    {% for subcategory in category.subcategory_set.all %}
+                                    {% for subcategory in category.subcategories.all %}
                                       <option value="{{ subcategory.id }}">{{ subcategory.name }}</option>
                                     {% endfor %}
                                   </optgroup>
@@ -130,7 +167,7 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end required-field">Color</label>
                             <div class="col-lg-9">
-                              <input name="color" type="text" class="form-control" required maxlength="15">
+                              <input name="color" type="text" class="form-control" required maxlength="15" />
                             </div>
                           </div>
                         </div>
@@ -155,7 +192,7 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end required-field">SKU</label>
                             <div class="col-lg-9">
-                              <input name="sku" type="text" class="form-control" required maxlength="50">
+                              <input name="sku" type="text" class="form-control" required maxlength="50" />
                             </div>
                           </div>
                         </div>
@@ -165,7 +202,7 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end">Weight (kg)</label>
                             <div class="col-lg-9">
-                              <input name="weight" type="number" step="0.01" min="0" class="form-control">
+                              <input name="weight" type="number" step="0.01" min="0" class="form-control" />
                             </div>
                           </div>
 
@@ -173,7 +210,7 @@
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end">Dimensions</label>
                             <div class="col-lg-9">
-                              <input name="dimensions" type="text" class="form-control" maxlength="50">
+                              <input name="dimensions" type="text" class="form-control" maxlength="50" />
                             </div>
                           </div>
                         </div>
@@ -201,39 +238,62 @@
   <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
 
   <script>
-    // Image URL preview
-    document.querySelector('input[name="base_image"]').addEventListener('input', function() {
-      const container = document.getElementById('image-preview-container');
-      container.innerHTML = '';
-      if (this.value) {
-        const img = document.createElement('img');
-        img.src = this.value;
-        img.className = 'image-preview img-thumbnail';
-        img.onerror = function() {
-          container.innerHTML = '<div class="text-danger mt-2">Invalid image URL</div>';
-        };
-        container.appendChild(img);
-      }
-    });
-
-    // Form validation
-    document.getElementById('product-form').addEventListener('submit', function(e) {
-      const requiredFields = this.querySelectorAll('[required]');
-      let isValid = true;
-      
-      requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-          field.classList.add('is-invalid');
-          isValid = false;
-        } else {
-          field.classList.remove('is-invalid');
+    // File upload and preview functionality
+    document.getElementById('base_image').addEventListener('change', function (e) {
+      const fileName = document.getElementById('file-name')
+      const container = document.getElementById('image-preview-container')
+      container.innerHTML = ''
+    
+      if (this.files && this.files[0]) {
+        fileName.textContent = this.files[0].name
+    
+        // Check file size (max 2MB)
+        if (this.files[0].size > 2 * 1024 * 1024) {
+          container.innerHTML = '<div class="text-danger mt-2">File size exceeds 2MB limit</div>'
+          this.value = ''
+          fileName.textContent = 'No file chosen'
+          return
         }
-      });
-
-      if (!isValid) {
-        e.preventDefault();
-        alert('Please fill all required fields');
+    
+        // Check file type
+        if (!this.files[0].type.match('image.*')) {
+          container.innerHTML = '<div class="text-danger mt-2">Please select an image file</div>'
+          this.value = ''
+          fileName.textContent = 'No file chosen'
+          return
+        }
+    
+        const reader = new FileReader()
+        reader.onload = function (e) {
+          const img = document.createElement('img')
+          img.src = e.target.result
+          img.className = 'image-preview img-thumbnail'
+          container.appendChild(img)
+        }
+        reader.readAsDataURL(this.files[0])
+      } else {
+        fileName.textContent = 'No file chosen'
       }
-    });
+    })
+    
+    // Form validation
+    document.getElementById('product-form').addEventListener('submit', function (e) {
+      const requiredFields = this.querySelectorAll('[required]')
+      let isValid = true
+    
+      requiredFields.forEach((field) => {
+        if (!field.value.trim()) {
+          field.classList.add('is-invalid')
+          isValid = false
+        } else {
+          field.classList.remove('is-invalid')
+        }
+      })
+    
+      if (!isValid) {
+        e.preventDefault()
+        alert('Please fill all required fields')
+      }
+    })
   </script>
 {% endblock %}

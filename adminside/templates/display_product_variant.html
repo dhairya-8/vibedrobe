@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}
-  Display Material | VibeDrobe
+  {{ product.name }} Variants | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -14,6 +15,21 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    .variant-table th {
+      background-color: #f8f9fa;
+    }
+    .product-header-img {
+      max-height: 200px;
+      width: auto;
+      object-fit: contain;
+    }
+    .product-header {
+      border-bottom: 1px solid #eef2f7;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -21,7 +37,7 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
-        <!-- Add messages display here -->
+        <!-- Messages display -->
         {% if messages %}
         <div class="row">
           <div class="col-12">
@@ -40,13 +56,13 @@
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
-                  <div class="col-auto">
-                    <h4 class="card-title">View Materials</h4>
+                  <div class="col">
+                    <h4 class="card-title">{{ product.name }} Variants</h4>
                   </div>
                   <!-- end col -->
                   <div class="col-auto ms-auto">
-                    <a href="{% url 'add_material' %}" class="btn btn-primary">
-                      <i class="las la-plus me-1"></i> Add New Material
+                    <a href="{% url 'add_product_variant' product_id=product.id %}" class="btn btn-primary">
+                      <i class="las la-plus me-1"></i> Add Variant
                     </a>
                   </div>
                   <!-- end col -->
@@ -54,47 +70,71 @@
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
+                <!-- Product summary -->
+                <div class="product-header mb-4">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <img src="{{ product.base_image }}" class="product-header-img img-fluid rounded" alt="{{ product.name }}">
+                    </div>
+                    <div class="col-md-8">
+                      <h3>{{ product.brand_id.name }}</h3>
+                      <p class="text-muted">{{ product.description }}</p>
+                      <div class="d-flex align-items-center">
+                        <h4 class="text-primary mb-0 me-3">₹{{ product.price }}</h4>
+                        <span class="badge bg-{% if product.is_active %}success{% else %}danger{% endif %}">
+                          {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Variants table -->
+                <h5 class="mb-3">Product Variants</h5>
+                
+                {% if variants_data %}
                 <div class="table-responsive">
-                  <table class="table" id="materialsTable">
-                    <thead class="table-light">
+                  <table class="table variant-table" id="variantsTable">
+                    <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Description</th>
+                        <th>Size</th>
+                        <th>SKU</th>
+                        <th>Stock</th>
+                        <th>Available</th>
+                        <th>Price</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {% for material in materials %}
+                      {% for item in variants_data %}
                       <tr>
-                        <td>{{ material.id }}</td>
-                        <td>{{ material.name }}</td>
-                        <td>{{ material.description }}</td>
+                        <td>{{ item.variant.size_id.name }}</td>
+                        <td>{{ item.variant.sku }}</td>
+                        <td>{{ item.variant.stock_quantity }}</td>
+                        <td>{{ item.available }}</td>
+                        <td>₹{{ item.total_price }}</td>
                         <td>
-                          {% if material.is_active %}
-                            <span class="badge bg-success">Active</span>
-                          {% else %}
-                            <span class="badge bg-danger">Inactive</span>
-                          {% endif %}
+                          <span class="badge bg-{% if item.variant.is_active %}success{% else %}danger{% endif %}">
+                            {% if item.variant.is_active %}Active{% else %}Inactive{% endif %}
+                          </span>
                         </td>
                         <td>
-                          <a href="{% url 'edit_material' material.id %}" class="me-2">
+                          <a href="{% url 'edit_product_variant' variant_id=item.variant.id %}" class="me-2">
                             <i class="las la-pen text-secondary fs-18"></i>
                           </a>
-                          <a href="{% url 'delete_material' material.id %}" onclick="return confirm('Are you sure you want to delete this material?')">
+                          <a href="{% url 'delete_product_variant' id=item.variant.id %}" onclick="return confirm('Are you sure you want to delete this variant?')">
                             <i class="las la-trash-alt text-danger fs-18"></i>
                           </a>
                         </td>
-                      </tr>
-                      {% empty %}
-                      <tr>
-                        <td colspan="6" class="text-center">No materials found</td>
                       </tr>
                       {% endfor %}
                     </tbody>
                   </table>
                 </div>
+                {% else %}
+                <div class="alert alert-info">No variants available for this product</div>
+                {% endif %}
               </div>
               <!-- end card-body -->
             </div>
@@ -114,27 +154,26 @@
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
   
   <script>
     // Initialize datatable
     document.addEventListener('DOMContentLoaded', function() {
-      new DataTable('#materialsTable', {
+      new DataTable('#variantsTable', {
         responsive: true,
         dom: '<"top"f>rt<"bottom"lip><"clear">',
         pageLength: 10
       });
       
-      // Alternative JavaScript approach to hide messages
+      // Auto-dismiss messages
       setTimeout(function() {
         let alerts = document.querySelectorAll('.alert-auto-dismiss');
         alerts.forEach(alert => {
-          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3';
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
           alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 300); // Remove after fade out
+          setTimeout(() => alert.remove(), 300);
         });
-      }, 3000); // 5 seconds
+      }, 3000);
     });
   </script>
 {% endblock %}

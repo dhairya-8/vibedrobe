@@ -6,7 +6,7 @@
 <div class="page-wrapper">
   <div class="page-content">
     <div class="container-xxl">
-      {% include 'messages.html' %}
+      {% include 'message.html' %}
       
       <div class="row justify-content-center">
         <div class="col-12">
@@ -57,7 +57,7 @@
                 
                 <div class="text-center mt-3">
                   <button type="submit" class="btn btn-primary px-5">Update Variant</button>
-                  <a href="{% url 'add_product_variants' variant.product_id.id %}" class="btn btn-secondary px-5">Back to Variants</a>
+                  <a href="{% url 'display_product_variant' variant.product_id.id %}" class="btn btn-secondary px-5">Back to Variants</a>
                 </div>
               </form>
             </div>

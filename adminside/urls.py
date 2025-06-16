@@ -40,15 +40,17 @@ urlpatterns = [
     
     # Product URLs
     path('add_product/', views.add_product, name='add_product'),
-    path('edit_product/<int:id>/', views.edit_product, name='edit_product'),
+    path('edit_product/<int:product_id>/', views.edit_product, name='edit_product'),
+    path('delete_product<int:product_id>/', views.delete_product, name='delete_product'),
     path('display_product/', views.display_product, name='display_product'),
-    path('delete_product/<int:id>/', views.delete_product, name='delete_product'),
+
     
     # Product Variant URLs
-    path('add_product_variants/<int:product_id>/', views.add_product_variants, name='add_product_variants'),
-    path('edit_product_variant/<int:id>/', views.edit_product_variant, name='edit_product_variant'),
+    path('add_product_variant/<int:product_id>/', views.add_product_variant, name='add_product_variant'),
+    path('display_product_variant/<int:product_id>/variants/', views.display_product_variant, name='display_product_variant'),
+    path('edit_product_variant/<int:variant_id>/', views.edit_product_variant, name='edit_product_variant'),
     path('delete_product_variant/<int:id>/', views.delete_product_variant, name='delete_product_variant'),
-    
+
     path('display_admin/',views.display_admin,name='display_admin'),
     path('display_orders/',views.display_orders,name='display_orders'),
     path('display_orderdetails/',views.display_orderdetails,name='display_orderdetails'),
@@ -58,4 +60,5 @@ urlpatterns = [
     path('report_FBT/',views.report_FBT,name='report_FBT'),
     path('report_customer/',views.report_customer,name='report_customer'),
     path('report_sales/',views.report_sales,name='report_sales'),
+    
 ]
