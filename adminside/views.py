@@ -5,6 +5,9 @@ from .decorators import admin_login_required
 from decimal import Decimal
 from django.core.files.storage import FileSystemStorage
 import os
+from datetime import datetime
+from django.utils.decorators import method_decorator
+from django.views import View
 
 @admin_login_required
 def index(request):
@@ -27,6 +30,12 @@ def login(request):
 
         if admin.check_password(password):
             request.session['admin_id'] = admin.id
+            request.session['admin_username'] = admin.username
+            request.session['admin_email'] = admin.email
+            request.session['admin_name'] = admin.first_name + ' ' + admin.last_name
+            request.session['admin_role'] = admin.role
+            now = timezone.now()
+            print(now,' Admin login successfully !')
             if remember_me == 'on':
                 request.session.set_expiry(1209600)  # 2 weeks
             else:
@@ -45,7 +54,90 @@ def logout(request):
       print("Admin logout successfully !")
       messages.success(request, 'You have been successfully logged out.')
       return redirect('login')
- 
+
+@method_decorator(admin_login_required, name='dispatch')
+class AdminProfileManagement(View):
+    def get(self, request):
+        try:
+            admin = Admin.objects.get(id=request.session.get('admin_id'))
+            current_year = datetime.now().year
+            account_age = current_year - admin.created_at.year
+
+            context = {
+                'admin': admin,
+                'account_age': account_age,
+            }
+            return render(request, 'display_admin_profile.html', context)
+        except Admin.DoesNotExist:
+            messages.error(request, "Admin profile not found.")
+            return redirect('admin_login')
+
+    def post(self, request):
+        try:
+            admin = Admin.objects.get(id=request.session.get('admin_id'))
+
+            # Check which form was submitted
+            if 'update_profile' in request.POST:
+                # Handle Profile Information Update
+                admin.first_name = request.POST.get('first_name')
+                admin.last_name = request.POST.get('last_name')
+                admin.username = request.POST.get('username')
+                admin.email = request.POST.get('email')
+
+                if request.FILES.get('profile_image'):
+                    admin.profile_image = request.FILES['profile_image']
+
+                admin.save(update_fields=['first_name', 'last_name', 'username', 'email', 'profile_image', 'updated_at'])
+                messages.success(request, 'Profile updated successfully!')
+
+            elif 'change_password' in request.POST:
+                # Handle Password Change
+                current_password = request.POST.get('current_password')
+                new_password = request.POST.get('new_password')
+                confirm_password = request.POST.get('confirm_password')
+
+                if not admin.check_password(current_password):
+                    messages.error(request, 'Current password is not correct.')
+                elif new_password != confirm_password:
+                    messages.error(request, 'New passwords do not match.')
+                else:
+                    admin.password = new_password # The save method will hash it
+                    admin.save(update_fields=['password', 'updated_at'])
+                    messages.success(request, 'Password changed successfully!')
+
+            return redirect('display_admin_profile')
+
+        except Admin.DoesNotExist:
+            messages.error(request, "Admin profile not found.")
+            return redirect('admin_login')
+    
+@admin_login_required
+def display_admin_profile(request):
+    try:
+        # Get the logged-in admin
+        admin = Admin.objects.get(id=request.session.get('admin_id'))
+        
+        current_year = datetime.now().year
+        account_age = current_year - admin.created_at.year
+
+        context = {
+            'admin': admin,
+            'current_year': current_year,
+            'account_age': account_age,  # Pass the calculated age
+        }
+        
+        return render(request, 'display_admin_profile.html', context)
+        
+    except Admin.DoesNotExist:
+        messages.error(request, "Admin profile not found")
+        return redirect('admin_login')
+
+@admin_login_required
+def display_admin(request):
+    admins = Admin.objects.all()
+    return render(request, 'display_admin.html', {'admins': admins})
+    
+# Category Views
 @admin_login_required
 def add_category(request):
     if request.method == 'POST':
@@ -584,9 +676,6 @@ def display_product_variant(request, product_id):
         'product': product,
         'variants_data': variants_data
     })
-    
-def display_admin(request):
-    return render(request, 'display_admin.html')
 
 def display_orders(request):
     return render(request, 'display_orders.html')

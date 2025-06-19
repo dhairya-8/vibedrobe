@@ -27,32 +27,50 @@
               <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col-auto">
-                    <h4 class="card-title">View Admins</h4>
+                    <h4 class="card-title">Admins</h4>
                   </div>
-                  <!-- end col -->
-                  
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">View Admins</h4>
                 <div class="table-responsive">
                   <table class="table">
                     <thead class="table-light">
                       <tr>
                         <th>ID</th>
                         <th>Email</th>
-                        <th>Action</th>
+                        <th>Username</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
                       </tr>
                     </thead>
                     <tbody>
+                      {% for admin in admins %}
                       <tr>
-                        <td>1</td>
-                        <td>apporva@gmail.com</td>
-                        <td>   
-                          <a href="#"><i class="las la-trash-alt text-secondary fs-18"></i></a>
-                      </td>
+                        <td>{{ admin.id }}</td>
+                        <td>{{ admin.email }}</td>
+                        <td>{{ admin.username }}</td>
+                        <td>{{ admin.first_name }}</td>
+                        <td>{{ admin.last_name }}</td>
+                        <td>{{ admin.role }}</td>
+                        <td>
+                          {% if admin.is_active %}
+                            <span class="badge bg-success">Active</span>
+                          {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ admin.last_login }}</td>
                       </tr>
+                      {% endfor %}
                     </tbody>
                   </table>
                 </div>

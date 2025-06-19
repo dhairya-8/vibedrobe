@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import *
 
 urlpatterns = [
 
@@ -8,6 +9,11 @@ urlpatterns = [
     path('index/',views.index,name='index'),
     path('login/',views.login,name='login'),
     path('logout/',views.logout,name='logout'),
+
+    # Admin URLs
+    path('display_admin/',views.display_admin,name='display_admin'),
+    path('display_admin_profile/',AdminProfileManagement.as_view(),name='display_admin_profile'),
+
     
     # Category URLs
     path('add_category/', views.add_category, name='add_category'),
@@ -52,7 +58,6 @@ urlpatterns = [
     path('edit_product_variant/<int:variant_id>/', views.edit_product_variant, name='edit_product_variant'),
     path('delete_product_variant/<int:id>/', views.delete_product_variant, name='delete_product_variant'),
 
-    path('display_admin/',views.display_admin,name='display_admin'),
     path('display_orders/',views.display_orders,name='display_orders'),
     path('display_orderdetails/',views.display_orderdetails,name='display_orderdetails'),
     path('display_cart/',views.display_cart,name='display_cart'),
