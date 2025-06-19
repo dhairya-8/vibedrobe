@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'adminside.context_processor.admin_profile_image',  # Custom context processor
             ],
         },
     },
@@ -118,6 +119,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'  # Or your local timezone
 
 
 # Static files (CSS, JavaScript, Images)

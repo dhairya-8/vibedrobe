@@ -10,7 +10,7 @@ class Admin(models.Model):
     password = models.CharField(max_length=255, null=False, blank=False)
     first_name = models.CharField(max_length=50, null=False, blank=False)
     last_name = models.CharField(max_length=50, null=False, blank=False)
-    profile_image = models.ImageField(upload_to='admin_profile_pictures/', null=True, blank=True)
+    profile_image = models.ImageField(upload_to='adminside/admin_profile_pictures/', null=True, blank=True)
     role = models.CharField(max_length=20, choices=[('super_admin', 'Super Admin'), ('admin', 'Admin'),('moderator', 'Moderator')], default='admin')
     is_active = models.BooleanField(default=True)
     last_login = models.DateTimeField(auto_now=True)
@@ -112,7 +112,7 @@ class Product(models.Model):
     name = models.CharField(max_length=200, unique=True,null=False, blank=False)
     description = models.TextField(max_length=2000, null=False, blank=False)
     price = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
-    base_image = models.TextField(max_length=300, null=False, blank=False)
+    base_image = models.ImageField(upload_to='products/base', null=True, blank=True)
     subcategory_id = models.ForeignKey(Sub_Category, on_delete=models.CASCADE)
     brand_id = models.ForeignKey(Brand, on_delete=models.CASCADE)
     color = models.CharField(max_length=15, null=False, blank=False)
@@ -136,7 +136,7 @@ class Product_Variants(models.Model):
     
 class Product_Gallery(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
-    image_path = models.TextField(max_length=300, null=False, blank=False)
+    image_path = models.ImageField(upload_to='products/gallery', null=True, blank=True)
     image_order = models.IntegerField(null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     

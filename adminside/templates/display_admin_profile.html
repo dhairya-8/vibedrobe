@@ -1,16 +1,93 @@
 {% extends 'base.html' %}
+{% load tz %}
 {% load static %}
 {% block title %}
 Display Profile | VibeDrobe
 {% endblock %}
 
 {% block css %}
-<!-- your static CSS links -->
+<!-- App favicon -->
+<link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+<!-- App css -->
+<link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+<style>
+    .error-popup {
+        background-color: #ffdddd;
+        border: 1px solid #f44336;
+        color: #a94442;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-out {
+        animation: fadeOut 0.5s ease-in-out forwards;
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-10px);
+            height: 0;
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+    }
+
+    /* For circular, perfectly cropped profile images */
+    .vd-profile-avatar-lg {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .vd-profile-avatar-md {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .vd-profile-avatar-small {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Your existing header remains untouched here -->
-
 <!-- START: Profile Cards Section Below Header -->
 <div class="page-wrapper">
 
@@ -28,8 +105,8 @@ Display Profile | VibeDrobe
                                         <!-- Profile Image & Basic Info -->
                                         <div class="position-relative me-3">
                                             {% if admin.profile_image %}
-                                            <img src="{{ admin.profile_image.url }}" alt="Profile Image" height="120"
-                                                class="rounded-circle">
+                                            <img src="{{ admin.profile_image.url }}" alt="Profile Image" width="135"
+                                                height="115" class="vd-profile-avatar-lg">
                                             {% else %}
                                             <img src="{% static 'admin/assets/images/users/avatar-7.jpg' %}"
                                                 alt="Default Profile" height="120" class="rounded-circle mb-2">
@@ -40,9 +117,11 @@ Display Profile | VibeDrobe
                                             </a>
                                         </div>
                                         <div class="">
-                                            <h5 class="fw-semibold fs-22 mb-1">{{ admin.first_name }} {{ admin.last_name}}</h5>
+                                            <h5 class="fw-semibold fs-22 mb-1">{{ admin.first_name }}
+                                                {{admin.last_name}}</h5>
                                             <p class="mb-0 text-muted fw-medium">{{ admin.get_role_display }}</p>
-                                            <p class="mb-0 text-muted fw-medium">Last Login: {{ admin.last_login|date:"Md, Y H:i"}}</p>
+                                            <p class="mb-0 text-muted fw-medium">Last Login:
+                                                {{admin.last_login|date:"Md, Y H:i"}}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -72,19 +151,55 @@ Display Profile | VibeDrobe
                                 </div><!--end col-->
 
                                 <div class="col-lg-4 align-self-center">
-                                    <div class="col align-self-cente">
+                                    <!-- <div class="col align-self-cente">
                                         <a href="#" class="btn btn-primary me-2"><i class="las la-user-edit"></i>
                                             Edit
                                             Profile</a>
                                         <a href="#" class="btn btn-light"><i class="las la-key"></i> Change
                                             Password</a>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {% for message in messages %}
+            {% with message.tags as tags_list %}
+            {% if 'error' in tags_list %}
+            {% with alert_class='danger' %}
+            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
+                {{ message }}
+            </div>
+            {% endwith %}
+            {% elif 'success' in tags_list %}
+            {% with alert_class='success' %}
+            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
+                {{ message }}
+            </div>
+            {% endwith %}
+            {% elif 'warning' in tags_list %}
+            {% with alert_class='warning' %}
+            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
+                {{ message }}
+            </div>
+            {% endwith %}
+            {% elif 'info' in tags_list %}
+            {% with alert_class='info' %}
+            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
+                {{ message }}
+            </div>
+            {% endwith %}
+            {% else %}
+            {% with alert_class='secondary' %}
+            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
+                {{ message }}
+            </div>
+            {% endwith %}
+            {% endif %}
+            {% endwith %}
+            {% endfor %}
 
             <!-- Personal Information Card -->
             <div class="row justify-content-center mb-4">
@@ -103,11 +218,11 @@ Display Profile | VibeDrobe
                                     <b>Role</b>: {{ admin.get_role_display }}
                                 </li>
                                 <li class="mb-2"><i class="las la-calendar me-2 text-secondary fs-22"></i> <b>Created
-                                        At</b>: {{ admin.created_at|date:"M d, Y" }}</li>
+                                        At</b>: {{ admin.created_at|localtime|date:"M d, Y H:i" }}</li>
                                 <li class="mb-2"><i class="las la-sync me-2 text-secondary fs-22"></i> <b>Last
-                                        Updated</b>: {{ admin.updated_at|date:"M d, Y" }}</li>
+                                        Updated</b>: {{ admin.updated_at|localtime|date:"M d, Y H:i" }}</li>
                                 <li class="mb-2"><i class="las la-sign-in-alt me-2 text-secondary fs-22"></i> <b>Last
-                                        Login</b>: {{ admin.last_login|date:"M d, Y H:i" }}</li>
+                                        Login</b>: {{ admin.last_login|localtime|date:"M d, Y H:i" }}</li>
                             </ul>
                         </div>
                     </div>
@@ -120,10 +235,15 @@ Display Profile | VibeDrobe
                                 aria-selected="true">Activity</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link fw-medium" data-bs-toggle="tab" href="#settings" role="tab"
-                                aria-selected="false">Settings</a>
+                            <a class="nav-link fw-medium" data-bs-toggle="tab" href="#personal-info" role="tab"
+                                aria-selected="false">Personal Information</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium" data-bs-toggle="tab" href="#change-password" role="tab"
+                                aria-selected="false">Change Password</a>
                         </li>
                     </ul>
+
                     <div class="tab-content">
                         <!-- Activity Tab -->
                         <div class="tab-pane fade show active" id="activity" role="tabpanel">
@@ -147,119 +267,109 @@ Display Profile | VibeDrobe
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Last Activity -->
-                                <div class="col-lg-6">
-                                    <div class="card p-3">
-                                        <div class="d-flex align-items-center justify-content-center">
-                                            <div class="me-3 text-center">
-                                                <p class="mb-1 fw-semibold">Last Activity</p>
-                                                <h3 class="fs-24 fw-bold">{{ admin.last_login|timesince }} ago</h3>
-                                                <p class="mb-0 text-muted">
-                                                    {% if admin.is_active %}
-                                                    <span class="text-success">Currently active</span>
-                                                    {% else %}
-                                                    <span class="text-warning">Inactive</span>
-                                                    {% endif %}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <div
-                                                    class="d-flex justify-content-center align-items-center thumb-xl bg-light rounded-circle mx-auto">
-                                                    <i class="iconoir-clock fs-30 text-muted"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </div>
                         </div>
-                        <!-- Settings Tab -->
-                        <div class="tab-pane fade" id="settings" role="tabpanel">
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane fade" id="personal-info" role="tabpanel">
                             <div class="card">
                                 <div class="card-header">
-                                    <div class="row align-items-center">
-                                        <div class="col">
-                                            <h4 class="card-title">Personal Information</h4>
-                                        </div><!--end col-->
-                                    </div> <!--end row-->
-                                </div><!--end card-header-->
+                                    <h4 class="card-title">Personal Information</h4>
+                                </div>
                                 <div class="card-body pt-0">
-                                    <form method="post" enctype="multipart/form-data" id="profile-info-form">
-                                            {% csrf_token %}
-                                        <div class="form-group mb-3 row">
-                                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">First Name</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="text" name="first_name" value="{{ admin.first_name }}">
-                                        </div>
-                                        </div>
-                                        <div class="form-group mb-3 row">
-                                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Last Name</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="text" name="last_name" value="{{ admin.last_name }}">
-                                        </div>
-                                        </div>
-                                        <div class="form-group mb-3 row">
-                                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Username</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="text" name="username" value="{{ admin.username }}">
-                                        </div>
-                                        </div>
-                                        <div class="form-group mb-3 row">
-                                            <label class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Email Address</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="email" name="email" value="{{ admin.email }}">
-                                        </div>
-                                        </div>
-                                        <!-- Hidden field to identify the form -->
+                                    <form method="post" action="{% url 'display_admin_profile' %}">
+                                        {% csrf_token %}
                                         <input type="hidden" name="update_profile" value="1">
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">First
+                                                Name</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="text" name="first_name"
+                                                    value="{{ admin.first_name }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Last
+                                                Name</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="text" name="last_name"
+                                                    value="{{ admin.last_name }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Username</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="text" name="username"
+                                                    value="{{ admin.username }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Email
+                                                Address</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="email" name="email"
+                                                    value="{{ admin.email }}">
+                                            </div>
+                                        </div>
                                         <div class="form-group row">
                                             <div class="col-lg-9 col-xl-8 offset-lg-3">
-                                                <button type="submit" class="btn btn-primary">Submit</button>
-                                                <button type="button" class="btn btn-danger" onclick="window.location.reload();">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
                                             </div>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        </div>
 
-                                </div><!--end card-body-->
-                            </div><!--end card-->
+                        <!-- Change Password Tab -->
+                        <div class="tab-pane fade" id="change-password" role="tabpanel">
                             <div class="card">
                                 <div class="card-header">
                                     <h4 class="card-title">Change Password</h4>
-                                </div><!--end card-header-->
+                                </div>
                                 <div class="card-body pt-0">
-                                    <div class="form-group mb-3 row">
-                                        <label
-                                            class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Current
-                                            Password</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="password" placeholder="Password">
-                                            <a href="#" class="text-primary font-12">Forgot password ?</a>
+                                    <form method="post" action="{% url 'display_admin_profile' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="change_password" value="1">
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Current
+                                                Password</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="password" name="current_password"
+                                                    required>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group mb-3 row">
-                                        <label
-                                            class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">New
-                                            Password</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="password" placeholder="New Password">
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">New
+                                                Password</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="password" name="new_password"
+                                                    required>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group mb-3 row">
-                                        <label
-                                            class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Confirm
-                                            Password</label>
-                                        <div class="col-lg-9 col-xl-8">
-                                            <input class="form-control" type="password" placeholder="Re-Password">
+                                        <div class="form-group mb-3 row">
+                                            <label
+                                                class="col-xl-3 col-lg-3 text-end mb-lg-0 align-self-center form-label">Confirm
+                                                Password</label>
+                                            <div class="col-lg-9 col-xl-8">
+                                                <input class="form-control" type="password" name="confirm_password"
+                                                    required>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <div class="col-lg-9 col-xl-8 offset-lg-3">
-                                            <button type="submit" class="btn btn-primary">Change Password</button>
-                                            <button type="button" class="btn btn-danger">Cancel</button>
+                                        <div class="form-group row">
+                                            <div class="col-lg-9 col-xl-8 offset-lg-3">
+                                                <button type="submit" class="btn btn-primary">Change Password</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div><!--end card-body-->
-                            </div><!--end card-->
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div> <!-- end tab-content -->
                 </div> <!-- end col -->
@@ -273,22 +383,39 @@ Display Profile | VibeDrobe
 <div class="modal fade" id="profileImageModal" tabindex="-1" aria-labelledby="profileImageModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="profileImageModalLabel">Update Profile Image</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <input type="file" id="profile-image-input" accept="image/*" class="form-control mb-3" />
-                <div id="image-preview" class="mb-3"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="save-image-btn" class="btn btn-primary">Save</button>
-            </div>
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <form method="post" enctype="multipart/form-data" action="{% url 'display_admin_profile' %}">
+                {% csrf_token %}
+                <div class="modal-header bg-gradient-primary text-white rounded-top-4">
+                    <h5 class="modal-title" id="profileImageModalLabel"><i class="fas fa-camera me-2"></i>Update Profile
+                        Image</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div id="image-preview" class="mb-3">
+                        {% if admin.profile_image %}
+                        <img src="{{ admin.profile_image.url }}" alt="Current Profile" class="vd-profile-avatar-lg"
+                            style="max-width: 120px;">
+                        {% else %}
+                        <img src="{% static 'admin/assets/images/users/avatar-7.jpg' %}" alt="Default"
+                            class="vd-profile-avatar-lg" style="max-width: 120px;">
+                        {% endif %}
+                    </div>
+                    <input type="file" id="profile-image-input" name="profile_image" accept="image/*"
+                        class="form-control mb-3" required>
+                    <input type="hidden" name="update_profile" value="1">
+                    <small class="text-muted">Choose a clear, square image under 2MB.</small>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">Save</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
 
 {% endblock %}
 {% block script %}
@@ -298,65 +425,65 @@ Display Profile | VibeDrobe
 <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
 <script src="{% static 'admin/assets/js/app.js' %}"></script>
 
-  <!-- DataTable and alert auto-dismiss -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // DataTable initialization
-      if (document.querySelector('#categoriesTable')) {
-        new DataTable('#categoriesTable', {
-          responsive: true,
-          dom: '<"top"f>rt<"bottom"lip><"clear">',
-          pageLength: 10
-        });
-      }
+<!-- DataTable and alert auto-dismiss -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // DataTable initialization
+        if (document.querySelector('#categoriesTable')) {
+            new DataTable('#categoriesTable', {
+                responsive: true,
+                dom: '<"top"f>rt<"bottom"lip><"clear">',
+                pageLength: 10
+            });
+        }
 
-      // Alert auto-dismiss
-      setTimeout(function() {
-        let alerts = document.querySelectorAll('.alert-auto-dismiss');
-        alerts.forEach(alert => {
-          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
-          alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 300);
-        });
-      }, 3000);
+        // Alert auto-dismiss
+        setTimeout(function () {
+            let alerts = document.querySelectorAll('.alert-auto-dismiss');
+            alerts.forEach(alert => {
+                alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            });
+        }, 3000);
 
-      // Profile Image Modal logic
-      var editProfileBtn = document.getElementById('edit-profile-image');
-      var profileImageInput = document.getElementById('profile-image-input');
-      var imagePreview = document.getElementById('image-preview');
-      var saveImageBtn = document.getElementById('save-image-btn');
+        // Profile Image Modal logic
+        var editProfileBtn = document.getElementById('edit-profile-image');
+        var profileImageInput = document.getElementById('profile-image-input');
+        var imagePreview = document.getElementById('image-preview');
+        var saveImageBtn = document.getElementById('save-image-btn');
 
-      if (editProfileBtn) {
-        editProfileBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          var modal = new bootstrap.Modal(document.getElementById('profileImageModal'));
-          modal.show();
-        });
-      }
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var modal = new bootstrap.Modal(document.getElementById('profileImageModal'));
+                modal.show();
+            });
+        }
 
-      if (profileImageInput) {
-        profileImageInput.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-              imagePreview.innerHTML =
-                `<img src="${evt.target.result}" alt="Preview" style="max-width: 120px; border-radius: 50%;">`;
-            };
-            reader.readAsDataURL(file);
-          } else {
-            imagePreview.innerHTML = "";
-          }
-        });
-      }
+        if (profileImageInput) {
+            profileImageInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (evt) {
+                        imagePreview.innerHTML =
+                            `<img src="${evt.target.result}" alt="Preview" style="max-width: 120px; border-radius: 50%;">`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.innerHTML = "";
+                }
+            });
+        }
 
-      if (saveImageBtn) {
-        saveImageBtn.addEventListener('click', function() {
-          // TODO: Add your AJAX upload logic here
-          var modal = bootstrap.Modal.getInstance(document.getElementById('profileImageModal'));
-          modal.hide();
-        });
-      }
+        if (saveImageBtn) {
+            saveImageBtn.addEventListener('click', function () {
+                // TODO: Add your AJAX upload logic here
+                var modal = bootstrap.Modal.getInstance(document.getElementById('profileImageModal'));
+                modal.hide();
+            });
+        }
     });
-  </script>
+</script>
 {% endblock %}

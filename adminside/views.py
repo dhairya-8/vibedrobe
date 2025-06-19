@@ -8,6 +8,8 @@ import os
 from datetime import datetime
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.core.exceptions import ValidationError
+
 
 @admin_login_required
 def index(request):
@@ -29,20 +31,23 @@ def login(request):
                 return render(request, 'login.html')
 
         if admin.check_password(password):
+            # Update last login time
+            admin.last_login = timezone.now()
+            admin.save(update_fields=['last_login'])
+            local_time = timezone.localtime(admin.last_login)
+            
             request.session['admin_id'] = admin.id
             request.session['admin_username'] = admin.username
             request.session['admin_email'] = admin.email
             request.session['admin_name'] = admin.first_name + ' ' + admin.last_name
             request.session['admin_role'] = admin.role
-            now = timezone.now()
-            print(now,' Admin login successfully !')
+            print(local_time,' Admin login successfully !')
             if remember_me == 'on':
                 request.session.set_expiry(1209600)  # 2 weeks
             else:
                 request.session.set_expiry(0)
             
-            # Redirect to 'next' or admin index
-            next_url = request.GET.get('next', 'index')  # Using URL name
+            next_url = request.GET.get('next', 'index') 
             return redirect(next_url)
         else:
             messages.error(request, 'Incorrect password')
@@ -66,6 +71,8 @@ class AdminProfileManagement(View):
             context = {
                 'admin': admin,
                 'account_age': account_age,
+                'current_time': timezone.now()
+            
             }
             return render(request, 'display_admin_profile.html', context)
         except Admin.DoesNotExist:
@@ -76,40 +83,82 @@ class AdminProfileManagement(View):
         try:
             admin = Admin.objects.get(id=request.session.get('admin_id'))
 
-            # Check which form was submitted
+            # --- Profile Information or Image Update ---
             if 'update_profile' in request.POST:
-                # Handle Profile Information Update
-                admin.first_name = request.POST.get('first_name')
-                admin.last_name = request.POST.get('last_name')
-                admin.username = request.POST.get('username')
-                admin.email = request.POST.get('email')
+                first_name = request.POST.get('first_name')
+                last_name = request.POST.get('last_name')
+                username = request.POST.get('username')
+                email = request.POST.get('email')
+                profile_image = request.FILES.get('profile_image')
 
-                if request.FILES.get('profile_image'):
-                    admin.profile_image = request.FILES['profile_image']
+                # If only profile_image is being updated (from modal)
+                if profile_image and not any([first_name, last_name, username, email]):
+                    admin.profile_image = profile_image
+                    admin.save(update_fields=['profile_image', 'updated_at'])
+                    messages.success(request, 'Profile image updated successfully!')
+                    return redirect('display_admin_profile')
 
-                admin.save(update_fields=['first_name', 'last_name', 'username', 'email', 'profile_image', 'updated_at'])
-                messages.success(request, 'Profile updated successfully!')
+                # Otherwise, require all fields for full profile update
+                if not all([first_name, last_name, username, email]):
+                    messages.error(request, "All fields are required.")
+                    return redirect('display_admin_profile')
 
+                # Check for unique username/email (exclude self)
+                if Admin.objects.exclude(id=admin.id).filter(username=username).exists():
+                    messages.error(request, "Username already taken.")
+                    return redirect('display_admin_profile')
+                if Admin.objects.exclude(id=admin.id).filter(email=email).exists():
+                    messages.error(request, "Email already taken.")
+                    return redirect('display_admin_profile')
+
+                admin.first_name = first_name
+                admin.last_name = last_name
+                admin.username = username
+                admin.email = email
+
+                if profile_image:
+                    admin.profile_image = profile_image
+
+                try:
+                    admin.full_clean()
+                    admin.save(update_fields=['first_name', 'last_name', 'username', 'email', 'profile_image', 'updated_at'])
+                    messages.success(request, 'Profile updated successfully!')
+                except ValidationError as e:
+                    messages.error(request, f"Invalid data: {e}")
+                return redirect('display_admin_profile')
+
+            # --- Change Password ---
             elif 'change_password' in request.POST:
-                # Handle Password Change
                 current_password = request.POST.get('current_password')
                 new_password = request.POST.get('new_password')
                 confirm_password = request.POST.get('confirm_password')
+
+                if not all([current_password, new_password, confirm_password]):
+                    messages.error(request, "All password fields are required.")
+                    return redirect('display_admin_profile')
 
                 if not admin.check_password(current_password):
                     messages.error(request, 'Current password is not correct.')
                 elif new_password != confirm_password:
                     messages.error(request, 'New passwords do not match.')
+                elif len(new_password) < 8:
+                    messages.error(request, 'New password must be at least 8 characters.')
                 else:
-                    admin.password = new_password # The save method will hash it
+                    admin.password = new_password  # The save method will hash it
                     admin.save(update_fields=['password', 'updated_at'])
                     messages.success(request, 'Password changed successfully!')
 
-            return redirect('display_admin_profile')
+                return redirect('display_admin_profile')
+
+            # --- Unknown form submission ---
+            else:
+                messages.error(request, "Invalid form submission.")
+                return redirect('display_admin_profile')
 
         except Admin.DoesNotExist:
             messages.error(request, "Admin profile not found.")
             return redirect('admin_login')
+
     
 @admin_login_required
 def display_admin_profile(request):
