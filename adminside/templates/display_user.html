@@ -21,46 +21,89 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
+        <!-- Add messages display here -->
+        {% if messages %}
+        <div class="row">
+          <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show alert-auto-dismiss">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col-auto">
-                    <h4 class="card-title">View Users</h4>
+                    <h4 class="card-title">Users</h4>
                   </div>
                   <!-- end col -->
-                 
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">View Users</h4>
                 <div class="table-responsive">
-                  <table class="table">
+                  <table class="table" id="usersTable">
                     <thead class="table-light">
                       <tr>
                         <th>ID</th>
-                        <th>Email</th>
+                        <th>Profile</th>
                         <th>Username</th>
-                        <th>Profile Image</th>
-                        <th>Registration Date</th>
+                        <th>Email</th>
+                        <th>Name</th>
                         <th>Contact</th>
-                        <th>Address</th>
-                       
+                        <th>Birth Date</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                        <th>Action</th>
                       </tr>
                     </thead>
                     <tbody>
+                      {% for user in users %}
                       <tr>
-                        <td>1</td>
-                        <td>dhairyasharma@gmail.com</td>
-                        <td>Dhairya Sharma</td>
-                        <td>photo.jpg</td>
-                        <td>2025-03-03</td>
-                        <td>+91 9811922936</td>
-                        <td>Ahmedabad</td>
+                        <td>{{ user.id }}</td>
+                        <td>
+                          {% if user.profile_image %}
+                            <img src="{{ user.profile_image.url }}" alt="profile" class="rounded-circle avatar-sm">
+                          {% else %}
+                            <img src="{% static 'admin/assets/images/users/avatar-1.jpg' %}" alt="profile" class="rounded-circle avatar-sm" width="50">
+                          {% endif %}
+                        </td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td>+91 {{ user.contact }}</td>
+                        <td>{{ user.date_of_birth }}
+                        <td>
+                          {% if user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                          {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ user.created_at|date:"Y-m-d" }}</td>
+                        <td>
+                           <a href="{% url 'toggle_user_status' user.id %}" class="me-2" title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+                            <i class="las la-power-off text-{% if user.is_active %}warning{% else %}success{% endif %} fs-18"></i>
+                          </a> 
+                        </td>
                       </tr>
-       
+                      {% empty %}
+                      <tr>
+                        <td colspan="9" class="text-center">No users found</td>
+                      </tr>
+                      {% endfor %}
                     </tbody>
                   </table>
                 </div>
@@ -73,27 +116,19 @@
         <!-- end row -->
       </div>
       <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
-
-      <footer class="footer text-center text-sm-start d-print-none">
+       <footer class="footer text-center text-sm-start d-print-none">
         <div class="container-xxl">
           <div class="row">
             <div class="col-12">
               <div class="card mb-0 rounded-bottom-0">
                 <div class="card-body">
                   <p class="text-muted mb-0">
-                    {% comment %} ©<script>
-                       document.write(new Date().getFullYear())
-                     </script> {% endcomment %}
+                    {% comment %}©<script>
+                                    document.write(new Date().getFullYear())
+                                  </script> {% endcomment %}
                     <span class="text-muted d-none d-sm-inline-block float-end">
                       VibeDrobe
                       <i class="iconoir-heart text-danger"></i>
-                   
                     </span>
                   </p>
                 </div>
@@ -102,22 +137,37 @@
           </div>
         </div>
       </footer>
-
-      <!-- end footer -->
     </div>
     <!-- end page content -->
   </div>
   <!-- end page-wrapper -->
 {% endblock %}
 
-<!-- Javascript -->
-
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  
+  <script>
+    // Initialize datatable
+    document.addEventListener('DOMContentLoaded', function() {
+      new DataTable('#usersTable', {
+        responsive: true,
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        pageLength: 10
+      });
+      
+      // Alternative JavaScript approach to hide messages
+      setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss');
+        alerts.forEach(alert => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3';
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 300); // Remove after fade out
+        });
+      }, 3000); // 5 seconds
+    });
+  </script>
 {% endblock %}
-<!-- end body -->

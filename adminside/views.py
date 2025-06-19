@@ -5,6 +5,10 @@ from .decorators import admin_login_required
 from decimal import Decimal
 from django.core.files.storage import FileSystemStorage
 import os
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+import string
 
 @admin_login_required
 def index(request):
@@ -584,15 +588,88 @@ def display_product_variant(request, product_id):
         'product': product,
         'variants_data': variants_data
     })
-    
+
+@admin_login_required
+def display_user(request):
+    users = User.objects.all().order_by('-created_at')
+    return render(request, 'display_user.html', {'users': users})
+
+@admin_login_required
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    username = user.username
+    user.delete()
+    messages.success(request, f'User {username} has been deleted.')
+    return redirect('display_user')
+
+@admin_login_required
+def toggle_user_status(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = not user.is_active
+    user.save()
+    status = "activated" if user.is_active else "deactivated"
+    messages.success(request, f'User {user.username} has been {status}.')
+    return redirect('display_user')
+
 def display_admin(request):
     return render(request, 'display_admin.html')
 
+@admin_login_required
 def display_orders(request):
-    return render(request, 'display_orders.html')
+    orders = Order_Master.objects.all().order_by('-order_date')
+    return render(request, 'display_orders.html', {'orders': orders})
 
-def display_orderdetails(request):
-    return render(request, 'display_orderdetails.html')
+@admin_login_required
+def order_details_content(request, order_id):
+    order = get_object_or_404(Order_Master, id=order_id)
+    
+    context = {
+        'order': order,
+        'shipping_address': order.order_address_set.filter(address_type='Shipping').first(),
+        'billing_address': order.order_address_set.filter(address_type='Billing').first(),
+        'items': order.order_details_set.all()
+    }
+    return render(request, 'order_details_content.html', context)
+
+def generate_random_password(length=12):
+    """Generate a random temporary password"""
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(random.choice(chars) for _ in range(length))
+
+def reset_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            admin = Admin.objects.get(email=email)
+            
+            # Generate and set new password
+            temp_password = generate_random_password()
+            admin.set_password(temp_password)  # Make sure your Admin model has this method
+            admin.save()
+            
+            # Send email
+            send_mail(
+                'Your Temporary Password for VibeDrobe Admin',
+                f'Your temporary password is: {temp_password}\n\n'
+                f'Please login and change it immediately at:\n'
+                f'{request.build_absolute_uri("/login/")}\n\n'
+                f'Username/Email: {email}\n'
+                f'Temporary Password: {temp_password}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 'Temporary password sent. Check your email.')
+            return redirect('login')
+            
+        except Admin.DoesNotExist:
+            messages.error(request, 'No admin account found with this email.')
+    
+    return render(request, 'resetpassword.html')
+
+def display_shipping(request):
+    return render(request, 'display_shipping.html')
 
 def display_cart(request):
     return render(request, 'display_cart.html')

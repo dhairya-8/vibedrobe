@@ -20,10 +20,10 @@
         <!-- Navigation -->
         <ul class="navbar-nav mb-auto w-100">
           <li class="menu-label pt-0 mt-0">
-            <!--         <small class="label-border">
+            <!--           <small class="label-border">
                               <div class="border_left hidden-xs"></div>
                               <div class="border_right"></div>
-                          </small>         -->
+                          </small>           -->
             <span>Main Menu</span>
           </li>
           <li class="nav-item">
@@ -50,160 +50,68 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarForms" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarForms">
+            <a class="nav-link" href="{% url 'display_product' %}">
               <i class="fas fa-tshirt menu-icon"></i>
               <span>Products</span>
             </a>
-            <div class="collapse" id="sidebarForms">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_product' %}">Add Products</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_product' %}">View Products</a>
-                </li>
-                <!-- end nav-item -->
-                
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarBrand" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarBrand">
-              {% comment %} <i class="iconoir-view-grid menu-icon"></i> {% endcomment %}
+            <a class="nav-link" href="{% url 'display_brand' %}">
               <i class="icofont-brand-puma menu-icon"></i>
               <span>Brands</span>
             </a>
-            <div class="collapse" id="sidebarBrand">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_brand' %}">Add Brand</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_brand' %}">View Brands</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarCategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarCategory">
+            <a class="nav-link" href="{% url 'display_category' %}">
               <i class="icofont-bow menu-icon"></i>
               <span>Categories</span>
             </a>
-            <div class="collapse" id="sidebarCategory">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_category' %}">Add Category</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_category' %}">View Categories</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarSize" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarSize">
-              <i class="fas fa-ruler-combined menu-icon"></i>
+            <a class="nav-link" href="{% url 'display_size' %}">
+              <i class="fas fa-ruler menu-icon"></i>
               <span>Size</span>
             </a>
-            <div class="collapse" id="sidebarSize">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_size' %}">Add Size</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_size' %}">View Sizes</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarMaterial" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarMaterial">
+            <a class="nav-link" href="{% url 'display_material' %}">
               <i class="iconoir-flower menu-icon"></i>
               <span>Materials</span>
             </a>
-            <div class="collapse" id="sidebarMaterial">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_material' %}">Add Material</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_material' %}">View Materials</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarsubcategory" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarsubcategory">
+            <a class="nav-link" href="{% url 'display_subcategory' %}">
               <i class="fas fa-project-diagram menu-icon"></i>
               <span>Sub Categories</span>
             </a>
-            <div class="collapse" id="sidebarsubcategory">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'add_subcategory' %}">Add Sub Category</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_subcategory' %}">View Sub Categories</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
             <!-- end startbarForms -->
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="display_user">
+            <a class="nav-link" href="{% url 'display_user' %}">
               <i class="fas fa-user-friends menu-icon"></i>
               <span>View Users</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarTables" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarTables">
+            <a class="nav-link" href="{% url 'display_orders' %}">
               <i class="iconoir-table-rows menu-icon"></i>
               <span>Orders</span>
             </a>
-            <div class="collapse" id="sidebarTables">
-              <ul class="nav flex-column">
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_orders' %}">View Orders</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'display_orderdetails' %}">Order Details</a>
-                </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
+        
             <!-- end startbarTables -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_cart' %}">
+            <a class="nav-link" href="{% url 'display_shipping' %}">
               <i class="fas fa-shipping-fast menu-icon"></i>
               <span>Shipping</span>
             </a>
@@ -211,7 +119,7 @@
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_cart' %}">
-              <i class="fas fa-cart-arrow-down menu-icon"></i>
+              <i class="fab fa-opencart menu-icon"></i>
               <span>Cart</span>
             </a>
           </li>

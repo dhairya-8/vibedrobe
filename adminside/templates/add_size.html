@@ -22,7 +22,7 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
-         {% include "message.html" %}
+        {% include 'message.html' %}
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
@@ -64,18 +64,15 @@
                       </div>
                     </div>
                   </div>
-                  <div class="text-center mt-2">
-                    <button type="submit" class="btn btn-lg px-5" style="background-color: #713ab82a; color: black;">Add Size</button>
+                  <div class="text-center mt-4 action-buttons">
+                    <a href="{% url 'display_size' %}" class="btn btn-secondary px-5 me-3"><i class="fas fa-arrow-left me-2"></i> Back</a>
+                    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-plus-circle me-2"></i> Add Size</button>
                   </div>
-                  {% comment %} <div class="text-center mt-1">
-                    <button type="submit" class="btn btn-secondary btn-lg px-5">Submit</button>
-                  </div> {% endcomment %}
                 </form>
                 <!-- end form -->
               </div>
               <!-- end card-body -->
             </div>
-         
           </div> <!-- end col -->
         </div>
         <!-- end row -->
