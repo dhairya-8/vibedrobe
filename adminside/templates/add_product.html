@@ -225,9 +225,10 @@ Add Product | VibeDrobe
                     </div>
                   </div>
                 </div>
-                <div class="text-center mt-4">
-                  <button type="submit" class="btn btn-primary px-5">Add Product</button>
-                </div>
+                  <div class="text-center mt-4 action-buttons">
+                    <a href="{% url 'display_product' %}" class="btn btn-secondary px-5 me-3"><i class="fas fa-arrow-left me-2"></i> Back</a>
+                    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-plus-circle me-2"></i> Add Product</button>
+                  </div>
               </form>
 
             </div>
