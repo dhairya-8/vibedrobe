@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'adminside',
     'userside',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [

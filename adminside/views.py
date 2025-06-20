@@ -4,15 +4,92 @@ from .models import *
 from .decorators import admin_login_required
 from decimal import Decimal
 from django.core.files.storage import FileSystemStorage
-import os
 from django.core.mail import send_mail
 from django.conf import settings
-import random
-import string
+import random, string, os
+from django.db.models import Count, Sum, Q
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models.functions import TruncDay
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_GET
 
 @admin_login_required
 def index(request):
-    return render(request, 'index.html')
+    today = timezone.now().date()
+    last_week = today - timedelta(days=7)
+    last_month = today - timedelta(days=30)
+    
+    # Order Statistics
+    orders_today = Order_Master.objects.filter(order_date__date=today).count()
+    orders_week = Order_Master.objects.filter(order_date__date__gte=last_week).count()
+    revenue_today = Order_Master.objects.filter(
+        order_date__date=today
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    revenue_week = Order_Master.objects.filter(
+        order_date__date__gte=last_week
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+    # Inventory Alerts
+    low_stock = Product_Variants.objects.filter(stock_quantity__lt=10).count()
+    out_of_stock = Product_Variants.objects.filter(stock_quantity=0).count()
+
+    # Recent Activity
+    recent_orders = Order_Master.objects.select_related('user_id').order_by('-order_date')[:5]
+    recent_users = User.objects.order_by('-created_at')[:5]
+    
+    # Product Performance
+    top_products = Product.objects.annotate(
+        total_sold=Sum('variants__order_details__quantity')
+    ).order_by('-total_sold')[:5]
+
+    # Sales Trend Data (Last 7 days)
+    sales_data = list(
+        Order_Master.objects.filter(
+            order_date__date__gte=last_week
+        ).annotate(
+            day=TruncDay('order_date')
+        ).values('day').annotate(
+            total=Sum('total_amount')
+        ).order_by('day')
+    )
+    
+    # Fill in missing days with 0 values
+    sales_trend = []
+    for i in range(7):
+        date = last_week + timedelta(days=i)
+        day_data = next((item for item in sales_data 
+                        if item['day'].date() == date), {'day': date, 'total': 0})
+        sales_trend.append(float(day_data['total']))
+
+    # Order Status Distribution
+    status_distribution = Order_Master.objects.values(
+        'status'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    status_labels = [item['status'].title() for item in status_distribution]
+    status_values = [item['count'] for item in status_distribution]
+
+    context = {
+        'orders_today': orders_today,
+        'orders_week': orders_week,
+        'revenue_today': revenue_today,
+        'revenue_week': revenue_week,
+        'low_stock': low_stock,
+        'out_of_stock': out_of_stock,
+        'recent_orders': recent_orders,
+        'recent_users': recent_users,
+        'top_products': top_products,
+        'today': today,
+        'last_week': last_week,
+        'sales_trend': sales_trend,
+        'status_labels': status_labels,
+        'status_values': status_values,
+        'week_days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    }
+    return render(request, 'index.html', context)
 
 def login(request):
     if request.method == 'POST':
@@ -35,6 +112,8 @@ def login(request):
                 request.session.set_expiry(1209600)  # 2 weeks
             else:
                 request.session.set_expiry(0)
+            
+            messages.success(request, 'show_sweet_alert')
             
             # Redirect to 'next' or admin index
             next_url = request.GET.get('next', 'index')  # Using URL name
@@ -380,6 +459,7 @@ def add_product(request):
             subcategory = get_object_or_404(Sub_Category, id=request.POST.get('subcategory_id'))
             brand = get_object_or_404(Brand, id=request.POST.get('brand_id'))
             material = get_object_or_404(Material, id=request.POST.get('material_id'))
+            
             # Create product with instances
             product = Product.objects.create(
                 name=request.POST.get('name'),
@@ -395,6 +475,8 @@ def add_product(request):
                 dimensions=request.POST.get('dimensions'),
                 base_image=request.FILES.get('base_image')
             )
+            
+            product.save()
             
             messages.success(request, 'Product added successfully!')
             return redirect('display_product')
@@ -416,16 +498,63 @@ def add_product(request):
     return render(request, 'add_product.html', context)
 
 @admin_login_required
+@require_GET
 def display_product(request):
-    # Get all active products with their variant counts
-    products = Product.objects.filter(is_active=True).annotate(
-        variant_count=models.Count('variants')
-    ).order_by('name')
+    # Base queryset with select_related for performance
+    products = Product.objects.all().select_related(
+        'brand_id', 
+        'subcategory_id__category_id'
+    ).order_by('-created_at')
     
-    return render(request, 'display_product.html', {
-        'products': products
-    })
+    # Get filter parameters with proper cleaning
+    search_term = request.GET.get('search', '').strip()
+    category_id = request.GET.get('category', '')
+    brand_id = request.GET.get('brand', '')
     
+    # Apply search filter if term exists
+    if search_term:
+        products = products.filter(
+            Q(name__icontains=search_term) | 
+            Q(description__icontains=search_term) |
+            Q(brand_id__name__icontains=search_term)
+        )
+    
+    # Apply category filter if valid ID
+    if category_id and category_id.isdigit():
+        products = products.filter(subcategory_id__category_id=int(category_id))
+    
+    # Apply brand filter if valid ID
+    if brand_id and brand_id.isdigit():
+        products = products.filter(brand_id=int(brand_id))
+    
+    # Annotate with variant count
+    products = products.annotate(variant_count=Count('variants'))
+    
+    # Pagination (12 items per page)
+    paginator = Paginator(products, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get all categories and brands for filters
+    categories = Category.objects.all()
+    brands = Brand.objects.all()
+    
+    context = {
+        'products': page_obj,
+        'categories': categories,
+        'brands': brands,
+        'search_term': search_term,
+        'selected_category': category_id,
+        'selected_brand': brand_id,
+    }
+    
+    # Handle AJAX requests differently
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'partials/product_grid.html', context)
+    
+    return render(request, 'display_product.html', context)
+
+@admin_login_required
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
