@@ -8,6 +8,11 @@ urlpatterns = [
     path('index/',index,name='index'),
     path('login/',login,name='login'),
     path('logout/',logout,name='logout'),
+
+    # Admin URLs
+    path('display_admin/',display_admin,name='display_admin'),
+    path('display_admin_profile/',AdminProfileManagement.as_view(),name='display_admin_profile'),
+    path('password_reset/', reset_password, name='resetpassword'),
     
     # Category URLs
     path('add_category/', add_category, name='add_category'),
@@ -44,7 +49,8 @@ urlpatterns = [
     path('edit_product/<int:product_id>/', edit_product, name='edit_product'),
     path('delete_product<int:product_id>/', delete_product, name='delete_product'),
     path('display_product/', display_product, name='display_product'),
-  
+    path('products/template/download/', download_json_template, name='download_json_template'),
+
     # Product Variant URLs
     path('add_product_variant/<int:product_id>/', add_product_variant, name='add_product_variant'),
     path('display_product_variant/<int:product_id>/variants/', display_product_variant, name='display_product_variant'),
@@ -56,13 +62,10 @@ urlpatterns = [
     path('delete_user/<int:user_id>/',delete_user,name='delete_user'),
     path('toggle_user_status/<int:user_id>/toggle-status/', toggle_user_status, name='toggle_user_status'),
     
-    # Admin URLs
-    path('display_admin/',display_admin,name='display_admin'),
-    
+    # Order's URLs
     path('display_orders/',display_orders,name='display_orders'),
     path('order_details_content/<int:order_id>/details/', order_details_content, name='order_details_content'),
      
-    path('password_reset/', reset_password, name='resetpassword'),
     
     path('display_shipping/',display_shipping,name='display_shipping'),
     path('display_cart/',display_cart,name='display_cart'),

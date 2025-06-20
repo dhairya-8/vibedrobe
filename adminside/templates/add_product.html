@@ -1,232 +1,268 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-  Add Product | VibeDrobe
+Add Product | VibeDrobe
 {% endblock %}
 
 {% block css %}
-  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
-  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
-  <style>
-    .action-buttons .btn {
-      min-width: 150px;
-    }
-    .image-preview {
-      max-width: 200px;
-      max-height: 200px;
-      margin-top: 10px;
-    }
-    .required-field:after {
-      content: ' *';
-      color: red;
-    }
-    .file-upload-wrapper {
-      position: relative;
-      margin-bottom: 15px;
-    }
-    .file-upload-input {
-      width: 100%;
-      height: 38px;
-      opacity: 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 2;
-      cursor: pointer;
-    }
-    .file-upload-label {
-      display: block;
-      padding: 8px 12px;
-      background-color: #f8f9fa;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      position: relative;
-      z-index: 1;
-    }
-    .file-upload-button {
-      display: inline-block;
-      padding: 6px 12px;
-      background-color: #713ab7;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  </style>
+<link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+<link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/libs/uppy/uppy.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet"
+  type="text/css" />
+<style>
+  .image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    margin-top: 10px;
+  }
+
+  .required-field:after {
+    content: ' *';
+    color: red;
+  }
+
+  .file-upload-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+  }
+
+  .file-upload-input {
+    width: 100%;
+    height: 38px;
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    cursor: pointer;
+  }
+
+  .file-upload-label {
+    display: block;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .file-upload-button {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #713ab7;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-  <div class="page-wrapper">
-    <div class="page-content">
-      <div class="container-xxl">
-        {% include 'message.html' %}
-        <div class="row justify-content-center">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-header">
-                <div class="row align-items-center">
-                  <div class="col">
-                    <h4 class="card-title">Products</h4>
-                  </div>
+<div class="page-wrapper">
+  <div class="page-content">
+    <div class="container-xxl">
+      {% include 'message.html' %}
+      <div class="row justify-content-center">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <div class="row align-items-center">
+                <div class="col">
+                  <h4 class="card-title">Add New Product</h4>
                 </div>
               </div>
-              <div class="card-body pt-0">
-                <form action="{% url 'add_product' %}" method="post" enctype="multipart/form-data" id="product-form">
-                  {% csrf_token %}
-                  <nav>
-                    <div class="nav nav-tabs" id="nav-tab"></div>
-                  </nav>
-                  <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane active" id="step1">
-                      <h4 class="card-title my-4 fs-15">Add Product</h4>
-                      <div class="row">
-                        <!-- Left Column -->
-                        <div class="col-md-6">
-                          <!-- Basic Info -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Product Name</label>
-                            <div class="col-lg-9">
-                              <input name="name" type="text" class="form-control" required maxlength="200" />
-                            </div>
-                          </div>
-
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Description</label>
-                            <div class="col-lg-9">
-                              <textarea name="description" class="form-control" rows="3" required maxlength="2000"></textarea>
-                            </div>
-                          </div>
-
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Price (₹)</label>
-                            <div class="col-lg-9">
-                              <input name="price" type="number" step="0.01" min="0" class="form-control" required />
-                            </div>
-                          </div>
-
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Base Image</label>
-                            <div class="col-lg-9">
-                              <div class="file-upload-wrapper">
-                                <input type="file" name="base_image" id="base_image" class="file-upload-input" accept="image/*" required />
-                                <label for="base_image" class="file-upload-label">
-                                  <span class="file-upload-button">Choose File</span>
-                                  <span id="file-name">No file chosen</span>
-                                </label>
-                              </div>
-                              <div id="image-preview-container" class="mt-2"></div>
-                              <small class="text-muted">Upload product main image (Max 2MB)</small>
-                            </div>
+            </div>
+            <div class="card-body pt-0">
+              <form action="{% url 'add_product' %}" method="post" enctype="multipart/form-data" id="product-form">
+                {% csrf_token %}
+                <div class="tab-content">
+                  <div class="tab-pane active">
+                    <div class="row">
+                      <!-- Left Column -->
+                      <div class="col-md-6">
+                        <!-- Basic Info -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Product Name</label>
+                          <div class="col-lg-9">
+                            <input name="name" type="text" class="form-control" required maxlength="200" />
                           </div>
                         </div>
 
-                        <!-- Right Column -->
-                        <div class="col-md-6">
-                          <!-- Category Selection -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Subcategory</label>
-                            <div class="col-lg-9">
-                              <select name="subcategory_id" class="form-control" required>
-                                <option value="">Select Subcategory</option>
-                                {% for category in categories %}
-                                  <optgroup label="{{ category.name }}">
-                                    {% for subcategory in category.subcategories.all %}
-                                      <option value="{{ subcategory.id }}">{{ subcategory.name }}</option>
-                                    {% endfor %}
-                                  </optgroup>
-                                {% endfor %}
-                              </select>
-                            </div>
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Description</label>
+                          <div class="col-lg-9">
+                            <textarea name="description" class="form-control" rows="3" required
+                              maxlength="2000"></textarea>
                           </div>
+                        </div>
 
-                          <!-- Brand Selection -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Brand</label>
-                            <div class="col-lg-9">
-                              <select name="brand_id" class="form-control" required>
-                                <option value="">Select Brand</option>
-                                {% for brand in brands %}
-                                  <option value="{{ brand.id }}">{{ brand.name }}</option>
-                                {% endfor %}
-                              </select>
-                            </div>
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Price (₹)</label>
+                          <div class="col-lg-9">
+                            <input name="price" type="number" step="0.01" min="0" class="form-control" required />
                           </div>
+                        </div>
 
-                          <!-- Material Selection -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Material</label>
-                            <div class="col-lg-9">
-                              <select name="material_id" class="form-control" required>
-                                <option value="">Select Material</option>
-                                {% for material in materials %}
-                                  <option value="{{ material.id }}">{{ material.name }}</option>
-                                {% endfor %}
-                              </select>
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Base Image</label>
+                          <div class="col-lg-9">
+                            <div class="file-upload-wrapper">
+                              <input type="file" name="base_image" id="base_image" class="file-upload-input"
+                                accept="image/*" required />
+                              <label for="base_image" class="file-upload-label">
+                                <span class="file-upload-button">Choose File</span>
+                                <span id="file-name">No file chosen</span>
+                              </label>
                             </div>
-                          </div>
-
-                          <!-- Color -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Color</label>
-                            <div class="col-lg-9">
-                              <input name="color" type="text" class="form-control" required maxlength="15" />
-                            </div>
+                            <div id="image-preview-container" class="mt-2"></div>
+                            <small class="text-muted">Upload product main image (Max 2MB)</small>
                           </div>
                         </div>
                       </div>
 
-                      <!-- Second Row -->
-                      <div class="row mt-3">
-                        <div class="col-md-6">
-                          <!-- Gender -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">Gender</label>
-                            <div class="col-lg-9">
-                              <select name="gender" class="form-control" required>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Unisex">Unisex</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <!-- SKU -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end required-field">SKU</label>
-                            <div class="col-lg-9">
-                              <input name="sku" type="text" class="form-control" required maxlength="50" />
-                            </div>
+                      <!-- Right Column -->
+                      <div class="col-md-6">
+                        <!-- Category Selection -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Subcategory</label>
+                          <div class="col-lg-9">
+                            <select name="subcategory_id" class="form-control" required>
+                              <option value="">Select Subcategory</option>
+                              {% for category in categories %}
+                              <optgroup label="{{ category.name }}">
+                                {% for subcategory in category.subcategories.all %}
+                                <option value="{{ subcategory.id }}">{{ subcategory.name }}</option>
+                                {% endfor %}
+                              </optgroup>
+                              {% endfor %}
+                            </select>
                           </div>
                         </div>
 
-                        <div class="col-md-6">
-                          <!-- Weight -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end">Weight (kg)</label>
-                            <div class="col-lg-9">
-                              <input name="weight" type="number" step="0.01" min="0" class="form-control" />
-                            </div>
+                        <!-- Brand Selection -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Brand</label>
+                          <div class="col-lg-9">
+                            <select name="brand_id" class="form-control" required>
+                              <option value="">Select Brand</option>
+                              {% for brand in brands %}
+                              <option value="{{ brand.id }}">{{ brand.name }}</option>
+                              {% endfor %}
+                            </select>
                           </div>
+                        </div>
 
-                          <!-- Dimensions -->
-                          <div class="form-group row mb-3">
-                            <label class="col-lg-3 col-form-label text-end">Dimensions</label>
-                            <div class="col-lg-9">
-                              <input name="dimensions" type="text" class="form-control" maxlength="50" />
-                            </div>
+                        <!-- Material Selection -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Material</label>
+                          <div class="col-lg-9">
+                            <select name="material_id" class="form-control" required>
+                              <option value="">Select Material</option>
+                              {% for material in materials %}
+                              <option value="{{ material.id }}">{{ material.name }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Color -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Color</label>
+                          <div class="col-lg-9">
+                            <input name="color" type="text" class="form-control" required maxlength="15" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Second Row -->
+                    <div class="row mt-3">
+                      <div class="col-md-6">
+                        <!-- Gender -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">Gender</label>
+                          <div class="col-lg-9">
+                            <select name="gender" class="form-control" required>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Unisex">Unisex</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- SKU -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end required-field">SKU</label>
+                          <div class="col-lg-9">
+                            <input name="sku" type="text" class="form-control" required maxlength="50" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <!-- Weight -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end">Weight (kg)</label>
+                          <div class="col-lg-9">
+                            <input name="weight" type="number" step="0.01" min="0" class="form-control" />
+                          </div>
+                        </div>
+
+                        <!-- Dimensions -->
+                        <div class="form-group row mb-3">
+                          <label class="col-lg-3 col-form-label text-end">Dimensions</label>
+                          <div class="col-lg-9">
+                            <input name="dimensions" type="text" class="form-control" maxlength="50" />
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
                   <div class="text-center mt-4 action-buttons">
                     <a href="{% url 'display_product' %}" class="btn btn-secondary px-5 me-3"><i class="fas fa-arrow-left me-2"></i> Back</a>
                     <button type="submit" class="btn btn-primary px-5"><i class="fas fa-plus-circle me-2"></i> Add Product</button>
+                  </div>
+              </form>
+
+            </div>
+          </div>
+          <!-- Below your existing form -->
+          <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">
+                <i class="fas fa-file-import me-2"></i>
+                Bulk Import via JSON
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info">
+                <strong>How to use:</strong>
+                <ol class="mt-2 mb-0">
+                  <li>Download the JSON template</li>
+                  <li>Add your products (500+ supported)</li>
+                  <li>Upload the JSON file</li>
+                </ol>
+              </div>
+
+              <div class="d-flex gap-3">
+                <a href="{% url 'download_json_template' %}" class="btn btn-success">
+                  <i class="fas fa-file-download me-1"></i> Download Template
+                </a>
+
+                <form method="post" action="{% url 'add_product' %}" enctype="multipart/form-data" class="flex-grow-1">
+                  {% csrf_token %}
+                  <div class="input-group">
+                    <input type="file" name="json_file" class="form-control" accept=".json" required>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-upload me-1"></i> Import Products
+                    </button>
                   </div>
                 </form>
               </div>
@@ -234,95 +270,75 @@
           </div>
         </div>
       </div>
-      <footer class="footer text-center text-sm-start d-print-none">
-        <div class="container-xxl">
-          <div class="row">
-            <div class="col-12">
-              <div class="card mb-0 rounded-bottom-0">
-                <div class="card-body">
-                  <p class="text-muted mb-0">
-                    {% comment %}©<script>
-                                    document.write(new Date().getFullYear())
-                                  </script> {% endcomment %}
-                    <span class="text-muted d-none d-sm-inline-block float-end">
-                      VibeDrobe
-                      <i class="iconoir-heart text-danger"></i>
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   </div>
+</div>
 {% endblock %}
 
 {% block script %}
-  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/app.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
+<script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/app.js' %}"></script>
+<script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
 
-  <script>
-    // File upload and preview functionality
-    document.getElementById('base_image').addEventListener('change', function (e) {
-      const fileName = document.getElementById('file-name')
-      const container = document.getElementById('image-preview-container')
-      container.innerHTML = ''
-    
-      if (this.files && this.files[0]) {
-        fileName.textContent = this.files[0].name
-    
-        // Check file size (max 2MB)
-        if (this.files[0].size > 2 * 1024 * 1024) {
-          container.innerHTML = '<div class="text-danger mt-2">File size exceeds 2MB limit</div>'
-          this.value = ''
-          fileName.textContent = 'No file chosen'
-          return
-        }
-    
-        // Check file type
-        if (!this.files[0].type.match('image.*')) {
-          container.innerHTML = '<div class="text-danger mt-2">Please select an image file</div>'
-          this.value = ''
-          fileName.textContent = 'No file chosen'
-          return
-        }
-    
-        const reader = new FileReader()
-        reader.onload = function (e) {
-          const img = document.createElement('img')
-          img.src = e.target.result
-          img.className = 'image-preview img-thumbnail'
-          container.appendChild(img)
-        }
-        reader.readAsDataURL(this.files[0])
-      } else {
+<script>
+  // File upload and preview functionality
+  document.getElementById('base_image').addEventListener('change', function (e) {
+    const fileName = document.getElementById('file-name')
+    const container = document.getElementById('image-preview-container')
+    container.innerHTML = ''
+
+    if (this.files && this.files[0]) {
+      fileName.textContent = this.files[0].name
+
+      // Check file size (max 2MB)
+      if (this.files[0].size > 2 * 1024 * 1024) {
+        container.innerHTML = '<div class="text-danger mt-2">File size exceeds 2MB limit</div>'
+        this.value = ''
         fileName.textContent = 'No file chosen'
+        return
+      }
+
+      // Check file type
+      if (!this.files[0].type.match('image.*')) {
+        container.innerHTML = '<div class="text-danger mt-2">Please select an image file</div>'
+        this.value = ''
+        fileName.textContent = 'No file chosen'
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = function (e) {
+        const img = document.createElement('img')
+        img.src = e.target.result
+        img.className = 'image-preview img-thumbnail'
+        container.appendChild(img)
+      }
+      reader.readAsDataURL(this.files[0])
+    } else {
+      fileName.textContent = 'No file chosen'
+    }
+  })
+
+  // Form validation
+  document.getElementById('product-form').addEventListener('submit', function (e) {
+    const requiredFields = this.querySelectorAll('[required]')
+    let isValid = true
+
+    requiredFields.forEach((field) => {
+      if (!field.value.trim()) {
+        field.classList.add('is-invalid')
+        isValid = false
+      } else {
+        field.classList.remove('is-invalid')
       }
     })
-    
-    // Form validation
-    document.getElementById('product-form').addEventListener('submit', function (e) {
-      const requiredFields = this.querySelectorAll('[required]')
-      let isValid = true
-    
-      requiredFields.forEach((field) => {
-        if (!field.value.trim()) {
-          field.classList.add('is-invalid')
-          isValid = false
-        } else {
-          field.classList.remove('is-invalid')
-        }
-      })
-    
-      if (!isValid) {
-        e.preventDefault()
-        alert('Please fill all required fields')
-      }
-    })
-  </script>
+
+    if (!isValid) {
+      e.preventDefault()
+      alert('Please fill all required fields')
+    }
+  })
+</script>
 {% endblock %}
