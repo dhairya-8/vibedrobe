@@ -22,7 +22,10 @@ class Admin(models.Model):
         if self.password and not self.password.startswith('pbkdf2_'):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
-
+        
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+        
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
 
@@ -37,7 +40,7 @@ class User(models.Model):
     last_name = models.CharField(max_length=50, null=False, blank=False)
     contact = models.BigIntegerField(null=False, blank=False)
     date_of_birth = models.DateField(null=False, blank=False)
-    gender = models.CharField(max_length=20, choices=[('Male', 'Female')])
+    gender = models.CharField(max_length=20, choices=[('1', 'Female'), ('2', 'Male')])
     profile_image = models.ImageField(upload_to='user_profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)
