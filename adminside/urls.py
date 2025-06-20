@@ -12,7 +12,7 @@ urlpatterns = [
     # Admin URLs
     path('display_admin/',display_admin,name='display_admin'),
     path('display_admin_profile/',AdminProfileManagement.as_view(),name='display_admin_profile'),
-
+    path('password_reset/', reset_password, name='resetpassword'),
     
     # Category URLs
     path('add_category/', add_category, name='add_category'),
@@ -51,19 +51,28 @@ urlpatterns = [
     path('display_product/', display_product, name='display_product'),
     path('products/template/download/', download_json_template, name='download_json_template'),
 
-
-    
     # Product Variant URLs
     path('add_product_variant/<int:product_id>/', add_product_variant, name='add_product_variant'),
     path('display_product_variant/<int:product_id>/variants/', display_product_variant, name='display_product_variant'),
     path('edit_product_variant/<int:variant_id>/', edit_product_variant, name='edit_product_variant'),
     path('delete_product_variant/<int:id>/', delete_product_variant, name='delete_product_variant'),
 
+    # User URLs
+    path('display_user/',display_user,name='display_user'),
+    path('delete_user/<int:user_id>/',delete_user,name='delete_user'),
+    path('toggle_user_status/<int:user_id>/toggle-status/', toggle_user_status, name='toggle_user_status'),
+    
+    # Order's URLs
     path('display_orders/',display_orders,name='display_orders'),
-    path('display_orderdetails/',display_orderdetails,name='display_orderdetails'),
+    path('order_details_content/<int:order_id>/details/', order_details_content, name='order_details_content'),
+     
+    
+    path('display_shipping/',display_shipping,name='display_shipping'),
     path('display_cart/',display_cart,name='display_cart'),
     path('display_wishlist/',display_wishlist,name='display_wishlist'),
     path('display_payment/',display_payment,name='display_payment'),
+    
+    # Report URLs
     path('report_FBT/',report_FBT,name='report_FBT'),
     path('report_customer/',report_customer,name='report_customer'),
     path('report_sales/',report_sales,name='report_sales'),
