@@ -3,7 +3,7 @@
 {% if products %}
   <div class="product-grid">
     {% for product in products %}
-      <div class="product-card">
+    <div class="product-card" data-product-id="{{ product.id }}">
         <div class="product-img-container">
           <img src="{{ product.base_image.url }}" class="product-img" alt="{{ product.name }}">
           

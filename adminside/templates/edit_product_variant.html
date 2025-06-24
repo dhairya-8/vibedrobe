@@ -2,6 +2,31 @@
 {% load static %}
 {% block title %}Edit Variant | VibeDrobe{% endblock %}
 
+<!-- App favicon -->
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
+  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    /* Message animation styles */
+    .alert-auto-dismiss {
+      animation: fadeOut 5s forwards;
+      animation-delay: 2s;
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; }
+    }
+  </style>
+{% endblock %}
 {% block content %}
 <div class="page-wrapper">
   <div class="page-content">
@@ -52,6 +77,17 @@
                         <input name="additional_price" type="number" step="0.01" class="form-control" value="{{ variant.additional_price }}">
                       </div>
                     </div>
+                    <div class="form-group row mb-2">
+                            <label class="col-lg-3 col-form-label text-end">Status</label>
+                            <div class="col-lg-9">
+                              <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if variant.is_active %}checked{% endif %} >
+                                <label class="form-check-label" for="is_active">
+                                  {% if variant.is_active %}Active{% else %}Inactive{% endif %}
+                                </label>
+                              </div>
+                            </div>
+                          </div>
                   </div>
                 </div>
               <div class="text-center mt-4">
@@ -64,6 +100,59 @@
         </div>
       </div>
     </div>
+    <footer class="footer text-center text-sm-start d-print-none">
+        <div class="container-xxl">
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-0 rounded-bottom-0">
+                <div class="card-body">
+                  <p class="text-muted mb-0">
+                    <span class="text-muted d-none d-sm-inline-block float-end">
+                      VibeDrobe
+                      <i class="iconoir-heart text-danger"></i>
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
   </div>
 </div>
+{% endblock %}
+<!-- Javascript -->
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/form-wizard.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/uppy/uppy.legacy.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/file-upload.init.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/huebee/huebee.pkgd.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanillajs-datepicker/js/datepicker-full.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/moment.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/imask/imask.min.js' %}"></script>
+  
+  <script>
+    // Toggle switch label update
+    document.getElementById('is_active').addEventListener('change', function() {
+      const label = document.querySelector('label[for="is_active"]');
+      label.textContent = this.checked ? 'Active' : 'Inactive';
+    });
+    
+    // Auto-dismiss messages
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss');
+        alerts.forEach(alert => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 300);
+        });
+      }, 3000);
+    });
+  </script>
 {% endblock %}

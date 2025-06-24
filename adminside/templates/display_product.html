@@ -145,6 +145,78 @@
       height: 3rem;
     }
   </style>
+   <style>
+    .search-filter-bar {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+#clear-filters-btn {
+  white-space: nowrap;
+  padding: 0.375rem 0.75rem;
+}
+
+/* Make sure all form elements have consistent height */
+.search-filter-bar .form-control,
+.search-filter-bar .form-select,
+.search-filter-bar .btn {
+  height: 38px;
+}
+
+/* Adjust input group to match height */
+.search-filter-bar .input-group .form-control {
+  height: 100%;
+}
+    /* Product Detail Modal Styles */
+    .product-detail-modal .modal-dialog {
+      max-width: 90%;
+      min-height: calc(100% - 3.5rem);
+    }
+    .product-detail-modal .modal-content {
+      height: calc(100vh - 3.5rem);
+    }
+    .product-detail-modal .modal-body {
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    .product-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .gallery-thumbnail {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .gallery-thumbnail:hover {
+      transform: scale(1.05);
+    }
+    .variant-table {
+      width: 100%;
+    }
+    .variant-table th {
+      background-color: #f8f9fa;
+    }
+    .product-tabs .nav-link {
+      font-weight: 500;
+      color: #495057;
+    }
+    .product-tabs .nav-link.active {
+      color: #0d6efd;
+      border-bottom: 2px solid #0d6efd;
+    }
+    .product-info-table th {
+      width: 30%;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -168,23 +240,24 @@
       <div class="row">
         <div class="col-12">
           <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h4 class="mb-0">Product Catalog</h4>
-              <div>
-                <a href="{% url 'add_product' %}" class="btn btn-primary">
-                  <i class="las la-plus me-1"></i> Add Product
-                </a>
-              </div>
-            </div>
-            
+           <div class="card-header d-flex justify-content-between align-items-center">
+  <div>
+    <h4 class="mb-0">Product Catalog</h4>
+    <small class="text-muted">{{ products.paginator.count|intcomma }} products found</small>
+  </div>
+  <div>
+    <a href="{% url 'add_product' %}" class="btn btn-primary">
+      <i class="las la-plus me-1"></i> Add Product
+    </a>
+  </div>
+</div>
             <div class="card-body">
               <!-- Search and Filter Bar -->
-              
-<div class="search-filter-bar mb-4">
+              <div class="search-filter-bar mb-4">
   <form method="GET" action="{% url 'display_product' %}" id="filter-form">
     <div class="row g-3 align-items-center">
       <!-- Search Field -->
-      <div class="col-md-5">
+      <div class="col-md-4">
         <div class="input-group">
           <input type="text" class="form-control" id="live-search" name="search" 
                  placeholder="Search products..." value="{{ request.GET.search }}"
@@ -222,7 +295,7 @@
       </div>
 
       <!-- Clear Filters Button -->
-      <div class="col-md-1">
+      <div class="col-md-2">
         <button type="button" class="btn btn-outline-secondary w-100" id="clear-filters-btn" 
                 {% if not request.GET.search and not request.GET.category and not request.GET.brand %}disabled{% endif %}>
           <i class="las la-broom"></i> Clear
@@ -230,16 +303,36 @@
       </div>
     </div>
   </form>
-</div>              <!-- Products Grid -->
+</div>              
+             <!-- Products Grid -->
               <div id="product-grid-container">
                 {% include 'partials/product_grid.html' %}
               </div>
+              <div class="modal fade product-detail-modal" id="productDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productDetailModalLabel">Product Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="productDetailContent">
+          <!-- Content will be loaded via AJAX -->
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
             </div>
           </div>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
       </div>
     </div>
-    <footer class="footer text-center text-sm-start d-print-none">
+  </div>
+</div>
+    
+  </div>
+  <footer class="footer text-center text-sm-start d-print-none">
         <div class="container-xxl">
           <div class="row">
             <div class="col-12">
@@ -260,7 +353,6 @@
           </div>
         </div>
       </footer>
-  </div>
 </div>
 {% endblock %}
 
@@ -394,4 +486,49 @@
     updateClearButtonState();
   });
 </script>
+<script>
+    document.addEventListener('click', function(e) {
+  if (e.target.closest('.product-img-container')) {
+    const productCard = e.target.closest('.product-card');
+    const productId = productCard.dataset.productId;
+    
+    if (!productId || productId === 'undefined') {
+      console.error('Product ID not found');
+      return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('productDetailModal'));
+    modal.show();
+    
+    // Show loading spinner
+    document.getElementById('productDetailContent').innerHTML = `
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    `;
+    
+    // Load product details via AJAX
+    fetch(`/adminside/product_detail_modal/${productId}/detail/`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.text();
+    })
+    .then(html => {
+      document.getElementById('productDetailContent').innerHTML = html;
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('productDetailContent').innerHTML = `
+        <div class="alert alert-danger">Error loading product details</div>
+      `;
+    });
+  }
+});
+  </script>
 {% endblock %}

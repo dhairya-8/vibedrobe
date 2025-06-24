@@ -187,7 +187,7 @@
                         <tr>
                           <td>
                             <div class="d-flex align-items-center">
-                              <img src="{{ product.base_image }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
+                              <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
                               <div>
                                 <h6 class="mb-0">{{ product.name|truncatechars:20 }}</h6>
                                 <small class="text-muted">{{ product.brand_id.name }}</small>

@@ -18,6 +18,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.http import JsonResponse
 
 @admin_login_required
 def index(request):
@@ -241,8 +242,7 @@ class AdminProfileManagement(View):
         except Admin.DoesNotExist:
             messages.error(request, "Admin profile not found.")
             return redirect('admin_login')
-
-    
+  
 @admin_login_required
 def display_admin_profile(request):
     try:
@@ -604,6 +604,7 @@ def download_json_template(request):
                 "price": 999.99,
                 "category": "Category Name",  # Must match an existing category name
                 "subcategory": "Subcategory Name",  # Must match the exact category/subcategory structure:
+                "fit_type": "Fit Type",  # string field, hence optional
                 "brand": "Brand Name",  # Must match an existing brand name
                 "color": "Color Name",
                 "material": "Material Name",  # Must match an existing material name
@@ -614,10 +615,7 @@ def download_json_template(request):
                 "base_image": "sku_name_base_image.jpg",  
                 "variants": [
                     {
-                        "size": "S",  # Must match an existing size name
-                        "sku": "PROD-001-S", # SKU for the variant, can be auto-generated if not provided
-                        "stock_quantity": 50,
-                        "additional_price": 0.00  # optional
+                        "size": "S", "sku": "PROD-001-S", "stock_quantity": 50, "additional_price": 0.00  
                     }
                 ],
                 "gallery": [ 
@@ -719,6 +717,7 @@ def add_product(request):
                             description=product_data['description'],
                             price=price,
                             subcategory_id_id=subcategory_id,
+                            fit_type=product_data.get('fit_type'),
                             brand_id_id=ref_data['brands'][product_data['brand'].strip().lower()],
                             material_id_id=ref_data['materials'][product_data['material'].strip().lower()],
                             color=product_data['color'],
@@ -813,6 +812,7 @@ def add_product(request):
                     description=request.POST.get('description'),
                     price=request.POST.get('price'),
                     subcategory_id=subcategory,
+                    fit_type=request.POST.get('fit_type'),
                     brand_id=brand,
                     material_id=material,
                     color=request.POST.get('color'),
@@ -831,228 +831,11 @@ def add_product(request):
     
     # GET request handling
     context = {
-        'categories': Category.objects.prefetch_related('subcategories').all(),
-        'brands': Brand.objects.all(),
-        'materials': Material.objects.all(),
-        'title': 'Add Product'
-    }
-    return render(request, 'add_product.html', context)
-    if request.method == 'POST':
-        # Handle JSON file upload
-        if request.FILES.get('json_file'):
-            try:
-                json_file = request.FILES['json_file']
-                data = json.load(json_file)
-                
-                # Preload all reference data (optimization)
-                ref_data = {
-                    'categories': {c.name.lower(): c.id for c in Category.objects.all()},
-                    'subcategories': {
-                        f"{s.category.name.lower()}/{s.name.lower()}": s.id 
-                        for s in Sub_Category.objects.select_related('category_id')
-                    },
-                    'brands': {b.name.lower(): b.id for b in Brand.objects.all()},
-                    'materials': {m.name.lower(): m.id for m in Material.objects.all()},
-                    'sizes': {s.name.lower(): s.id for s in Size.objects.all()}
-                }
-
-                success_count = 0
-                skipped_products = []
-
-                for idx, product_data in enumerate(data.get('products', []), start=1):
-                    try:
-                        # ===== 1. VALIDATE REQUIRED FIELDS =====
-                        required_fields = [
-                            'name', 'description', 'price',
-                            'category', 'subcategory', 'brand',
-                            'material', 'color', 'gender', 'sku'
-                        ]
-                        missing_fields = [f for f in required_fields if f not in product_data]
-                        if missing_fields:
-                            raise ValueError(f"Missing fields: {', '.join(missing_fields)}")
-
-                        # ===== 2. CONVERT NAMES TO IDs =====
-                        # Subcategory (format: "category/subcategory")
-                        subcategory_path = f"{product_data['category'].lower()}/{product_data['subcategory'].lower()}"
-                        subcategory_id = ref_data['subcategories'].get(subcategory_path)
-                        if not subcategory_id:
-                            raise ValueError(
-                                f"Subcategory '{product_data['subcategory']}' under "
-                                f"category '{product_data['category']}' not found"
-                            )
-
-                        # Other fields
-                        brand_id = ref_data['brands'].get(product_data['brand'].lower())
-                        material_id = ref_data['materials'].get(product_data['material'].lower())
-
-                        if None in [subcategory_id, brand_id, material_id]:
-                            missing = []
-                            if not subcategory_id: missing.append("subcategory")
-                            if not brand_id: missing.append("brand")
-                            if not material_id: missing.append("material")
-                            raise ValueError(f"Reference not found: {', '.join(missing)}")
-
-                        # ===== 3. VALIDATE PRICE =====
-                        try:
-                            price = Decimal(str(product_data['price']))
-                            if price <= 0:
-                                raise ValueError("Price must be greater than 0")
-                        except (InvalidOperation, TypeError):
-                            raise ValueError(f"Invalid price format: {product_data['price']}")
-
-                        # ===== 4. HANDLE IMAGES =====
-                        base_image_path = None
-                        if product_data.get('base_image'):
-                            image_path = os.path.join(
-                                settings.MEDIA_ROOT,
-                                'products/base',
-                                product_data['base_image']
-                            )
-                            if os.path.exists(image_path):
-                                base_image_path = f"products/base/{product_data['base_image']}"
-                            else:
-                                messages.warning(
-                                    request,
-                                    f"Row {idx}: Base image not found - {product_data['base_image']}"
-                                )
-
-                        # ===== 5. CREATE PRODUCT =====
-                        product = Product.objects.create(
-                            name=product_data['name'],
-                            description=product_data['description'],
-                            price=price,
-                            subcategory_id_id=subcategory_id,
-                            brand_id_id=brand_id,
-                            material_id_id=material_id,
-                            color=product_data['color'],
-                            gender=product_data['gender'],
-                            sku=product_data['sku'],
-                            weight=product_data.get('weight'),
-                            dimensions=product_data.get('dimensions'),
-                            base_image=base_image_path
-                        )
-
-                        # ===== 6. HANDLE VARIANTS =====
-                        variant_errors = []
-                        for v_idx, variant in enumerate(product_data.get('variants', []), start=1):
-                            try:
-                                size_name = variant.get('size', '').lower()
-                                size_id = ref_data['sizes'].get(size_name)
-                                if not size_id:
-                                    raise ValueError(f"Size '{variant.get('size')}' not found")
-
-                                Product_Variants.objects.create(
-                                    product_id=product,
-                                    size_id_id=size_id,
-                                    sku=variant.get('sku', f"{product_data['sku']}-{size_name.upper()}"),
-                                    stock_quantity=int(variant.get('stock_quantity', 0)),
-                                    additional_price=Decimal(str(variant.get('additional_price', 0))))
-                            except Exception as e:
-                                variant_errors.append(f"Variant {v_idx}: {str(e)}")
-
-                        if variant_errors:
-                            messages.warning(
-                                request,
-                                f"Row {idx}: {product_data['sku']} - "
-                                f"{len(variant_errors)} variant(s) skipped: {', '.join(variant_errors)}"
-                            )
-
-                        # ===== 7. HANDLE GALLERY IMAGES =====
-                        gallery_errors = []
-                        for g_idx, gallery_item in enumerate(product_data.get('gallery', []), start=1):
-                            try:
-                                gallery_path = os.path.join(
-                                    settings.MEDIA_ROOT,
-                                    'products/gallery',
-                                    gallery_item['image_path']
-                                )
-                                if os.path.exists(gallery_path):
-                                    Product_Gallery.objects.create(
-                                        product_id=product,
-                                        image_path=f"products/gallery/{gallery_item['image_path']}",
-                                        image_order=gallery_item.get('image_order', g_idx)
-                                    )
-                                else:
-                                    raise ValueError(f"Image not found: {gallery_item['image_path']}")
-                            except Exception as e:
-                                gallery_errors.append(f"Gallery {g_idx}: {str(e)}")
-
-                        if gallery_errors:
-                            messages.warning(
-                                request,
-                                f"Row {idx}: {product_data['sku']} - "
-                                f"{len(gallery_errors)} gallery image(s) skipped: {', '.join(gallery_errors)}"
-                            )
-
-                        success_count += 1
-
-                    except Exception as e:
-                        skipped_products.append(
-                            f"Row {idx}: SKU {product_data.get('sku', '?')} - {str(e)}"
-                        )
-                        continue
-
-                # Final report
-                if success_count:
-                    messages.success(
-                        request,
-                        f"Successfully imported {success_count}/{len(data['products'])} products"
-                    )
-                if skipped_products:
-                    messages.warning(
-                        request,
-                        f"Skipped {len(skipped_products)} products: " +
-                        "; ".join(skipped_products[:5]) + 
-                        ("..." if len(skipped_products) > 5 else "")
-                    )
-
-                return redirect('display_product')
-
-            except json.JSONDecodeError:
-                messages.error(request, "Invalid JSON file format")
-            except Exception as e:
-                messages.error(request, f"File processing failed: {str(e)}")
-            return redirect('add_product')
-
-        # Handle regular form submission (non-JSON)
-        else:
-            try:
-                subcategory = get_object_or_404(Sub_Category, id=request.POST.get('subcategory_id'))
-                brand = get_object_or_404(Brand, id=request.POST.get('brand_id'))
-                material = get_object_or_404(Material, id=request.POST.get('material_id'))
-                # Create product with instances
-                product = Product.objects.create(
-                    name=request.POST.get('name'),
-                    description=request.POST.get('description'),
-                    price=request.POST.get('price'),
-                    subcategory_id=subcategory, 
-                    brand_id=brand,
-                    material_id=material,
-                    color=request.POST.get('color'),
-                    gender=request.POST.get('gender'),
-                    sku=request.POST.get('sku'),
-                    weight=request.POST.get('weight'),
-                    dimensions=request.POST.get('dimensions'),
-                    base_image=request.FILES.get('base_image')
-                )
-                product.save()
-                messages.success(request, 'Product added successfully!')
-                return redirect('display_product')
-            
-            except Exception as e:
-                messages.error(request, f'Error adding product: {str(e)}')
-    
-    # Get all categories, brands, and materials for the form
-    categories = Category.objects.prefetch_related('subcategories').all()
-    brands = Brand.objects.all()
-    materials = Material.objects.all()
-    
-    context = {
-        'categories': categories,
-        'brands': brands,
-        'materials': materials,
-        'title': 'Add Product'
-    }
+                'categories': Category.objects.prefetch_related('subcategories').all(),
+                'brands': Brand.objects.all(),
+                'materials': Material.objects.all(),
+                'title': 'Add Product'
+            }
     return render(request, 'add_product.html', context)
 
 @admin_login_required
@@ -1184,7 +967,19 @@ def delete_product(request, product_id):
         messages.error(request, f'Error deleting product: {str(e)}')
     
     return redirect('display_product')
- 
+
+def product_detail_modal(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    gallery_images = Product_Gallery.objects.filter(product_id=product).order_by('image_order')
+    variants = Product_Variants.objects.filter(product_id=product)
+    
+    context = {
+        'product': product,
+        'gallery_images': gallery_images,
+        'variants': variants,
+    }
+    return render(request, 'product_detail_modal.html', context)
+
 # Product Variant Views
 @admin_login_required
 def add_product_variant(request, product_id):
@@ -1299,9 +1094,6 @@ def toggle_user_status(request, user_id):
     messages.success(request, f'User {user.username} has been {status}.')
     return redirect('display_user')
 
-def display_admin(request):
-    return render(request, 'display_admin.html')
-
 @admin_login_required
 def display_orders(request):
     orders = Order_Master.objects.all().order_by('-order_date')
@@ -1355,9 +1147,6 @@ def reset_password(request):
             messages.error(request, 'No admin account found with this email.')
     
     return render(request, 'resetpassword.html')
-
-def display_shipping(request):
-    return render(request, 'display_shipping.html')
 
 def display_cart(request):
     return render(request, 'display_cart.html')

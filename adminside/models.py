@@ -112,16 +112,16 @@ class Material(models.Model):
         return self.name
 
 class Product(models.Model):
-    name = models.CharField(max_length=200, unique=True,null=False, blank=False)
+    name = models.CharField(max_length=200,null=False, blank=False)
     description = models.TextField(max_length=2000, null=False, blank=False)
     price = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
     base_image = models.ImageField(upload_to='products/base', null=True, blank=True)
     subcategory_id = models.ForeignKey(Sub_Category, on_delete=models.CASCADE)
+    fit_type = models.CharField(max_length=30, null=True, blank=True)
     brand_id = models.ForeignKey(Brand, on_delete=models.CASCADE)
-    color = models.CharField(max_length=15, null=False, blank=False)
+    color = models.CharField(max_length=50, null=False, blank=False)
     material_id = models.ForeignKey(Material, on_delete=models.CASCADE)
     gender = models.CharField(max_length=10, null=False, blank=False)
-    sku = models.CharField(max_length=50, unique=True,null=False, blank=False)
     weight = models.DecimalField(decimal_places=2, max_digits=5, null=True)
     dimensions = models.CharField(max_length=50, null=True)
     is_active = models.BooleanField(default=True)
