@@ -92,37 +92,77 @@
           </div>
         </div>
 
-        <!-- Charts Row -->
+        <!-- Top Charts Row - Same Height -->
         <div class="row mt-4">
-          <!-- Sales Trend -->
+          <!-- Weekly Sales Trend -->
           <div class="col-lg-8">
             <div class="card">
               <div class="card-header">
                 <h5 class="mb-0">Weekly Sales Trend</h5>
               </div>
               <div class="card-body">
-                <div id="sales-trend-chart" style="min-height: 300px;"></div>
+                <div id="sales-trend-chart" style="min-height: 350px;"></div>
               </div>
             </div>
           </div>
 
-          <!-- Order Status -->
+          <!-- Order Status Chart -->
           <div class="col-lg-4">
             <div class="card">
               <div class="card-header">
                 <h5 class="mb-0">Order Status</h5>
               </div>
               <div class="card-body">
-                <div id="order-status-chart" style="min-height: 300px;"></div>
+                <div id="order-status-chart" style="min-height: 350px;"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Data Tables Row -->
+        <!-- Bottom Tables Row -->
         <div class="row mt-4">
+          <!-- Top Selling Products - Full Width -->
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Top Selling Products</h5>
+                <a href="{% url 'display_product' %}" class="btn btn-sm btn-soft-primary">View All</a>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Sold</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for product in top_products %}
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
+                              <div>
+                                <h6 class="mb-0">{{ product.name|truncatechars:20 }}</h6>
+                                <small class="text-muted">{{ product.brand_id.name }}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>₹{{ product.price|intcomma }}</td>
+                          <td>{{ product.total_sold|default:0 }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Recent Orders -->
-          <div class="col-lg-6">
+          <div class="col-lg-4">
             <div class="card">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Orders</h5>
@@ -156,46 +196,6 @@
                               {{ order.status|title }}
                             </span>
                           </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Top Products -->
-          <div class="col-lg-6">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Top Selling Products</h5>
-                <a href="{% url 'display_product' %}" class="btn btn-sm btn-soft-primary">View All</a>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-hover mb-0">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Sold</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for product in top_products %}
-                        <tr>
-                          <td>
-                            <div class="d-flex align-items-center">
-                              <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
-                              <div>
-                                <h6 class="mb-0">{{ product.name|truncatechars:20 }}</h6>
-                                <small class="text-muted">{{ product.brand_id.name }}</small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>₹{{ product.price|intcomma }}</td>
-                          <td>{{ product.total_sold|default:0 }}</td>
                         </tr>
                       {% endfor %}
                     </tbody>
@@ -242,10 +242,10 @@
   <script src="{% static 'admin/assets/js/pages/index.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
 
-  <!-- Sweet Alert JS -->
+<!-- Sweet Alert JS -->
   <script src="{% static 'admin/assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
   <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     // Sales Trend Chart with REAL DATA
     var salesOptions = {
         series: [{

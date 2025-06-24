@@ -154,22 +154,13 @@
   <div class="page-wrapper">
     <div class="page-content">
       <div class="container-xxl">
-        <!-- Flash Messages -->
-        {% if messages %}
-          <div class="row mb-3">
-            <div class="col-12">
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                  {{ message }}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
-
         <!-- Main Content -->
         <div class="row">
+        <!-- Messages display -->
+        {% include 'custom_alerts.html' with position='inline' %}
+        
+        <div class="row justify-content-center">
+
           <div class="col-12">
             <div class="card product-card">
               <!-- Product Header -->
@@ -296,6 +287,8 @@
           </div>
         </div>
       </div>
+      <!-- container -->
+        {% include 'footer.html' %}
     </div>
   </div>
 {% endblock %}

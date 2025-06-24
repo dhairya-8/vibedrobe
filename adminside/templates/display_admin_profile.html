@@ -165,41 +165,7 @@ Display Profile | VibeDrobe
                 </div>
             </div>
 
-            {% for message in messages %}
-            {% with message.tags as tags_list %}
-            {% if 'error' in tags_list %}
-            {% with alert_class='danger' %}
-            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
-                {{ message }}
-            </div>
-            {% endwith %}
-            {% elif 'success' in tags_list %}
-            {% with alert_class='success' %}
-            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
-                {{ message }}
-            </div>
-            {% endwith %}
-            {% elif 'warning' in tags_list %}
-            {% with alert_class='warning' %}
-            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
-                {{ message }}
-            </div>
-            {% endwith %}
-            {% elif 'info' in tags_list %}
-            {% with alert_class='info' %}
-            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
-                {{ message }}
-            </div>
-            {% endwith %}
-            {% else %}
-            {% with alert_class='secondary' %}
-            <div class="alert alert-{{ alert_class }} alert-auto-dismiss">
-                {{ message }}
-            </div>
-            {% endwith %}
-            {% endif %}
-            {% endwith %}
-            {% endfor %}
+            {% include 'custom_alerts.html' with position='inline' %}
 
             <!-- Personal Information Card -->
             <div class="row justify-content-center mb-4">
@@ -375,6 +341,7 @@ Display Profile | VibeDrobe
                 </div> <!-- end col -->
             </div> <!-- end row -->
         </div> <!-- container-xxl -->
+        {% include 'footer.html' %}
     </div> <!-- page-content -->
 </div>
 <!-- end page-wrapper -->

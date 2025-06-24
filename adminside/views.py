@@ -109,7 +109,7 @@ def login(request):
             try:
                 admin = Admin.objects.get(email=identifier)
             except Admin.DoesNotExist:
-                messages.error(request, 'Invalid username or email')
+                messages.info(request, 'Invalid username or email')
                 return render(request, 'login.html')
 
         if admin.check_password(password):
@@ -141,8 +141,45 @@ def login(request):
 def logout(request):
       request.session.flush()
       print("Admin logout successfully !")
-      messages.success(request, 'You have been successfully logged out.')
+      messages.info(request, 'You have been successfully logged out.')
       return redirect('login')
+
+def generate_random_password(length=12):
+    """Generate a random temporary password"""
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(random.choice(chars) for _ in range(length))
+
+def reset_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            admin = Admin.objects.get(email=email)
+            
+            # Generate and set new password
+            temp_password = generate_random_password()
+            admin.set_password(temp_password)  
+            admin.save()
+            
+            # Send email
+            send_mail(
+                'Your Temporary Password for VibeDrobe Admin',
+                f'Your temporary password is: {temp_password}\n\n'
+                f'Please login and change it immediately at:\n'
+                f'{request.build_absolute_uri("/login/")}\n\n'
+                f'Username/Email: {email}\n'
+                f'Temporary Password: {temp_password}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 'Temporary password sent. Check your email.')
+            return redirect('login')
+            
+        except Admin.DoesNotExist:
+            messages.error(request, 'No admin account found with this email.')
+    
+    return render(request, 'resetpassword.html')
 
 @method_decorator(admin_login_required, name='dispatch')
 class AdminProfileManagement(View):
@@ -242,31 +279,12 @@ class AdminProfileManagement(View):
         except Admin.DoesNotExist:
             messages.error(request, "Admin profile not found.")
             return redirect('admin_login')
-  
-@admin_login_required
-def display_admin_profile(request):
-    try:
-        # Get the logged-in admin
-        admin = Admin.objects.get(id=request.session.get('admin_id'))
-        
-        current_year = datetime.now().year
-        account_age = current_year - admin.created_at.year
-
-        context = {
-            'admin': admin,
-            'current_year': current_year,
-            'account_age': account_age,  # Pass the calculated age
-        }
-        
-        return render(request, 'display_admin_profile.html', context)
-        
-    except Admin.DoesNotExist:
-        messages.error(request, "Admin profile not found")
-        return redirect('admin_login')
 
 @admin_login_required
 def display_admin(request):
+    print("Admin display page")
     admins = Admin.objects.all()
+    print("admin data ----------->",admins)
     return render(request, 'display_admin.html', {'admins': admins})
     
 # Category Views
@@ -329,7 +347,7 @@ def delete_category(request, id):
         category = Category.objects.get(id=id)
         category_name = category.name
         category.delete()
-        messages.success(request, f"Category '{category_name}' deleted successfully!")
+        messages.info(request, f"Category '{category_name}' deleted successfully!")
     except Category.DoesNotExist:
         messages.error(request, "Category not found")
     return redirect('display_category')
@@ -402,7 +420,7 @@ def delete_subcategory(request, id):
     try:
         subcategory = Sub_Category.objects.get(id=id)
         subcategory.delete()
-        messages.success(request, "SubCategory deleted successfully!")
+        messages.info(request, "SubCategory deleted successfully!")
     except Sub_Category.DoesNotExist:
         messages.error(request, "SubCategory not found")
     return redirect('display_subcategory')
@@ -462,7 +480,7 @@ def delete_brand(request, id):
     try:
         brand = Brand.objects.get(id=id)
         brand.delete()
-        messages.success(request, "Brand deleted successfully!")
+        messages.info(request, "Brand deleted successfully!")
     except Brand.DoesNotExist:
         messages.error(request, "Brand not found")
     return redirect('display_brand')
@@ -525,7 +543,7 @@ def delete_size(request, id):
     try:
         size = Size.objects.get(id=id)
         size.delete()
-        messages.success(request, "Size deleted successfully!")
+        messages.info(request, "Size deleted successfully!")
     except Size.DoesNotExist:
         messages.error(request, "Size not found")
     return redirect('display_size')
@@ -588,7 +606,7 @@ def delete_material(request, id):
     try:
         material = Material.objects.get(id=id)
         material.delete()
-        messages.success(request, "Material deleted successfully!")
+        messages.info(request, "Material deleted successfully!")
     except Material.DoesNotExist:
         messages.error(request, "Material not found")
     return redirect('display_material')
@@ -962,7 +980,7 @@ def delete_product(request, product_id):
             if os.path.isfile(product.base_image.path):
                 os.remove(product.base_image.path)
         product.delete()
-        messages.success(request, 'Product deleted successfully!')
+        messages.info(request, 'Product deleted successfully!')
     except Exception as e:
         messages.error(request, f'Error deleting product: {str(e)}')
     
@@ -1045,7 +1063,7 @@ def delete_product_variant(request, id):
     
     try:
         variant.delete()
-        messages.success(request, "Variant deleted successfully!")
+        messages.info(request, "Variant deleted successfully!")
     except Exception as e:
         messages.error(request, f"Error deleting variant: {str(e)}")
     
@@ -1111,42 +1129,8 @@ def order_details_content(request, order_id):
     }
     return render(request, 'order_details_content.html', context)
 
-def generate_random_password(length=12):
-    """Generate a random temporary password"""
-    chars = string.ascii_letters + string.digits + "!@#$%^&*"
-    return ''.join(random.choice(chars) for _ in range(length))
 
-def reset_password(request):
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        try:
-            admin = Admin.objects.get(email=email)
-            
-            # Generate and set new password
-            temp_password = generate_random_password()
-            admin.set_password(temp_password)  # Make sure your Admin model has this method
-            admin.save()
-            
-            # Send email
-            send_mail(
-                'Your Temporary Password for VibeDrobe Admin',
-                f'Your temporary password is: {temp_password}\n\n'
-                f'Please login and change it immediately at:\n'
-                f'{request.build_absolute_uri("/login/")}\n\n'
-                f'Username/Email: {email}\n'
-                f'Temporary Password: {temp_password}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
-            
-            messages.success(request, 'Temporary password sent. Check your email.')
-            return redirect('login')
-            
-        except Admin.DoesNotExist:
-            messages.error(request, 'No admin account found with this email.')
-    
-    return render(request, 'resetpassword.html')
+
 
 def display_cart(request):
     return render(request, 'display_cart.html')

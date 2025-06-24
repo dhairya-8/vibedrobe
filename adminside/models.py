@@ -29,8 +29,8 @@ class Admin(models.Model):
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
 
-    def _str_(self):
-        return self.username
+    def __str__(self):
+        return f"Admin: {self.username} ({self.role})"
     
 class User(models.Model):
     email = models.EmailField(unique=True,null=False, blank=False,max_length=100)
@@ -49,8 +49,8 @@ class User(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    def _str_(self):
-        return self.username
+    def __str__(self):
+        return f"User#{self.id}: {self.email}"
 
 class User_Address(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -75,8 +75,8 @@ class Category(models.Model):
     sort_order = models.IntegerField(null=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f"Category: {self.name}"
 
 class Sub_Category(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE,related_name='subcategories')
@@ -84,32 +84,32 @@ class Sub_Category(models.Model):
     is_active = models.BooleanField(default=True)
     sort_order = models.IntegerField(null=False, default=0)
     
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f"SubCategory: {self.name} > {self.category_id.name}"
 
 class Brand(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f"Brand: {self.name}"
     
 class Size(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     sort_order = models.IntegerField(null=False, default=0)
     is_active = models.BooleanField(default=True)
     
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f"Size: {self.name}"
 
 class Material(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     description = models.TextField(max_length=200, null=False, blank=False)
     is_active = models.BooleanField(default=True)
     
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f"Material: {self.name[:20]}..."
 
 class Product(models.Model):
     name = models.CharField(max_length=200,null=False, blank=False)
@@ -117,7 +117,7 @@ class Product(models.Model):
     price = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
     base_image = models.ImageField(upload_to='products/base', null=True, blank=True)
     subcategory_id = models.ForeignKey(Sub_Category, on_delete=models.CASCADE)
-    fit_type = models.CharField(max_length=30, null=True, blank=True)
+    fit_type = models.CharField(max_length=50, blank=True, null=True)
     brand_id = models.ForeignKey(Brand, on_delete=models.CASCADE)
     color = models.CharField(max_length=50, null=False, blank=False)
     material_id = models.ForeignKey(Material, on_delete=models.CASCADE)
@@ -128,6 +128,9 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    def __str__(self):
+        return f"Product#{self.id}: {self.name[:50]} ({self.brand_id.name})"
+    
 class Product_Variants(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
     size_id = models.ForeignKey(Size, on_delete=models.CASCADE)
@@ -136,33 +139,51 @@ class Product_Variants(models.Model):
     reserved_quantity = models.IntegerField(default=0)
     additional_price = models.DecimalField(decimal_places=2,max_digits=8, null=True, default=0)
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.product_id.name} - {self.size_id.name} (SKU: {self.sku})"
     
 class Product_Gallery(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     image_path = models.ImageField(upload_to='products/gallery', null=True, blank=True)
     image_order = models.IntegerField(null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image #{self.image_order} for {self.product_id.name}"
     
 class Product_Tags(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     tag = models.TextField(max_length=50, null=False, blank=False)
+
+    def __str__(self):
+        return f"Tag: {self.tag[:20]}"
     
 class Cart(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"Cart#{self.id} for User#{self.user_id.id}"
+
 class Cart_Items(models.Model):
-    cart_id = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    cart_id = models.ForeignKey(Cart, on_delete=models.PROTECT)
     product_variant_id = models.ForeignKey(Product_Variants, on_delete=models.CASCADE)
     quantity = models.IntegerField(null=False, blank=False, default=1)
     price_at_time = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
     added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.quantity}x Variant#{self.product_variant_id.id}"
     
 class Wishlist(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Wish: User#{self.user_id.id} > Product#{self.product_id.id}"
 
 class Order_Master(models.Model):
     order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
@@ -176,15 +197,21 @@ class Order_Master(models.Model):
     expected_delivery = models.DateField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"
     
 class Order_Details(models.Model):
-    order_id = models.ForeignKey(Order_Master, on_delete=models.CASCADE)
+    order_id = models.ForeignKey(Order_Master, on_delete=models.PROTECT)
     product_variant_id = models.ForeignKey(Product_Variants, on_delete=models.CASCADE)
     quantity = models.IntegerField(null=False, blank=False)
     unit_price = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False )
     total_price = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
     product_name = models.CharField(max_length=200, null=False, blank=False)
     product_sku = models.CharField(max_length=50, null=False, blank=False)
+
+    def __str__(self):
+        return f"{self.quantity}x {self.product_name[:20]}"
     
 class Order_Address(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.CASCADE)
@@ -196,6 +223,9 @@ class Order_Address(models.Model):
     city = models.CharField(max_length=50, null=False, blank=False)
     state = models.CharField(max_length=50, null=False, blank=False)
     pincode = models.CharField(max_length=10, null=False, blank=False)
+
+    def __str__(self):
+        return f"Address for Order#{self.order_id.order_number}: {self.full_name} ({self.address_type})"
 
 class Payment(models.Model):
     payment_id = models.CharField(max_length=50, unique=True,null=False, blank=False)
@@ -214,6 +244,9 @@ class Payment(models.Model):
     transaction_date = models.DateField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Payment#{self.payment_id}: {self.status} (${self.amount})"
     
 class Shipping_Partners(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
@@ -222,17 +255,23 @@ class Shipping_Partners(models.Model):
     is_active = models.BooleanField(default=True)
     base_rate = models.DecimalField(decimal_places=2,max_digits=8, default=0)
 
+    def __str__(self):
+        return f"Courier: {self.name}"
+
 class Shipping(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.CASCADE)
     shipping_partners_id = models.ForeignKey(Shipping_Partners, on_delete=models.CASCADE)
     tracking_number = models.CharField(max_length=50, unique=True,null=True)
-    shipping_status = models.CharField(max_length=30, null=False, blank=False)
+    shipping_status = models.CharField(max_length=30, null=False, blank=False) # choices to be defined after discussion
     shipped_date = models.DateTimeField(null=True)
     excepted_delivery = models.DateField(null=True)
     delivered_date = models.DateTimeField(null=True)
     delivery_notes = models.TextField(max_length=300, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Ship#{self.tracking_number or 'NA'}: {self.shipping_status}"
     
 class ML_Feature_Vectors(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE, unique=True)
@@ -242,6 +281,9 @@ class ML_Feature_Vectors(models.Model):
     vector_length = models.IntegerField(null=False, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"ML: {self.product_id.name} ({self.model_name})"
     
 class Frequently_Bought_Together(models.Model):
     product_a_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fbt_a")
@@ -252,6 +294,9 @@ class Frequently_Bought_Together(models.Model):
     lift_score = models.DecimalField(decimal_places=4, max_digits=5, null=False, blank=False)
     last_calculated = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"FBT: {self.product_a_id.name} + {self.product_b_id.name}"
+
 class Review(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -260,3 +305,6 @@ class Review(models.Model):
     title = models.CharField(max_length=100, null=True)
     comment = models.TextField(max_length=1000, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review: {self.rating}★ for {self.product_id.name}"

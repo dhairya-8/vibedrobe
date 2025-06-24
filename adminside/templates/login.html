@@ -16,6 +16,8 @@
     <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'admin/assets/css/spinner.css' %}" rel="stylesheet" type="text/css" />
+
 
     <style>
       .error-popup {
@@ -61,6 +63,11 @@
   </head>
 
   <body>
+       <!-- Preloader div-->
+   <div id="preloader">
+      <div class="spinner"></div>
+   </div>
+
     <div class="container-xxl">
       <div class="row vh-100 d-flex justify-content-center">
         <div class="col-12 align-self-center">
@@ -117,17 +124,8 @@
                       </div> <!-- end form-group -->
                     </form>
                     
-                    {% if messages %}
-                    <div id="message-container">
-                      {% for message in messages %}
-                        <div class="error-popup" id="message-{{ forloop.counter }}">{{ message }}</div>
-                      {% endfor %}
-                    </div>
-                    {% endif %}
-                    <!-- end form -->
-                    <div class="text-center mb-2">
-                      {% comment %} <h6 class="px-3 d-inline-block">Or Login With</h6> {% endcomment %}
-                    </div>
+                      {% include 'custom_alerts.html' with position='inline' %}
+
                   </div>
                   <!-- end card-body -->
                 </div>
@@ -143,27 +141,15 @@
     </div>
     <!-- container -->
 
-    <script>
-      // Auto-dismiss messages after 3 seconds
-      document.addEventListener('DOMContentLoaded', function() {
-        const messages = document.querySelectorAll('.error-popup');
-        
-        messages.forEach(message => {
-          setTimeout(() => {
-            message.classList.add('fade-out');
-            
-            // Remove element after animation completes
-            setTimeout(() => {
-              message.remove();
-            }, 500); // Matches the fadeOut animation duration
-          }, 3000); // 3000 milliseconds = 3 seconds
-        });
-      });
-    </script>
-    <script>
-    // Debugging - check session status
-    console.log("Session admin_id:", "{{ request.session.admin_id }}");
-    console.log("Next parameter:", "{{ request.GET.next }}");
-    </script>
+   <!-- Preloader script-->
+   <script>
+    window.addEventListener('load', function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.add('hidden'); // Add the 'hidden' class to trigger the fade-out
+        }
+    });
+   </script>
+
 </body>
 </html>

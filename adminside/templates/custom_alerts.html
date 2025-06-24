@@ -1,0 +1,222 @@
+<!-- templates/alerts/custom_alerts.html -->
+<!-- 
+Usage:
+Positions: 'fixed-top-right', 'fixed-top-center', 'fixed-bottom-right', 'inline' (default)
+-->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+{% if custom_messages %}
+{% with position=position|default:'inline' %}
+<div class="alerts-container alerts-{{ position }} mb-4" id="alertsContainer-{{ forloop.counter0|default:'0' }}">
+{% for message in custom_messages %}
+    <div class="{{ message.alert_class }} alert-dismissible fade show custom-alert {% if not forloop.last %}mb-3{% else %}mb-0{% endif %}" 
+         role="alert" 
+         data-auto-dismiss="true">
+        {{ message.icon_circle_html|safe }}
+        <strong>{{ message.strong_text }}</strong> {{ message.message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+
+</div>
+{% endwith %}
+
+<!-- Dynamic CSS based on position -->
+<style>
+    
+    .custom-alert {
+        transition: all 0.3s ease-in-out;
+        opacity: 1;
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .custom-alert.fade-in {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .custom-alert.fade-out {
+        animation: slideOut 0.3s ease-in forwards;
+    }
+
+    /* Inline positioning (default) */
+    .alerts-inline {
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Fixed positioning options */
+    .alerts-fixed-top-right {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+        max-width: 400px;
+    }
+
+    .alerts-fixed-top-center {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        max-width: 500px;
+    }
+
+    .alerts-fixed-top-left {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1050;
+        max-width: 400px;
+    }
+
+    .alerts-fixed-bottom-right {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1050;
+        max-width: 400px;
+    }
+
+    .alerts-fixed-bottom-center {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        max-width: 500px;
+    }
+
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+
+    /* Bottom animations */
+    .alerts-fixed-bottom-right .custom-alert.fade-in,
+    .alerts-fixed-bottom-center .custom-alert.fade-in {
+        animation: slideInBottom 0.3s ease-out;
+    }
+
+    .alerts-fixed-bottom-right .custom-alert.fade-out,
+    .alerts-fixed-bottom-center .custom-alert.fade-out {
+        animation: slideOutBottom 0.3s ease-in forwards;
+    }
+
+    @keyframes slideInBottom {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideOutBottom {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+
+        .alerts-fixed-top-right,
+        .alerts-fixed-top-left,
+        .alerts-fixed-bottom-right {
+            left: 10px;
+            right: 10px;
+            max-width: none;
+        }
+
+        .alerts-fixed-top-center,
+        .alerts-fixed-bottom-center {
+            left: 10px;
+            right: 10px;
+            transform: none;
+            max-width: none;
+        }
+    }
+</style>
+
+<!-- JavaScript for auto-dismiss and smooth transitions -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const alertContainers = document.querySelectorAll('[id^="alertsContainer-"]');
+
+        alertContainers.forEach(function (container) {
+            const alerts = container.querySelectorAll('[data-auto-dismiss="true"]');
+
+            // Add fade-in animation to all alerts
+            alerts.forEach(function (alert, index) {
+                // Stagger the animations slightly
+                setTimeout(function () {
+                    alert.classList.add('fade-in');
+                }, index * 100);
+
+                // Auto-dismiss after 4 seconds
+                setTimeout(function () {
+                    dismissAlert(alert);
+                }, 4000 + (index * 100));
+            });
+
+            // Handle manual close button clicks
+            container.querySelectorAll('.btn-close').forEach(function (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    const alert = this.closest('.alert');
+                    dismissAlert(alert);
+                });
+            });
+        });
+
+        function dismissAlert(alert) {
+            if (alert && !alert.classList.contains('fade-out')) {
+                alert.classList.add('fade-out');
+
+                // Remove the element after animation completes
+                setTimeout(function () {
+                    if (alert.parentNode) {
+                        alert.remove();
+
+                        // Remove container if no alerts left
+                        const container = alert.closest('[id^="alertsContainer-"]');
+                        if (container && container.querySelectorAll('.alert').length === 0) {
+                            container.remove();
+                        }
+                    }
+                }, 300); // Match the animation duration
+            }
+        }
+    });
+</script>
+{% endif %}
