@@ -68,7 +68,7 @@
   <div class="page-wrapper">
     <div class="page-content">
       <div class="container-xxl">
-        {% include 'message.html' %}
+        {% include 'custom_alerts.html' with position='inline' %}
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
@@ -237,6 +237,9 @@
           </div>
         </div>
       </div>
+      <!-- Start Footer -->
+      {% include 'footer.html' %}
+      <!-- end footer -->
     </div>
   </div>
 {% endblock %}

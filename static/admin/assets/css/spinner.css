@@ -1,0 +1,42 @@
+/* Preloader Overlay */
+#preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #e5ccf0; /* Elegant white background, adjust as needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Ensure it's on top of everything */
+    transition: opacity 0.7s ease-out, visibility 0.7s ease-out; /* Smooth fade-out */
+}
+
+/* Spinner Design */
+.spinner {
+    width: 50px; /* Size of the spinner */
+    height: 50px;
+    border: 4px solid rgba(0, 0, 0, 0.1); /* Light border for the base */
+    border-top-color: #333; /* Darker color for the spinning part */
+    border-radius: 50%;
+    animation: spin 1s linear infinite; /* Simplified animation */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+    transform-origin: center; /* Ensure it spins from center */
+}
+
+/* Keyframe for Spinning Animation */
+@keyframes spin {
+    from { 
+        transform: rotate(0deg); 
+    }
+    to { 
+        transform: rotate(360deg); 
+    }
+}
+
+/* Hidden State for Preloader (after page loads) */
+#preloader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}

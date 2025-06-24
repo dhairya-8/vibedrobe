@@ -38,18 +38,7 @@
     <div class="page-content">
       <div class="container-xxl">
         <!-- Messages display -->
-        {% if messages %}
-        <div class="row">
-          <div class="col-12">
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show alert-auto-dismiss">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
+        {% include 'custom_alerts.html' with position='inline' %}
         
         <div class="row justify-content-center">
           <div class="col-12">
@@ -144,6 +133,7 @@
         <!-- end row -->
       </div>
       <!-- container -->
+        {% include 'footer.html' %}
     </div>
     <!-- end page content -->
   </div>

@@ -67,7 +67,7 @@ Add Product | VibeDrobe
 <div class="page-wrapper">
   <div class="page-content">
     <div class="container-xxl">
-      {% include 'message.html' %}
+      {% include 'custom_alerts.html' with position='inline' %}
       <div class="row justify-content-center">
         <div class="col-12">
           <div class="card">
@@ -271,6 +271,7 @@ Add Product | VibeDrobe
         </div>
       </div>
     </div>
+      {% include 'footer.html' %}
   </div>
 </div>
 {% endblock %}
