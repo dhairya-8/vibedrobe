@@ -50,6 +50,7 @@ urlpatterns = [
     path('delete_product<int:product_id>/', delete_product, name='delete_product'),
     path('display_product/', display_product, name='display_product'),
     path('products/template/download/', download_json_template, name='download_json_template'),
+    path('product_detail_modal/<int:product_id>/detail/', product_detail_modal, name='product_detail_modal'),
 
     # Product Variant URLs
     path('add_product_variant/<int:product_id>/', add_product_variant, name='add_product_variant'),
@@ -65,9 +66,7 @@ urlpatterns = [
     # Order's URLs
     path('display_orders/',display_orders,name='display_orders'),
     path('order_details_content/<int:order_id>/details/', order_details_content, name='order_details_content'),
-     
-    
-    path('display_shipping/',display_shipping,name='display_shipping'),
+
     path('display_cart/',display_cart,name='display_cart'),
     path('display_wishlist/',display_wishlist,name='display_wishlist'),
     path('display_payment/',display_payment,name='display_payment'),

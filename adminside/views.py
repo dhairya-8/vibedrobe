@@ -18,6 +18,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from django.http import JsonResponse
 
 @admin_login_required
 def index(request):
@@ -855,7 +856,6 @@ def add_product(request):
             }
     return render(request, 'add_product.html', context)
 
-
 @admin_login_required
 @require_GET
 def display_product(request):
@@ -985,7 +985,19 @@ def delete_product(request, product_id):
         messages.error(request, f'Error deleting product: {str(e)}')
     
     return redirect('display_product')
- 
+
+def product_detail_modal(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    gallery_images = Product_Gallery.objects.filter(product_id=product).order_by('image_order')
+    variants = Product_Variants.objects.filter(product_id=product)
+    
+    context = {
+        'product': product,
+        'gallery_images': gallery_images,
+        'variants': variants,
+    }
+    return render(request, 'product_detail_modal.html', context)
+
 # Product Variant Views
 @admin_login_required
 def add_product_variant(request, product_id):
@@ -1119,9 +1131,6 @@ def order_details_content(request, order_id):
 
 
 
-
-def display_shipping(request):
-    return render(request, 'display_shipping.html')
 
 def display_cart(request):
     return render(request, 'display_cart.html')

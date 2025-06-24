@@ -1,0 +1,218 @@
+<div class="container-fluid">
+  <!-- Product Header with Status -->
+  <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+    <div>
+      <h2 class="mb-1">{{ product.name }}</h2>
+      <div class="text-muted">SKU: {{ product.sku }}</div>
+    </div>
+    <span class="badge bg-{% if product.is_active %}success{% else %}danger{% endif %} fs-6 px-3 py-2">
+      {% if product.is_active %}ACTIVE{% else %}INACTIVE{% endif %}
+    </span>
+  </div>
+
+  <!-- 1. Product Details Section -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <h5 class="mb-0 fw-semibold"><i class="las la-info-circle me-2"></i>Product Information</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <!-- Main Product Image -->
+        <div class="col-lg-4 mb-4 mb-lg-0">
+          <div class="border rounded-3 p-2 bg-white text-center" style="height: 320px;">
+            {% if product.base_image %}
+              <img src="{{ product.base_image.url }}" 
+                   class="img-fluid h-100 object-fit-contain main-product-image" 
+                   alt="{{ product.name }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                <i class="las la-image fs-1"></i>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Product Information Table -->
+        <div class="col-lg-8">
+          <div class="table-responsive">
+            <table class="table table-borderless mb-0">
+              <tbody>
+                <tr>
+                  <td class="w-25 fw-semibold text-muted">Brand</td>
+                  <td>{{ product.brand_id.name }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Category</td>
+                  <td>
+                    <span class="badge bg-light text-dark">{{ product.subcategory_id.category_id.name }}</span>
+                    <i class="las la-angle-right mx-2 text-muted"></i>
+                    <span class="badge bg-light text-dark">{{ product.subcategory_id.name }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Price</td>
+                  <td class="fw-bold text-primary">₹{{ product.price }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Fit Type</td>
+                  <td class="fw-bold text-primary">{{ product.fit_type }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Color</td>
+                  <td>
+                    <span class="d-inline-block rounded-circle me-2" 
+                          style="width:16px; height:16px; background-color: {{ product.color.lower }};"></span>
+                    {{ product.color }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Material</td>
+                  <td>{{ product.material_id.name }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Gender</td>
+                  <td>{{ product.gender }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Weight</td>
+                  <td>{{ product.weight|default:"-" }} kg</td>
+                </tr>
+                <tr>
+                  <td class="fw-semibold text-muted">Dimensions</td>
+                  <td>{{ product.dimensions|default:"-" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Description -->
+          <div class="mt-4 pt-3 border-top">
+            <h6 class="fw-semibold mb-3">Description</h6>
+            <div class="bg-light rounded-3 p-3">
+              {{ product.description|linebreaks }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Variants Section -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold"><i class="las la-list-ul me-2"></i>Product Variants</h5>
+        <span class="badge bg-primary rounded-pill">{{ product.variants.count }} variants</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {% if product.variants.all %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Size</th>
+              <th>SKU</th>
+              <th>Stock</th>
+              <th>Available</th>
+              <th>+ Price</th>
+              <th>Total</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for variant in product.variants.all %}
+            <tr>
+              <td class="ps-4 fw-semibold">{{ variant.size_id.name }}</td>
+              <td><code>{{ variant.sku }}</code></td>
+              <td>{{ variant.stock_quantity }}</td>
+              <td class="fw-semibold">{{ variant.stock_quantity }}</td>
+              <td class="text-success">+₹{{ variant.additional_price }}</td>
+              <td class="fw-bold">₹{{ product.price|add:variant.additional_price }}</td>
+              <td class="text-center">
+                <span class="badge bg-{% if variant.is_active %}success{% else %}danger{% endif %} rounded-pill px-3 py-1">
+                  {% if variant.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="las la-box-open fs-1 text-muted mb-3"></i>
+        <p class="text-muted">No variants available for this product</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 3. Product Gallery Section -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold"><i class="las la-images me-2"></i>Product Gallery</h5>
+        <span class="badge bg-primary rounded-pill">{{ gallery_images.count }} images</span>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if gallery_images %}
+      <div class="row g-3">
+        {% for image in gallery_images %}
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="gallery-item position-relative border rounded-3 overflow-hidden">
+            <img src="{{ image.image_path.url }}" 
+                 class="img-fluid w-100 object-fit-cover cursor-zoom"
+                 style="height: 180px;"
+                 onclick="updateMainImage('{{ image.image_path.url }}')"
+                 alt="Gallery image {{ forloop.counter }}">
+            <div class="position-absolute top-0 end-0 bg-dark text-white px-2 py-1 small">
+              {{ forloop.counter }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="las la-camera fs-1 text-muted mb-3"></i>
+        <p class="text-muted">No additional images available</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .object-fit-contain {
+    object-fit: contain;
+  }
+  .object-fit-cover {
+    object-fit: cover;
+  }
+  .cursor-zoom {
+    cursor: zoom-in;
+  }
+  .gallery-item:hover {
+    transform: translateY(-3px);
+    transition: all 0.2s ease;
+  }
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+  }
+</style>
+
+<script>
+function updateMainImage(imageUrl) {
+  const mainImage = document.querySelector('.main-product-image');
+  if (mainImage) {
+    mainImage.src = imageUrl;
+    // Add temporary animation
+    mainImage.style.transform = 'scale(1.05)';
+    setTimeout(() => {
+      mainImage.style.transform = 'scale(1)';
+    }, 300);
+  }
+}
+</script>
