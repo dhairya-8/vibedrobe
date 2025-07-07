@@ -147,7 +147,7 @@
     </a>
 
     <div class="logo">
-      <a href="../index.html"><img src="{% static 'user/assets/images/VB_logo1.png' %}" alt="logo" class="logo__image d-block" /></a>
+      <a href="homepage.html"><img src="{% static 'user/assets/images/VB_logo1.png' %}" alt="logo" class="logo__image d-block" /></a>
     </div>
     <!-- /.logo -->
 
@@ -545,15 +545,14 @@
   <div class="container">
     <div class="header-desk header-desk_type_1">
       <div class="logo">
-        <a href="../index.html"><img src="{% static 'user/assets/images/VB_logo1.png' %}" alt="Uomo" style="width: 200px;" class="logo__image d-block" /></a>
+        <a href="homepage.html"><img src="{% static 'user/assets/images/VB_logo1.png' %}" alt="Uomo" style="width: 130px;" class="logo__image d-block" /></a>
       </div>
       <!-- /.logo -->
 
       <nav class="navigation">
         <ul class="navigation__list list-unstyled d-flex">
           <li class="navigation__item">
-            <a href="{% url 'homepage' %}" class="navigation__link">Home</a>
-           
+            <a href="{% url 'homepage' %}" class="navigation__link">Home</a>         
             <!-- /.box-menu -->
           </li>
           <li class="navigation__item">
@@ -658,6 +657,7 @@
         <!-- /.header-tools__item hover-container -->
 
         <div class="header-tools__item hover-container">
+
   {% if request.session.user_id %}
     <!-- User is logged in: show profile picture or username with dropdown -->
     <div class="dropdown">

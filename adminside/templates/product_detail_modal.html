@@ -1,9 +1,14 @@
 <div class="container-fluid">
+<<<<<<< HEAD
   <!-- Product Header -->
+=======
+  <!-- Product Header with Status -->
+>>>>>>> origin/dev
   <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
     <div>
       <h2 class="mb-1">{{ product.name }}</h2>
     </div>
+<<<<<<< HEAD
   </div>
 
 <!-- Place this at the top of your modal content -->
@@ -24,11 +29,23 @@
           </button>
         </form>
       </div>
+=======
+    <span class="badge bg-{% if product.is_active %}success{% else %}danger{% endif %} fs-6 px-3 py-2">
+      {% if product.is_active %}ACTIVE{% else %}INACTIVE{% endif %}
+    </span>
+  </div>
+
+  <!-- 1. Product Details Section -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <h5 class="mb-0 fw-semibold"><i class="las la-info-circle me-2"></i>Product Information</h5>
+>>>>>>> origin/dev
     </div>
     <div class="card-body">
       <div class="row">
         <!-- Main Product Image -->
         <div class="col-lg-4 mb-4 mb-lg-0">
+<<<<<<< HEAD
           <div class="border rounded-3 p-2 bg-white text-center" style="height: 420px;">
             {% if product.base_image %}
             <img src="{{ product.base_image.url }}" class="img-fluid h-100 object-fit-contain main-product-image"
@@ -41,6 +58,21 @@
           </div>
         </div>
 
+=======
+          <div class="border rounded-3 p-2 bg-white text-center" style="height: 320px;">
+            {% if product.base_image %}
+              <img src="{{ product.base_image.url }}" 
+                   class="img-fluid h-100 object-fit-contain main-product-image" 
+                   alt="{{ product.name }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                <i class="las la-image fs-1"></i>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        
+>>>>>>> origin/dev
         <!-- Product Information Table -->
         <div class="col-lg-8">
           <div class="table-responsive">
@@ -69,6 +101,7 @@
                 <tr>
                   <td class="fw-semibold text-muted">Color</td>
                   <td>
+<<<<<<< HEAD
                     {% if "color" in product.color.lower %}
                     <!-- Show only text if color contains text -->
                     {{ product.color }}
@@ -78,6 +111,11 @@
                       style="width:16px; height:16px; background-color: {{ product.color|lower }};"></span>
                     {{ product.color }}
                     {% endif %}
+=======
+                    <span class="d-inline-block rounded-circle me-2" 
+                          style="width:16px; height:16px; background-color: {{ product.color.lower }};"></span>
+                    {{ product.color }}
+>>>>>>> origin/dev
                   </td>
                 </tr>
                 <tr>
@@ -96,6 +134,7 @@
                   <td class="fw-semibold text-muted">Dimensions</td>
                   <td>{{ product.dimensions|default:"-" }}</td>
                 </tr>
+<<<<<<< HEAD
                 <tr>
                   <td class="fw-semibold text-muted">Status</td>
                   <td>
@@ -109,6 +148,12 @@
             </table>
           </div>
 
+=======
+              </tbody>
+            </table>
+          </div>
+          
+>>>>>>> origin/dev
           <!-- Description -->
           <div class="mt-4 pt-3 border-top">
             <h6 class="fw-semibold mb-3">Description</h6>
@@ -121,9 +166,15 @@
     </div>
   </div>
 
+<<<<<<< HEAD
   <!-- 2. Variants Section (Updated) -->
   <div class="card mb-4 border-0 shadow-sm">
     <div class="card-header bg-light border-bottom py-3">
+=======
+  <!-- 2. Variants Section -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+>>>>>>> origin/dev
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-semibold"><i class="las la-list-ul me-2"></i>Product Variants</h5>
         <span class="badge bg-primary rounded-pill">{{ product.variants.count }} variants</span>
@@ -131,6 +182,7 @@
     </div>
     <div class="card-body p-0">
       {% if product.variants.all %}
+<<<<<<< HEAD
       <form id="bulkVariantForm" method="post" action="{% url 'bulk_update_variants' product.id %}">
         {% csrf_token %}
         <div class="table-responsive">
@@ -182,13 +234,56 @@
       </form>
       {% else %}
         <!-- No variants message -->
+=======
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Size</th>
+              <th>SKU</th>
+              <th>Stock</th>
+              <th>Available</th>
+              <th>+ Price</th>
+              <th>Total</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for variant in product.variants.all %}
+            <tr>
+              <td class="ps-4 fw-semibold">{{ variant.size_id.name }}</td>
+              <td><code>{{ variant.sku }}</code></td>
+              <td>{{ variant.stock_quantity }}</td>
+              <td class="fw-semibold">{{ variant.stock_quantity }}</td>
+              <td class="text-success">+₹{{ variant.additional_price }}</td>
+              <td class="fw-bold">₹{{ product.price|add:variant.additional_price }}</td>
+              <td class="text-center">
+                <span class="badge bg-{% if variant.is_active %}success{% else %}danger{% endif %} rounded-pill px-3 py-1">
+                  {% if variant.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="las la-box-open fs-1 text-muted mb-3"></i>
+        <p class="text-muted">No variants available for this product</p>
+      </div>
+>>>>>>> origin/dev
       {% endif %}
     </div>
   </div>
 
   <!-- 3. Product Gallery Section -->
   <div class="card border-0 shadow-sm">
+<<<<<<< HEAD
     <div class="card-header bg-light border-bottom py-3">
+=======
+    <div class="card-header bg-white border-bottom py-3">
+>>>>>>> origin/dev
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-semibold"><i class="las la-images me-2"></i>Product Gallery</h5>
         <span class="badge bg-primary rounded-pill">{{ gallery_images.count }} images</span>
@@ -199,9 +294,18 @@
       <div class="row g-3">
         {% for image in gallery_images %}
         <div class="col-6 col-md-4 col-lg-3">
+<<<<<<< HEAD
           <div class="gallery-item position-relative border rounded-3 overflow-hidden" style="height: 225px;">
             <img src="{{ image.image_path.url }}" class="img-fluid w-100 h-100 object-fit-contain"
               onclick="updateMainImage('{{ image.image_path.url }}')" alt="Gallery image {{ forloop.counter }}">
+=======
+          <div class="gallery-item position-relative border rounded-3 overflow-hidden">
+            <img src="{{ image.image_path.url }}" 
+                 class="img-fluid w-100 object-fit-cover cursor-zoom"
+                 style="height: 180px;"
+                 onclick="updateMainImage('{{ image.image_path.url }}')"
+                 alt="Gallery image {{ forloop.counter }}">
+>>>>>>> origin/dev
             <div class="position-absolute top-0 end-0 bg-dark text-white px-2 py-1 small">
               {{ forloop.counter }}
             </div>
@@ -219,6 +323,7 @@
   </div>
 </div>
 
+<<<<<<< HEAD
 <!-- CSS -->
 <style>
   /* Required Styles */
@@ -289,4 +394,37 @@ document.getElementById('bulkVariantForm')?.addEventListener('submit', function(
         btn.innerHTML = '<i class="las la-spinner la-spin"></i> Saving...';
     }
 });
+=======
+<style>
+  .object-fit-contain {
+    object-fit: contain;
+  }
+  .object-fit-cover {
+    object-fit: cover;
+  }
+  .cursor-zoom {
+    cursor: zoom-in;
+  }
+  .gallery-item:hover {
+    transform: translateY(-3px);
+    transition: all 0.2s ease;
+  }
+  .table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+  }
+</style>
+
+<script>
+function updateMainImage(imageUrl) {
+  const mainImage = document.querySelector('.main-product-image');
+  if (mainImage) {
+    mainImage.src = imageUrl;
+    // Add temporary animation
+    mainImage.style.transform = 'scale(1.05)';
+    setTimeout(() => {
+      mainImage.style.transform = 'scale(1)';
+    }, 300);
+  }
+}
+>>>>>>> origin/dev
 </script>

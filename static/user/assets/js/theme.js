@@ -1143,7 +1143,10 @@ function pureFadeOut(e) {
       this.initAccessories();
       this.initMultiSelect();
       this.initBsTooltips();
+<<<<<<< HEAD
       this.initRangeSlider();
+=======
+>>>>>>> origin/dev
 
       new UomoElements.JsHoverContent();
       new UomoElements.Search();
@@ -1266,6 +1269,7 @@ function pureFadeOut(e) {
         return new bootstrap.Tooltip(tooltipTriggerEl)
       });
     }
+<<<<<<< HEAD
 
     initRangeSlider() {
       const selectors = {
@@ -1296,6 +1300,8 @@ function pureFadeOut(e) {
         }
       });
     }
+=======
+>>>>>>> origin/dev
   }
 
   document.addEventListener("DOMContentLoaded", function() {

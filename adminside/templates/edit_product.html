@@ -9,7 +9,14 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+<<<<<<< HEAD
 
+=======
+  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+>>>>>>> origin/dev
   <style>
     .image-preview {
       max-width: 200px;
@@ -177,7 +184,16 @@
                               <input name="color" type="text" class="form-control" required maxlength="15" value="{{ product.color }}" />
                             </div>
                           </div>
+<<<<<<< HEAD
 
+=======
+                        </div>
+                      </div>
+
+                      <!-- Second Row -->
+                      <div class="row mt-3">
+                        <div class="col-md-6">
+>>>>>>> origin/dev
                           <!-- Gender -->
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end required-field">Gender</label>
@@ -189,7 +205,21 @@
                               </select>
                             </div>
                           </div>
+<<<<<<< HEAD
                           
+=======
+
+                          <!-- SKU -->
+                          <div class="form-group row mb-3">
+                            <label class="col-lg-3 col-form-label text-end required-field">SKU</label>
+                            <div class="col-lg-9">
+                              <input name="sku" type="text" class="form-control" required maxlength="50" value="{{ product.sku }}" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="col-md-6">
+>>>>>>> origin/dev
                           <!-- Weight -->
                           <div class="form-group row mb-3">
                             <label class="col-lg-3 col-form-label text-end">Weight (kg)</label>
@@ -205,6 +235,7 @@
                               <input name="dimensions" type="text" class="form-control" maxlength="50" value="{{ product.dimensions }}" />
                             </div>
                           </div>
+<<<<<<< HEAD
 
                         </div>
                       </div>
@@ -213,6 +244,14 @@
                   </div>
                   <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary px-5 me-3">Update Product</button>
+=======
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary px-5">Update Product</button>
+>>>>>>> origin/dev
                     <a href="{% url 'display_product' %}" class="btn btn-secondary px-5">Cancel</a>
                   </div>
                 </form>

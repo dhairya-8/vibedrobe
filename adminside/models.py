@@ -62,6 +62,7 @@ class User(models.Model):
     def check_password(self, raw_password):
         """Verify password"""
         return check_password(raw_password, self.password)
+
     
     def __str__(self):
         return f"User#{self.id}: {self.email}"
@@ -156,6 +157,23 @@ class Product_Variants(models.Model):
 
     def __str__(self):
         return f"{self.product_id.name} - {self.size_id.name} (SKU: {self.sku})"
+
+    
+    def first_gallery_image(self):
+        """Returns the first gallery image ordered by image_order"""
+        return self.product_gallery_set.order_by('image_order').first()
+    
+    def has_gallery_images(self):
+        """Check if product has any gallery images"""
+        return self.product_gallery_set.exists()
+
+    @property
+    def product(self):
+        return self.product_id
+        
+    def get_main_image(self):
+        return self.product_id.images.first()
+
     
 class Product_Gallery(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -190,6 +208,15 @@ class Cart_Items(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x Variant#{self.product_variant_id.id}"
+
+    
+    @property
+    def total_price(self):
+        return self.price_at_time * self.quantity
+        
+    def __str__(self):
+        return f"{self.quantity}x {self.product_variant_id.product_id.name} in Cart#{self.cart_id.id}"
+
     
 class Wishlist(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)

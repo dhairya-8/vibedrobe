@@ -55,7 +55,6 @@ urlpatterns = [
     path('toggle-status/<int:product_id>/', toggle_product_status, name='toggle_product_status'),
     path('bulk-update-variants/<int:product_id>/', bulk_update_variants, name='bulk_update_variants'),
 
-
     # Product Variant URLs
     path('add_product_variant/<int:product_id>/', add_product_variant, name='add_product_variant'),
     path('display_product_variant/<int:product_id>/variants/', display_product_variant, name='display_product_variant'),
@@ -71,8 +70,13 @@ urlpatterns = [
     path('display_orders/',display_orders,name='display_orders'),
     path('order_details_content/<int:order_id>/details/', order_details_content, name='order_details_content'),
 
-    path('display_cart/',display_cart,name='display_cart'),
-    path('display_wishlist/',display_wishlist,name='display_wishlist'),
+    path('display_cart/', display_cart, name='display_cart'),
+    path('display_cart/user/<int:user_id>/', display_cart, name='admin_user_cart'),
+    
+    path('display_wishlist/', display_wishlist, name='display_wishlist'),
+    path('display_wishlist/user/<int:user_id>/', display_wishlist, name='admin_user_wishlist'),
+    
+
     path('display_payment/',display_payment,name='display_payment'),
     
     # Report URLs

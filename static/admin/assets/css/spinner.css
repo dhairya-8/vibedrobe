@@ -23,7 +23,10 @@
     animation: spin 1s linear infinite; /* Simplified animation */
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
     transform-origin: center; /* Ensure it spins from center */
+<<<<<<< HEAD
     position: absolute; /* Centering the spinner */
+=======
+>>>>>>> origin/dev
 }
 
 /* Keyframe for Spinning Animation */

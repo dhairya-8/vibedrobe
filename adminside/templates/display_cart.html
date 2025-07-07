@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
+<<<<<<< HEAD
   Display Cart | VibeDrobe
+=======
+  User Carts | VibeDrobe
+>>>>>>> origin/dev
 {% endblock %}
 
 {% block css %}
@@ -14,6 +18,11 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+<<<<<<< HEAD
+=======
+  <!-- Custom CSS for cart -->
+  <link href="{% static 'admin/assets/css/cart.css' %}" rel="stylesheet" type="text/css" />
+>>>>>>> origin/dev
 {% endblock %}
 
 {% block content %}
@@ -21,21 +30,45 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
+<<<<<<< HEAD
+=======
+
+        {% include 'custom_alerts.html' with position='inline' %}
+        
+>>>>>>> origin/dev
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
+<<<<<<< HEAD
                   <div class="col-auto">
                     <h4 class="card-title">View Cart</h4>
                   </div>
                   <!-- end col -->
                  
+=======
+                  <div class="col">
+                    <h4 class="card-title">User Carts</h4>
+                  </div>
+                  <!-- end col -->
+                  {% if show_all %}
+                  <div class="col-auto ms-auto">
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="Search carts..." id="cartSearch">
+                      <button class="btn btn-light" type="button">
+                        <i class="las la-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {% endif %}
+>>>>>>> origin/dev
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
+<<<<<<< HEAD
                 <div class="table-responsive">
                   <table class="table">
                     <thead class="table-light">
@@ -59,6 +92,96 @@
                     </tbody>
                   </table>
                 </div>
+=======
+                {% if show_all %}
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">All Active Carts</h4>
+                {% else %}
+                <div class="mb-3">
+                  <a href="{% url 'admin_carts' %}" class="btn btn-secondary">
+                    <i class="las la-arrow-left me-1"></i> Back to All Carts
+                  </a>
+                </div>
+                {% endif %}
+
+                {% for data in cart_data %}
+                <div class="card mb-3 border-light">
+                  <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <h5 class="mb-0">
+                          Cart #{{ data.cart.id }} - 
+                          <span class="text-primary">{{ data.user.username }}</span>
+                          <small class="text-muted">({{ data.user.email }})</small>
+                        </h5>
+                        <small class="text-muted">
+                          Created: {{ data.cart.created_at|date:"M d, Y H:i" }} | 
+                          Last Updated: {{ data.cart.updated_at|date:"M d, Y H:i" }}
+                        </small>
+                      </div>
+                      <span class="badge bg-primary rounded-pill">
+                        {{ data.item_count }} items | ${{ data.subtotal }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="card-body">
+                    {% if data.items %}
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle" id="cartTable{{ data.cart.id }}">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Product</th>
+                            <th>Variant</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Added On</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for item in data.items %}
+                          <tr>
+                            <td>
+                              <div class="d-flex align-items-center">
+                                {% if item.product_variant_id.product_id.base_image %}
+                                <img src="{{ item.product_variant_id.product_id.base_image.url }}" 
+                                     alt="{{ item.product_variant_id.product_id.name }}" 
+                                     class="rounded me-3" width="60">
+                                {% else %}
+                                <div class="rounded me-3 bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                  <i class="las la-image text-muted" style="font-size: 1.5rem;"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                  <h6 class="mb-0">{{ item.product_variant_id.product_id.name }}</h6>
+                                  <small class="text-muted">SKU: {{ item.product_variant_id.sku }}</small>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span class="badge bg-light text-dark">Size: {{ item.product_variant_id.size_id.name }}</span>
+                            </td>
+                            <td>${{ item.price_at_time }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td><strong>${{ item.total_price }}</strong></td>
+                            <td>{{ item.added_at|date:"M d, Y H:i" }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">This cart is empty</div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-warning">No carts found</div>
+                {% endfor %}
+>>>>>>> origin/dev
               </div>
               <!-- end card-body -->
             </div>
@@ -68,6 +191,7 @@
         <!-- end row -->
       </div>
       <!-- container -->
+<<<<<<< HEAD
       <!-- Start Rightbar -->
       <!-- Start Rightbar/offcanvas -->
    
@@ -75,22 +199,71 @@
       <!-- end Rightbar -->
       <!-- Start Footer -->
 
+=======
+>>>>>>> origin/dev
       {% include 'footer.html' %}
       <!-- end footer -->
     </div>
     <!-- end page content -->
   </div>
+<<<<<<< HEAD
   <!-- end page-wrapper -->
 {% endblock %}
 
 <!-- Javascript -->
 
+=======
+    <!-- end page-wrapper -->
+{% endblock %}
+
+>>>>>>> origin/dev
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
+<<<<<<< HEAD
   <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
 {% endblock %}
 <!-- end body -->
+=======
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  
+  <script>
+    // Initialize datatables for each cart table
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize all cart tables
+      document.querySelectorAll('[id^="cartTable"]').forEach(table => {
+        new DataTable(table, {
+          responsive: true,
+          searching: false,
+          paging: false,
+          info: false
+        });
+      });
+
+      // Search functionality for all carts view
+      if (document.getElementById('cartSearch')) {
+        document.getElementById('cartSearch').addEventListener('input', function(e) {
+          const searchTerm = e.target.value.toLowerCase();
+          document.querySelectorAll('.card.mb-3').forEach(card => {
+            const cardText = card.textContent.toLowerCase();
+            card.style.display = cardText.includes(searchTerm) ? '' : 'none';
+          });
+        });
+      }
+      
+      // Auto-dismiss alerts
+      setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss');
+        alerts.forEach(alert => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 300);
+        });
+      }, 3000);
+    });
+  </script>
+{% endblock %}
+>>>>>>> origin/dev

@@ -169,6 +169,12 @@
                   <h4 class="mb-0 product-title">
                     <i class="las la-box me-2"></i>{{ product.name }} Variants
                   </h4>
+<<<<<<< HEAD
+=======
+                  <a href="{% url 'add_product_variant' product_id=product.id %}" class="btn btn-primary btn-sm">
+                    <i class="las la-plus-circle me-1"></i> Add Variant
+                  </a>
+>>>>>>> origin/dev
                 </div>
               </div>
 
@@ -209,6 +215,7 @@
                 <hr class="my-4" />
 
                 <!-- Variants Table -->
+<<<<<<< HEAD
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <h5 class="mb-0"><i class="las la-list-ul me-2"></i>Product Variants</h5>
                     <div>
@@ -220,6 +227,9 @@
                       </a>
                     </div>
                 </div>
+=======
+                <h5 class="mb-3"><i class="las la-list-ul me-2"></i>Product Variants</h5>
+>>>>>>> origin/dev
 
                 {% if variants_data %}
                   <div class="table-responsive">
@@ -241,7 +251,11 @@
                               <strong>{{ item.variant.size_id.name }}</strong>
                             </td>
                             <td>
+<<<<<<< HEAD
                               {{ item.variant.sku }}
+=======
+                              <code class="text-muted">{{ item.variant.sku }}</code>
+>>>>>>> origin/dev
                             </td>
                             <td>{{ item.variant.stock_quantity }}</td>
                             <td>

@@ -13,10 +13,8 @@ urlpatterns = [
     path('', homepage, name='homepage'),
     path('homepage/', homepage, name='homepage'),
     path('shop/', shop, name='shop'),
-    path('product/<int:pk>/', product_detail, name='product_detail'),
     
     # Cart & Checkout URLs
-    path('cart/', cart, name='cart'),
     path('checkout/', checkout, name='checkout'),
     path('order-confirm/', orderconfirm, name='orderconfirm'),
     
@@ -26,4 +24,13 @@ urlpatterns = [
     # Static Pages
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
+    
+    # Priya's URLs
+    # Product detail page
+    path('product/<int:product_id>/', product_detail, name='product_detail'),  
+    # Add to cart
+    path('add-to-cart/<int:product_id>/', add_to_cart, name='add_to_cart'), 
+    # Add to wishlist
+    path('add-to-wishlist/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
+
 ]

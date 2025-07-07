@@ -8,6 +8,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.conf import settings
 import random, string, os, json, logging
+import random, string, os, json
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import timedelta
@@ -22,7 +23,9 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.db import transaction
 from django.views.decorators.http import require_POST
-
+from django.http import HttpResponse
+from django.contrib.auth.decorators import user_passes_test
+from django.db import transaction
 
 @admin_login_required
 def index(request):
@@ -287,6 +290,8 @@ class AdminProfileManagement(View):
 @admin_login_required
 def display_admin(request):
     admins = Admin.objects.all()
+    print("Admin display page")
+    print("admin data ----------->",admins)
     return render(request, 'display_admin.html', {'admins': admins})
     
 # Category Views
@@ -895,7 +900,9 @@ def add_product(request):
                                                 variant_skus.add(variant_sku)
 
                                                 size_value = variant['size']
+
                                                 # Handle both string and numeric sizes
+
                                                 if isinstance(size_value, (int, float)):
                                                     size_name = str(size_value).lower()
                                                 else:
@@ -1089,7 +1096,7 @@ def display_product(request):
     products = products.annotate(variant_count=Count('variants'))
     
     # Pagination (12 items per page)
-    paginator = Paginator(products, 12)
+    paginator = Paginator(products, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -1148,7 +1155,9 @@ def edit_product(request, product_id):
                 filename = fs.save(new_image.name, new_image)
                 product.base_image = fs.url(filename)
             
+
             product.updated_at = timezone.now()  # Update timestamp
+
             product.save()
             messages.success(request, 'Product updated successfully!')
             return redirect('display_product')
@@ -1380,13 +1389,70 @@ def order_details_content(request, order_id):
     return render(request, 'order_details_content.html', context)
 
 
+@admin_login_required
+def display_cart(request, user_id=None):
+    # If specific user_id is provided, show their cart
+    if user_id:
+        user = get_object_or_404(User, id=user_id)
+        carts = Cart.objects.filter(user_id=user)
+    else:
+        # Show all active carts if no user specified
+        carts = Cart.objects.all()
+    
+    cart_data = []
+    for cart in carts:
+        cart_items = Cart_Items.objects.filter(cart_id=cart).select_related(
+            'product_variant_id__product_id',
+            'product_variant_id__size_id',
+        )
+        
+        cart_subtotal = sum(item.total_price for item in cart_items)
+        
+        cart_data.append({
+            'cart': cart,
+            'user': cart.user_id,
+            'items': cart_items,
+            'subtotal': cart_subtotal,
+            'item_count': cart_items.count()
+        })
+    
+    context = {
+        'cart_data': cart_data,
+        'show_all': user_id is None
+    }
+    
+    return render(request, 'display_cart.html', context)
 
-# Miscellaneous Views
-def display_cart(request):
-    return render(request, 'display_cart.html')
+@user_passes_test(lambda u: u.is_staff)
+def display_wishlist(request, user_id=None):
+    # If specific user_id is provided, show their wishlist
+    if user_id:
+        user = get_object_or_404(User, id=user_id)
+        wishlists = Wishlist.objects.filter(user_id=user)
+    else:
+        # Show all wishlists if no user specified
+        wishlists = Wishlist.objects.all()
+    
+    # Group by user
+    wishlist_data = {}
+    for wish in wishlists.select_related('user_id', 'product_id'):
+        if wish.user_id not in wishlist_data:
+            wishlist_data[wish.user_id] = {
+                'user': wish.user_id,
+                'items': [],
+                'count': 0
+            }
+        wishlist_data[wish.user_id]['items'].append(wish)
+        wishlist_data[wish.user_id]['count'] += 1
+    
+    context = {
+        'wishlist_data': wishlist_data.values(),
+        'show_all': user_id is None
+    }
+    
+    return render(request, 'display_wishlist.html', context)
 
-def display_wishlist(request):
-    return render(request, 'display_wishlist.html')
+# Miscellaneous Views, PENDING
 
 def display_payment(request):
     return render(request, 'display_payment.html')
