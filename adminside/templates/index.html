@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+{% block title %}
+  Dashboard | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/jsvectormap/css/jsvectormap.min.css' %}" />
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <div class="page-content">
+      <div class="container-xxl">
+        <!-- Summary Cards -->
+        <div class="row">
+          <!-- Orders Today -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted mb-2">Orders Today</h6>
+                    <h3 class="mb-0">{{ orders_today }}</h3>
+                    <small class="text-muted">{{ today|date:'M d, Y' }}</small>
+                  </div>
+                  <div class="bg-primary bg-opacity-10 p-3 rounded">
+                    <i class="iconoir-shopping-bag fs-3 text-primary"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Revenue -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted mb-2">Weekly Revenue</h6>
+                    <h3 class="mb-0">₹{{ revenue_week|intcomma }}</h3>
+                    <small class="text-muted">{{ last_week|date:'M d' }} - {{ today|date:'M d' }}</small>
+                  </div>
+                  <div class="bg-success bg-opacity-10 p-3 rounded">
+                    <i class="iconoir-wallet fs-3 text-success"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted mb-2">Low Stock</h6>
+                    <h3 class="mb-0">{{ low_stock }}</h3>
+                    <small class="text-danger">{{ out_of_stock }} out of stock</small>
+                  </div>
+                  <div class="bg-warning bg-opacity-10 p-3 rounded">
+                    <i class="iconoir-warning-triangle fs-3 text-warning"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- New Customers -->
+          <div class="col-md-6 col-lg-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="text-muted mb-2">New Users</h6>
+                    <h3 class="mb-0">{{ recent_users.count }}</h3>
+                    <small class="text-success">This week</small>
+                  </div>
+                  <div class="bg-info bg-opacity-10 p-3 rounded">
+                    <i class="iconoir-user fs-3 text-info"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Charts Row - Same Height -->
+        <div class="row mt-4">
+          <!-- Weekly Sales Trend -->
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">Weekly Sales Trend</h5>
+              </div>
+              <div class="card-body">
+                <div id="sales-trend-chart" style="min-height: 350px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Status Chart -->
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">Order Status</h5>
+              </div>
+              <div class="card-body">
+                <div id="order-status-chart" style="min-height: 350px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Tables Row -->
+        <div class="row mt-4">
+          <!-- Top Selling Products - Full Width -->
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Top Selling Products</h5>
+                <a href="{% url 'display_product' %}" class="btn btn-sm btn-soft-primary">View All</a>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Sold</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for product in top_products %}
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
+                              <div>
+                                <h6 class="mb-0">{{ product.name|truncatechars:20 }}</h6>
+                                <small class="text-muted">{{ product.brand_id.name }}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>₹{{ product.price|intcomma }}</td>
+                          <td>{{ product.total_sold|default:0 }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Orders -->
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Orders</h5>
+                <a href="{% url 'display_orders' %}" class="btn btn-sm btn-soft-primary">View All</a>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in recent_orders %}
+                        <tr>
+                          <td>
+                            <a href="{% url 'order_details_content' order.id %}">{{ order.order_number|truncatechars:8 }}</a>
+                          </td>
+                          <td>{{ order.user_id.first_name }} {{ order.user_id.last_name }}</td>
+                          <td>₹{{ order.total_amount|intcomma }}</td>
+                          <td>
+                            <span class="badge bg-{% if order.status == 'completed' %}
+                                success
+                              {% else %}
+                                warning
+                              {% endif %}">
+                              {{ order.status|title }}
+                            </span>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="footer text-center text-sm-start d-print-none">
+        <div class="container-xxl">
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-0 rounded-bottom-0">
+                <div class="card-body">
+                  <p class="text-muted mb-0">
+                    {% comment %}©<script>
+                                    document.write(new Date().getFullYear())
+                                  </script> {% endcomment %}
+                    <span class="text-muted d-none d-sm-inline-block float-end">
+                      VibeDrobe
+                      <i class="iconoir-heart text-danger"></i>
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+
+  <script src="{% static 'admin/assets/libs/apexcharts/apexcharts.min.js' %}"></script>
+  <script src="{% static 'admin/assets/data/stock-prices.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/jsvectormap/js/jsvectormap.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/jsvectormap/maps/world.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/index.init.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+<!-- Sweet Alert JS -->
+  <script src="{% static 'admin/assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sales Trend Chart with REAL DATA
+    var salesOptions = {
+        series: [{
+            name: 'Sales',
+            data: {{ sales_trend|safe }}
+        }],
+        chart: {
+            height: 350,
+            type: 'area',
+            toolbar: { show: false }
+        },
+        colors: ['#5b73e8'],
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: {
+            categories: {{ week_days|safe }}
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return "₹" + val.toLocaleString('en-IN')
+                }
+            }
+        }
+    };
+    var salesChart = new ApexCharts(document.querySelector("#sales-trend-chart"), salesOptions);
+    salesChart.render();
+
+    // Order Status Chart with REAL DATA
+    var orderOptions = {
+        series: {{ status_values|safe }},
+        chart: { height: 300, type: 'donut' },
+        labels: {{ status_labels|safe }},
+        colors: ['#34c38f', '#5b73e8', '#f1b44c', '#f46a6a'],
+        legend: { position: 'bottom' },
+        responsive: [{
+            breakpoint: 480,
+            options: { chart: { width: 200 }, legend: { position: 'bottom' } }
+        }]
+    };
+    var orderChart = new ApexCharts(document.querySelector("#order-status-chart"), orderOptions);
+    orderChart.render();
+});
+</script>
+
+  <script>
+   document.addEventListener('DOMContentLoaded', function() {
+    // Check for our special success message
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' and message.message == 'show_sweet_alert' %}
+                // Show the SweetAlert mixin example
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                })
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Signed in successfully'
+                })
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+  </script>
+{% endblock %}

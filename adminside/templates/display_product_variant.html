@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  {{ product.name }} Variants | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
+
+  <!-- App CSS -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+  <!-- Custom Styles -->
+  <style>
+    .product-card {
+      border-radius: 8px;
+      border: 1px solid #eef2f7;
+      background-color: #fff;
+    }
+    
+    .product-header {
+      background-color: #f8f9fa;
+      border-radius: 8px 8px 0 0;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eef2f7;
+    }
+    
+    .product-image-container {
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      padding: 10px;
+      border: 1px solid #eef2f7;
+    }
+    
+    .product-image {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    
+    .product-title {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+    
+    .product-price {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #28a745; /* Changed from blue to green */
+    }
+    
+    .variant-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .variant-table thead th {
+      background-color: #f8f9fa;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 500;
+      color: #495057;
+      border-bottom: 1px solid #eef2f7;
+    }
+    
+    .variant-table tbody tr {
+      border-bottom: 1px solid #eef2f7;
+    }
+    
+    .variant-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    .variant-table td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+    
+    .action-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    
+    .action-btn {
+      color: #6c757d;
+      transition: color 0.15s ease;
+    }
+    
+    .action-btn:hover {
+      color: #2c3e50;
+      text-decoration: none;
+    }
+    
+    .action-btn.edit:hover {
+      color: #3b5de7;
+    }
+    
+    .action-btn.delete:hover {
+      color: #dc3545;
+    }
+    
+    .empty-state {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .empty-state-icon {
+      font-size: 2.5rem;
+      color: #adb5bd;
+      margin-bottom: 15px;
+    }
+    
+    .badge-status {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .badge-status.active {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .badge-status.inactive {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .text-muted {
+      color: #6c757d !important;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <div class="page-content">
+      <div class="container-xxl">
+        <!-- Main Content -->
+        <div class="row">
+        <!-- Messages display -->
+        {% include 'custom_alerts.html' with position='inline' %}
+        
+        <div class="row justify-content-center">
+
+          <div class="col-12">
+            <div class="card product-card">
+              <!-- Product Header -->
+              <div class="card-header product-header">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h4 class="mb-0 product-title">
+                    <i class="las la-box me-2"></i>{{ product.name }} Variants
+                  </h4>
+                  <a href="{% url 'add_product_variant' product_id=product.id %}" class="btn btn-primary btn-sm">
+                    <i class="las la-plus-circle me-1"></i> Add Variant
+                  </a>
+                </div>
+              </div>
+
+              <!-- Product Summary -->
+              <div class="card-body">
+                <div class="row mb-4">
+                  <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="product-image-container">
+                      {% if product.base_image %}
+                        <img src="{{ product.base_image.url }}" class="product-image" alt="{{ product.name }}" />
+                      {% else %}
+                        <i class="las la-image fs-1 text-muted"></i>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-9">
+                    <div class="d-flex flex-column h-100 justify-content-between">
+                      <div>
+                        <span class="badge bg-light text-dark mb-2">{{ product.brand_id.name }}</span>
+                        <h3 class="mb-2">{{ product.name }}</h3>
+                        <p class="text-muted mb-3">{{ product.description|truncatechars:200 }}</p>
+                      </div>
+                      <div class="d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="mb-2 mb-sm-0">
+                          <span class="product-price">₹{{ product.price }}</span>
+                          <span class="badge-status {% if product.is_active %}active{% else %}inactive{% endif %} ms-2">
+                            {% if product.is_active %}Active{% else %}Inactive{% endif %}
+                          </span>
+                        </div>
+                        <div>
+                          <span class="text-muted">{{ variants_data|length }} Variant{{ variants_data|pluralize }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- Variants Table -->
+                <h5 class="mb-3"><i class="las la-list-ul me-2"></i>Product Variants</h5>
+
+                {% if variants_data %}
+                  <div class="table-responsive">
+                    <table class="table variant-table" id="variantsTable">
+                      <thead>
+                        <tr>
+                          <th>Size</th>
+                          <th>SKU</th>
+                          <th>Stock</th>
+                          <th>Price</th>
+                          <th>Status</th>
+                          <th class="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for item in variants_data %}
+                          <tr>
+                            <td>
+                              <strong>{{ item.variant.size_id.name }}</strong>
+                            </td>
+                            <td>
+                              <code class="text-muted">{{ item.variant.sku }}</code>
+                            </td>
+                            <td>{{ item.variant.stock_quantity }}</td>
+                            <td>
+                              <span class="fw-semibold">₹{{ item.total_price }}</span>
+                              {% if item.total_price != product.price %}
+                                <small class="text-muted d-block">Base: ₹{{ product.price }}</small>
+                              {% endif %}
+                            </td>
+                            <td>
+                              <span class="badge-status {% if item.variant.is_active %}active{% else %}inactive{% endif %}">
+                                {% if item.variant.is_active %}Active{% else %}Inactive{% endif %}
+                              </span>
+                            </td>
+                            <td>
+                              <div class="action-btns">
+                                <a href="{% url 'edit_product_variant' variant_id=item.variant.id %}" 
+                                   class="action-btn edit" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Edit">
+                                  <i class="las la-pen"></i>
+                                </a>
+                                <a href="{% url 'delete_product_variant' id=item.variant.id %}" 
+                                   class="action-btn delete" 
+                                   onclick="return confirm('Are you sure you want to delete this variant?')" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Delete">
+                                  <i class="las la-trash-alt"></i>
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <div class="empty-state">
+                    <div class="empty-state-icon">
+                      <i class="las la-box-open"></i>
+                    </div>
+                    <h4 class="mb-3">No Variants Found</h4>
+                    <p class="text-muted mb-4">This product doesn't have any variants yet. Add one to get started.</p>
+                    <a href="{% url 'add_product_variant' product_id=product.id %}" class="btn btn-primary btn-sm">
+                      <i class="las la-plus-circle me-1"></i> Add First Variant
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- container -->
+        {% include 'footer.html' %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize DataTable
+      if (document.getElementById('variantsTable')) {
+        new DataTable('#variantsTable', {
+          responsive: true,
+          dom: '<"top"f>rt<"bottom"lip><"clear">',
+          pageLength: 10,
+          language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search variants...",
+          }
+        });
+      }
+      
+      // Initialize tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+      
+      // Auto-dismiss alerts after 5 seconds
+      setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+          var bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        });
+      }, 5000);
+    });
+  </script>
+{% endblock %}

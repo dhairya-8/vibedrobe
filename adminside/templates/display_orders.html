@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Order Management | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- App favicon -->
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    .modal-lg {
+      max-width: 90%;
+    }
+    .order-details-table th {
+      background-color: #f8f9fa;
+    }
+    .order-details-table td,
+    .order-details-table th {
+      padding: 0.75rem;
+      vertical-align: middle;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        {% include 'custom_alerts.html' with position='inline' %}
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Order Management</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">All Orders</h4>
+                <div class="table-responsive">
+                  <table class="table" id="ordersTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Order Date</th>
+                        <th>Status</th>
+                        <th>Total Amount</th>
+                        <th>Expected Delivery</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in orders %}
+                        <tr>
+                          <td>{{ order.order_number }}</td>
+                          <td>{{ order.user_id.get_full_name|default:order.user_id.username }}</td>
+                          <td>{{ order.order_date|date:'Y-m-d H:i' }}</td>
+                          <td>
+                            <span class="badge 
+                            {% if order.status == 'Completed' %}
+                                
+                                bg-success
+
+
+                              {% elif order.status == 'Cancelled' %}
+                                
+                                bg-danger
+
+
+                              {% elif order.status == 'Processing' %}
+                                
+                                bg-warning
+
+
+                              {% elif order.status == 'Shipped' %}
+                                
+                                bg-info
+
+
+                              {% else %}
+                                
+                                bg-secondary
+
+                              {% endif %}">
+                              {{ order.status }}
+                            </span>
+                          </td>
+                          <td>₹{{ order.total_amount }}</td>
+                          <td>{{ order.expected_delivery|date:'Y-m-d' }}</td>
+                          <td>
+                            <button class="btn btn-sm btn-primary view-order-details" data-order-id="{{ order.id }}" data-bs-toggle="modal" data-bs-target="#orderDetailsModal"><i class="las la-eye"></i> Details</button>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="7" class="text-center">No orders found</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Footer -->
+      {% include 'footer.html' %}
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+
+  <!-- Order Details Modal -->
+  <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="orderDetailsContent">
+          <!-- Content will be loaded via AJAX -->
+          <div class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+  <script>
+    // Initialize datatable
+    document.addEventListener('DOMContentLoaded', function () {
+      new DataTable('#ordersTable', {
+        responsive: true,
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        pageLength: 10
+      })
+    
+      // Auto-dismiss alerts
+      setTimeout(function () {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss')
+        alerts.forEach((alert) => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3'
+          alert.style.opacity = '0'
+          setTimeout(() => alert.remove(), 300)
+        })
+      }, 3000)
+    
+      // Order details modal
+      document.querySelectorAll('.view-order-details').forEach((button) => {
+        button.addEventListener('click', function () {
+          const orderId = this.getAttribute('data-order-id')
+          const modalContent = document.getElementById('orderDetailsContent')
+    
+          // Show loading spinner
+          modalContent.innerHTML = `
+                    <div class="text-center">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  `
+    
+          // Fetch order details via AJAX
+          fetch(`/adminside/order_details_content/${orderId}/details/`)
+            .then((response) => response.text())
+            .then((html) => {
+              modalContent.innerHTML = html
+            })
+            .catch((error) => {
+              modalContent.innerHTML = `
+            <div class="alert alert-danger">
+                Error loading details: ${error.message}
+                <br>Please check console for details.
+            </div>
+        `
+              console.error('Error:', error)
+            })
+        })
+      })
+    })
+  </script>
+{% endblock %}

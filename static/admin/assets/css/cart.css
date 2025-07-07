@@ -1,0 +1,35 @@
+/* Cart page specific styles */
+.cart-item-img {
+    max-width: 80px;
+    height: auto;
+}
+
+.quantity-selector {
+    max-width: 120px;
+}
+
+.product-card {
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-card img {
+    transition: all 0.3s ease;
+}
+
+.product-card:hover img {
+    opacity: 0.9;
+}
+
+.card.border {
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+}

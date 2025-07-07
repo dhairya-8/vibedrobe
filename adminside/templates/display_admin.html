@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Display Admins | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- App favicon -->
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col-auto">
+                    <h4 class="card-title">Admins</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">View Admins</h4>
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for admin in admins %}
+                      <tr>
+                        <td>{{ admin.id }}</td>
+                        <td>{{ admin.email }}</td>
+                        <td>{{ admin.username }}</td>
+                        <td>{{ admin.first_name }}</td>
+                        <td>{{ admin.last_name }}</td>
+                        <td>{{ admin.role }}</td>
+                        <td>
+                          {% if admin.is_active %}
+                            <span class="badge bg-success">Active</span>
+                          {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                          {% endif %}
+                        </td>
+                        <td>{{ admin.last_login }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Start Rightbar -->
+      <!-- Start Rightbar/offcanvas -->
+   
+      <!-- end Rightbar/offcanvas -->
+      <!-- end Rightbar -->
+      <!-- Start Footer -->
+
+      {% include 'footer.html' %}
+      <!-- end footer -->
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+{% endblock %}
+
+<!-- Javascript -->
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+{% endblock %}
+<!-- end body -->

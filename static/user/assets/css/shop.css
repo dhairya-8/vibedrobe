@@ -1,0 +1,245 @@
+
+  /* Product card image styling */
+.pc__img-wrapper_wide3 {
+  position: relative;
+  overflow: hidden;
+  background-color: #f8f9fa; /* Light background for better contrast */
+}
+
+.pc__img-wrapper_wide3 img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+  object-fit: contain; /* This ensures the whole image is visible */
+  padding: 10px; /* Add some padding around the image */
+}
+
+.pc__img-wrapper_wide3:hover img {
+  transform: scale(1.03); /* Slight zoom on hover */
+}
+
+/* For consistent card heights */
+.product-card_style9 {
+  border-radius: 10px !important;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.pc__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make sure all cards in a row have the same height */
+.product-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+/* Improved Category Dropdown Styles */
+.accordion-button__icon.type2 {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+  width: 12px;
+  height: 12px;
+}
+
+.accordion-button:not(.collapsed) .accordion-button__icon.type2 {
+  transform: rotate(180deg);
+}
+
+/* Subcategory dropdown styles */
+.subcategory-toggle {
+  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.subcategory-toggle[aria-expanded="true"] .subcategory-arrow {
+  transform: rotate(180deg);
+}
+
+.subcategory-arrow {
+  transition: transform 0.2s ease;
+  width: 10px; /* Slightly smaller than header arrow */
+  height: 10px;
+  color: #6c757d; /* Subtle gray color */
+}
+
+/* Menu link styles */
+.menu-link {
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.menu-link:hover {
+  color: #000;
+  font-weight: 500;
+}
+
+/* Better alignment for category items */
+.list-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.d-flex.justify-content-between.align-items-center {
+  width: 100%;
+}
+
+/* Differentiate header arrow from item arrows */
+.accordion-button__icon.type2 {
+  color: #333; /* Darker for header */
+}
+
+.subcategory-arrow {
+  color: #6c757d; /* Lighter for items */
+}
+
+/* Size filter styles */
+.swatch-size {
+  min-width: 40px;
+  text-align: center;
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+}
+
+.swatch-size:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.swatch-size.active {
+  background-color: #000;
+  color: #fff;
+  border-color: #000;
+}
+.brand-scroll-container {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--light);
+}
+
+.brand-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.brand-scroll-container::-webkit-scrollbar-track {
+  background: var(--light);
+}
+
+.brand-scroll-container::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 6px;
+}
+
+.active-brand {
+  font-weight: 600;
+  color: var(--primary) !important;
+}
+
+.search-field__input {
+  border-radius: 4px !important;
+  border: 1px solid #dee2e6 !important;
+}
+
+.search-field__input:focus {
+  box-shadow: none;
+  border-color:rgb(0, 0, 0) !important;
+}
+
+/* Highlight selected subcategory */
+.menu-link.fw-bold.text-dark {
+    color: #000 !important;
+    font-weight: 600 !important;
+    position: relative;
+}
+
+.menu-link.fw-bold.text-dark:before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 60%;
+    background-color: #000;
+    border-radius: 2px;
+}
+
+/* Clear filters button */
+.clear-filters-btn {
+  position: absolute;
+  right: 15px;
+  top: 0;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 767.98px) {
+  .clear-filters-btn {
+    position: static;
+    transform: none;
+    margin-top: 10px;
+    text-align: right;
+  }
+}
+
+/* Clear All Filters button styles */
+#clear-all-filters {
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+#clear-all-filters:hover {
+  color: #dc3545 !important;
+}
+
+@media (max-width: 767.98px) {
+  #clear-all-filters {
+    margin-left: 0;
+    margin-right: auto;
+    order: -1 !important;
+    padding-left: 0;
+  }
+}
+
+/* Style for the dynamic range display */
+.slider-range-display {
+  font-size: 10px;
+  font-weight: 500;
+  color: #000;
+  background: rgba(255,255,255,0.9);
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -35px;
+  z-index: 5;
+}
+
+/* Adjust tooltip positions */
+.slider-handle .tooltip.tooltip-main {
+  transform: translateX(-50%) !important;
+}
+.slider-handle.round .tooltip.tooltip-main {
+  transform: translateX(-50%) !important;
+}

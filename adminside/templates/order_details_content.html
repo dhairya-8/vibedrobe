@@ -1,0 +1,154 @@
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <h5>Order Information</h5>
+      <table class="table table-bordered">
+        <tr>
+          <th>Order Number</th>
+          <td>{{ order.order_number }}</td>
+        </tr>
+        <tr>
+          <th>Order Date</th>
+          <td>{{ order.order_date|date:"Y-m-d H:i" }}</td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td>
+            <span class="badge 
+              {% if order.status == 'Completed' %}bg-success
+              {% elif order.status == 'Cancelled' %}bg-danger
+              {% elif order.status == 'Processing' %}bg-warning
+              {% elif order.status == 'Shipped' %}bg-info
+              {% else %}bg-secondary{% endif %}">
+              {{ order.status }}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Customer</th>
+          <td>{{ order.user_id.get_full_name|default:order.user_id.username }}</td>
+        </tr>
+        <tr>
+          <th>Email</th>
+          <td>{{ order.user_id.email }}</td>
+        </tr>
+        <tr>
+          <th>Expected Delivery</th>
+          <td>{{ order.expected_delivery|date:"Y-m-d" }}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="col-md-6">
+      <h5>Order Summary</h5>
+      <table class="table table-bordered">
+        <tr>
+          <th>Subtotal</th>
+          <td>₹{{ order.subtotal }}</td>
+        </tr>
+        <tr>
+          <th>Tax Amount</th>
+          <td>₹{{ order.tax_amount }}</td>
+        </tr>
+        <tr>
+          <th>Shipping Charge</th>
+          <td>₹{{ order.shipping_charge }}</td>
+        </tr>
+        <tr>
+          <th>Total Amount</th>
+          <td><strong>₹{{ order.total_amount }}</strong></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <h5>Shipping Address</h5>
+      {% if shipping_address %}
+      <table class="table table-bordered">
+        <tr>
+          <th>Full Name</th>
+          <td>{{ shipping_address.full_name }}</td>
+        </tr>
+        <tr>
+          <th>Phone</th>
+          <td>{{ shipping_address.phone }}</td>
+        </tr>
+        <tr>
+          <th>Address</th>
+          <td>
+            {{ shipping_address.address_line_1 }}<br>
+            {% if shipping_address.address_line_2 %}
+              {{ shipping_address.address_line_2 }}<br>
+            {% endif %}
+            {{ shipping_address.city }}, {{ shipping_address.state }}<br>
+            {{ shipping_address.pincode }}
+          </td>
+        </tr>
+      </table>
+       {% else %}
+        <p>No shipping address found</p>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-6">
+      <h5>Billing Address</h5>
+      {% if billing_address %}
+      <table class="table table-bordered">
+        <tr>
+          <th>Full Name</th>
+          <td>{{ billing_address.full_name }}</td>
+        </tr>
+        <tr>
+          <th>Phone</th>
+          <td>{{ billing_address.phone }}</td>
+        </tr>
+        <tr>
+          <th>Address</th>
+          <td>
+            {{ billing_address.address_line_1 }}<br>
+            {% if billing_address.address_line_2 %}
+              {{ billing_address.address_line_2 }}<br>
+            {% endif %}
+            {{ billing_address.city }}, {{ billing_address.state }}<br>
+            {{ billing_address.pincode }}
+          </td>
+        </tr>
+      </table>
+      {% else %}
+        <p>No billing address found</p>
+        {% endif %}
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <h5>Order Items</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered order-details-table">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.order_details_set.all %}
+            <tr>
+              <td>{{ item.product_name }}</td>
+              <td>{{ item.product_sku }}</td>
+              <td>₹{{ item.unit_price }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₹{{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

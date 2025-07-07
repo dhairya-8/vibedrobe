@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Add Category | VibeDrobe
+{% endblock %}
+
+<!-- App favicon -->
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
+  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+         {% include 'custom_alerts.html' with position='inline' %}
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Categories</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <form action="{% url 'add_category' %}" method="post" id="custom-step">
+                  {% csrf_token %}
+                  <nav>
+                    <div class="nav nav-tabs" id="nav-tab"></div>
+                  </nav>
+                  <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane active" id="step1">
+                      <h4 class="card-title my-4 fs-15">Add Category</h4>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group row mb-2">
+                            <label for="name" class="col-lg-3 col-form-label text-end">Category Name</label>
+                            <div class="col-lg-9">
+                              <input id="name" name="name" type="text" class="form-control" />
+                            </div>
+                          </div>
+                          <div class="form-group row mb-2">
+                            <label for="sort_order" class="col-lg-3 col-form-label text-end">Sort Order</label>
+                            <div class="col-lg-9">
+                              <input id="sort_order" name="sort_order" type="text" class="form-control" />
+                            </div>
+                          </div>
+                          <!-- end form-group -->
+                        </div>
+                        <!-- end col -->
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-center mt-4 action-buttons">
+                    <a href="{% url 'display_category' %}" class="btn btn-secondary px-5 me-3"><i class="fas fa-arrow-left me-2"></i> Back</a>
+                    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-plus-circle me-2"></i> Add Category</button>
+                  </div>
+                </form>
+                <!-- end form -->
+              </div>
+              <!-- end card-body -->
+            </div>
+         
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Start Rightbar -->
+      <!-- Start Rightbar/offcanvas -->
+
+      <!-- end Rightbar/offcanvas -->
+      <!-- end Rightbar -->
+      <!-- Start Footer -->
+
+      {% include 'footer.html' %}
+      <!-- end Footer -->
+
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+{% endblock %}
+
+<!-- Javascript -->
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/form-wizard.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/uppy/uppy.legacy.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/pages/file-upload.init.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/huebee/huebee.pkgd.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanillajs-datepicker/js/datepicker-full.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/moment.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/imask/imask.min.js' %}"></script>
+
+  <!-- end body -->
+{% endblock %}

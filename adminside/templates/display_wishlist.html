@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  User Wishlists | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- Same CSS includes as your cart page -->
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/cart.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <div class="page-content">
+      <div class="container-xxl">
+        {% include 'custom_alerts.html' with position='inline' %}
+        
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">User Wishlists</h4>
+                  </div>
+                  {% if show_all %}
+                  <div class="col-auto ms-auto">
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="Search wishlists..." id="wishlistSearch">
+                      <button class="btn btn-light" type="button">
+                        <i class="las la-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="card-body pt-0">
+                {% if show_all %}
+                <h4 class="card-title my-4 fs-15">All Wishlists</h4>
+                {% else %}
+                <div class="mb-3">
+                  <a href="{% url 'admin_wishlists' %}" class="btn btn-secondary">
+                    <i class="las la-arrow-left me-1"></i> Back to All Wishlists
+                  </a>
+                </div>
+                {% endif %}
+
+                {% for data in wishlist_data %}
+                <div class="card mb-3 border-light">
+                  <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <h5 class="mb-0">
+                          <span class="text-primary">{{ data.user.username }}</span>
+                          <small class="text-muted">({{ data.user.email }})</small>
+                        </h5>
+                      </div>
+                      <span class="badge bg-primary rounded-pill">
+                        {{ data.count }} items
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="card-body">
+                    {% if data.items %}
+                    <div class="table-responsive">
+                      <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Added On</th>
+                           
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for item in data.items %}
+                          <tr>
+                            <td>
+                              <div class="d-flex align-items-center">
+                                {% if item.product_id.base_image %}
+                                <img src="{{ item.product_id.base_image.url }}" 
+                                     alt="{{ item.product_id.name }}" 
+                                     class="rounded me-3" width="60">
+                                {% else %}
+                                <div class="rounded me-3 bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                  <i class="las la-image text-muted" style="font-size: 1.5rem;"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                  <h6 class="mb-0">{{ item.product_id.name }}</h6>
+                                  
+                                </div>
+                              </div>
+                            </td>
+                            <td>${{ item.product_id.price }}</td>
+                            <td>{{ item.added_at|date:"M d, Y H:i" }}</td>
+                            {% comment %} <td>
+                              <a href="{% url 'admin:products_product_change' item.product_id.id %}" class="btn btn-sm btn-light">
+                                <i class="las la-external-link-alt"></i> View Product
+                              </a>
+                            </td> {% endcomment %}
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">This wishlist is empty</div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-warning">No wishlists found</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% include 'footer.html' %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Search functionality
+      if (document.getElementById('wishlistSearch')) {
+        document.getElementById('wishlistSearch').addEventListener('input', function(e) {
+          const searchTerm = e.target.value.toLowerCase();
+          document.querySelectorAll('.card.mb-3').forEach(card => {
+            const cardText = card.textContent.toLowerCase();
+            card.style.display = cardText.includes(searchTerm) ? '' : 'none';
+          });
+        });
+      }
+      
+      // Auto-dismiss alerts
+      setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss');
+        alerts.forEach(alert => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 300);
+        });
+      }, 3000);
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="light" data-bs-theme="light">
+
+<head>    
+
+    <meta charset="utf-8" />
+         <title>{% block title %} {% endblock %}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
+            <meta content="" name="author" />
+            <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <!-- Spinner CSS -->
+            <link rel="stylesheet" href="{% static 'admin/assets/css/spinner.css' %}">
+            <!-- Css's links -->
+            {% block css %} {% endblock %}
+
+</head>
+
+<body>
+   <!-- Preloader -->
+   <div id="preloader">
+      <div class="spinner"></div>
+   </div>
+
+   {% comment %} adding topbar {% endcomment %}
+   {% include "topbar.html" %} 
+
+   {% comment %} adding leftbar {% endcomment %}
+   {% include "leftbar.html" %} 
+
+   <!-- start page-wrapper -->
+   {% block content %}
+   {% endblock %}
+   <!-- end page-wrapper -->
+
+   <!-- Javascript  -->
+
+   {% block script %} {% endblock %}
+
+   <!-- Preloader -->
+   <script>
+    window.addEventListener('load', function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.add('hidden'); // Add the 'hidden' class to trigger the fade-out
+        }
+    });
+   </script>
+</body>
+
+</html>

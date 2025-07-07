@@ -1,0 +1,577 @@
+{% extends 'base1.html' %}
+{% load static %}
+
+{% block title %}Shop Page | VibeDrobe{% endblock %}
+
+{% block css %}
+<!-- Stylesheets -->
+<link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'user/assets/css/shop.css' %}" type="text/css">
+
+{% endblock %}
+
+{% block content %}
+<main>
+  <section class="shop-main container d-flex pt-4 pt-xl-5">
+    <!-- SIDEBAR FILTERS -->
+    <div class="shop-sidebar side-sticky bg-body" id="shopFilter">
+      <div class="aside-header d-flex d-lg-none align-items-center">
+        <h3 class="text-uppercase fs-6 mb-0">Filter By</h3>
+        <button class="btn-close-lg js-close-aside btn-close-aside ms-auto"></button>
+      </div>
+
+      <div class="pt-4 pt-lg-0"></div>
+
+      <!-- CATEGORIES FILTER -->
+      <div class="accordion" id="categories-list">
+        <div class="accordion-item mb-4 pb-3">
+          <h5 class="accordion-header" id="accordion-heading-11">
+            <button class="accordion-button p-0 border-0 fs-5 text-uppercase" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-filter-1" aria-expanded="true" aria-controls="accordion-filter-1">
+              Product Categories
+              <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+              </svg>
+            </button>
+          </h5>
+          <div id="accordion-filter-1" class="accordion-collapse collapse show border-0" aria-labelledby="accordion-heading-11" data-bs-parent="#categories-list">
+            <div class="accordion-body px-0 pb-0 pt-3">
+              <ul class="list list-unstyled mb-0">
+                {% for item in categories_with_subcategories %}
+                <li class="list-item mb-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <a href="?category={{ item.category.id }}" class="menu-link py-1 flex-grow-1 {% if request.GET.category == item.category.id|stringformat:'i' %}fw-bold text-dark{% endif %}">
+                      {{ item.category.name }}
+                    </a>
+                    {% if item.subcategory_ids %}
+                    <button class="btn btn-link p-0 text-decoration-none subcategory-toggle" 
+                          type="button" 
+                          data-bs-toggle="collapse" 
+                          data-bs-target="#subcategories-{{ item.category.id }}"
+                          aria-expanded="{{ item.has_selected_subcategory|yesno:'true,false' }}">
+                      <svg width="12" height="12" viewBox="0 0 10 6" fill="currentColor" class="subcategory-arrow">
+                        <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+                      </svg>
+                    </button>
+                    {% endif %}
+                  </div>
+                  {% if item.subcategory_ids %}
+                  <div class="collapse {% if item.has_selected_subcategory %}show{% endif %}" id="subcategories-{{ item.category.id }}">
+                    <ul class="list list-unstyled ps-3 mt-1">
+                      {% for subcategory in item.category.subcategories.all %}
+                      <li>
+                        <a href="?subcategory={{ subcategory.id }}" 
+                          class="menu-link py-1 d-block {% if request.GET.subcategory == subcategory.id|stringformat:'i' %}fw-bold text-dark{% endif %}">
+                          {{ subcategory.name }}
+                          <span class="text-secondary ms-2">{{ subcategory.product_set.count }}</span>
+                        </a>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+              {% if request.GET.category or request.GET.subcategory %}
+              <button class="btn btn-link p-0 text-danger text-decoration-none fs-6" id="clear-categories">
+                Clear
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIZES FILTER -->
+      <div class="accordion" id="size-filters">
+        <div class="accordion-item mb-4 pb-3">
+          <h5 class="accordion-header" id="accordion-heading-size">
+            <button class="accordion-button p-0 border-0 fs-5 text-uppercase" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-filter-size" aria-expanded="true" aria-controls="accordion-filter-size">
+              Sizes
+              <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+              </svg>
+            </button>
+          </h5>
+          <div id="accordion-filter-size" class="accordion-collapse collapse show border-0" aria-labelledby="accordion-heading-size" data-bs-parent="#size-filters">
+            <div class="accordion-body px-0 pb-0">
+              <div class="d-flex flex-wrap">
+                {% for size in sizes %}
+                <a href="javascript:void(0)" 
+                  class="swatch-size btn btn-sm mb-3 me-3 js-size-filter {% if size.id in selected_sizes %}active{% else %}btn-outline-light{% endif %}" 
+                  data-size="{{ size.id }}">
+                  {{ size.name }}
+                </a>
+                {% endfor %}
+              </div>
+              {% if selected_sizes %}
+              <div class="mt-3">
+                <a href="javascript:void(0)" class="btn btn-sm btn-link text-danger p-0" id="clear-sizes">Clear Sizes</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BRANDS FILTER -->
+      <div class="accordion" id="brand-filters">
+        <div class="accordion-item mb-4 pb-3">
+          <h5 class="accordion-header" id="accordion-heading-brand">
+            <button class="accordion-button p-0 border-0 fs-5 text-uppercase" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-filter-brand" aria-expanded="true" aria-controls="accordion-filter-brand">
+              Brands
+              <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+              </svg>
+            </button>
+          </h5>
+          <div id="accordion-filter-brand" class="accordion-collapse collapse show border-0" aria-labelledby="accordion-heading-brand" data-bs-parent="#brand-filters">
+            <div class="accordion-body px-0 pb-0">
+              <div class="search-field mb-3">
+                <input type="text" class="search-field__input form-control form-control-sm border-light border-2" placeholder="Search brands..." id="brand-search">
+              </div>
+              <div class="brand-scroll-container" style="max-height: 300px; overflow-y: auto;">
+                <ul class="list-unstyled mb-0" id="brand-list">
+                  {% for brand in ordered_brands %}
+                  <li class="mb-2">
+                    <div class="form-check d-flex align-items-center">
+                      <input class="form-check-input brand-checkbox" type="checkbox" 
+                            value="{{ brand.id }}" 
+                            id="brand-{{ brand.id }}"
+                            {% if brand.id in selected_brands %}checked{% endif %}>
+                      <label class="form-check-label d-flex justify-content-between align-items-center w-100 ps-2" for="brand-{{ brand.id }}">
+                        <span class="me-auto brand-name">{{ brand.name }}</span>
+                        <span class="text-secondary">{{ brand.product_count }}</span>
+                      </label>
+                    </div>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              <div class="d-flex justify-content-between mt-3">
+                <button class="btn btn-sm btn-outline-dark" id="apply-brands">Apply</button>
+                {% if selected_brands %}
+                <button class="btn btn-sm btn-link text-danger" id="clear-brands">Clear Brands</button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICE FILTER -->
+      <div class="accordion" id="price-filters">
+        <div class="accordion-item mb-4">
+          <h5 class="accordion-header mb-2" id="accordion-heading-price">
+            <button class="accordion-button p-0 border-0 fs-5 text-uppercase" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-filter-price" aria-expanded="true" aria-controls="accordion-filter-price">
+              Price
+              <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+              </svg>
+            </button>
+          </h5>
+          <div id="accordion-filter-price" class="accordion-collapse collapse show border-0" aria-labelledby="accordion-heading-price" data-bs-parent="#price-filters">
+            <input class="price-range-slider" type="text" name="price_range" value=""
+              data-slider-min="{{ global_min_price|default:10 }}" 
+              data-slider-max="{{ global_max_price|default:1000 }}" 
+              data-slider-step="5"
+              data-slider-value="[{% if min_price %}{{ min_price }}{% else %}{{ global_min_price|default:250 }}{% endif %}, {% if max_price %}{{ max_price }}{% else %}{{ global_max_price|default:450 }}{% endif %}]">
+            <div class="price-range__info d-flex align-items-center mt-2">
+              <div class="me-auto">
+                <span class="text-secondary">Min Price: </span>
+                <span class="price-range__min">₹{{ min_price|default:global_min_price|floatformat:2 }}</span>
+              </div>
+              <div>
+                <span class="text-secondary">Max Price: </span>
+                <span class="price-range__max">₹{{ max_price|default:global_max_price|floatformat:2 }}</span>
+              </div>
+            </div>
+            {% if min_price or max_price %}
+            <div class="mt-3">
+              <a href="javascript:void(0)" class="btn btn-sm btn-link text-danger p-0" id="clear-price">
+                <i class="fas fa-times me-1"></i>Clear price range
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div><!-- /.shop-sidebar -->
+
+    <!-- MAIN SHOP CONTENT -->
+    <div class="shop-list flex-grow-1">
+      <!-- SLIDESHOW BANNER -->
+      <div class="swiper-container js-swiper-slider slideshow slideshow_small slideshow_split"
+        data-settings='{"autoplay": {"delay": 5000},"slidesPerView": 1,"effect": "fade","loop": true,"pagination": {"el": ".slideshow-pagination","type": "bullets","clickable": true} }'>
+        <div class="swiper-wrapper">
+          {% for i in "123" %}
+          <div class="swiper-slide">
+            <div class="slide-split h-100 d-block d-md-flex overflow-hidden">
+              <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #f5e6e0;">
+                <div class="slideshow-text container p-3 p-xl-5">
+                  <h2 class="text-uppercase section-title fw-normal mb-3 animate animate_fade animate_btt animate_delay-2">Women's <br><strong>ACCESSORIES</strong></h2>
+                  <p class="mb-0 animate animate_fade animate_btt animate_delay-5">Accessories are the best way to update your look. Add a title edge with new styles and new colors, or go for timeless pieces.</p>
+                </div>
+              </div>
+              <div class="slide-split_media position-relative">
+                <div class="slideshow-bg" style="background-color: #f5e6e0;">
+                  <img loading="lazy" src="{% static 'user/assets/images/shop/shop_banner3.jpg' %}" width="630" height="450" alt="Women's accessories" class="slideshow-bg__img object-fit-cover">
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="container p-3 p-xl-5">
+          <div class="slideshow-pagination d-flex align-items-center position-absolute bottom-0 mb-4 pb-xl-2"></div>
+        </div>
+      </div>
+
+      <div class="mb-3 pb-2 pb-xl-3"></div>
+
+      <!-- FILTER/SORT CONTROLS -->
+      <div class="d-flex justify-content-between mb-4 pb-md-2">
+        <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1" style="white-space: nowrap; display: inline-block !important;">
+          <div style="display: inline-flex; align-items: center;">
+            <a href="{% url 'homepage' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">Home</a>
+            <span class="menu-link fw-medium px-2" style="color: #6c757d;">/</span>
+            <a href="{% url 'shop' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">The Shop</a>
+          </div>
+        </div>
+
+        <div class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
+          <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" aria-label="Sort Items" name="total-number" onchange="location = this.value;">
+            <option value="?sort=default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
+            <option value="?sort=featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+            <option value="?sort=popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
+            <option value="?sort=a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
+            <option value="?sort=z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
+            <option value="?sort=price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
+            <option value="?sort=price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
+            <option value="?sort=date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
+            <option value="?sort=date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
+          </select>
+
+          {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort %}
+          <button class="btn btn-link text-danger text-decoration-none fs-6 ms-3 order-2 order-md-1" id="clear-all-filters">
+            <i class="fas fa-times me-1"></i>Clear All
+          </button>
+          {% endif %}
+
+          <div class="shop-asc__seprator mx-3 bg-light d-none d-md-block order-md-0"></div>
+
+          <div class="shop-filter d-flex align-items-center order-0 order-md-3 d-lg-none">
+            <button class="btn-link btn-link_f d-flex align-items-center ps-0 js-open-aside" data-aside="shopFilter">
+              <svg class="d-inline-block align-middle me-2" width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_filter" /></svg>
+              <span class="text-uppercase fw-medium d-inline-block align-middle">Filter</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCT GRID -->
+      <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4" id="products-grid">
+        {% for product in products %}
+        <div class="product-card-wrapper">
+          <div class="product-card product-card_style9 border rounded-3 mb-3 mb-md-4 mb-xxl-5">
+            <div class="position-relative pb-3">
+              <div class="pc__img-wrapper pc__img-wrapper_wide3" style="padding-bottom: 25%;">
+                <a href="{% url 'product_detail' product.id %}">
+                  <img loading="lazy" src="{{ product.base_image.url }}" alt="{{ product.name }}" class="pc__img w-100 h-100 object-fit-contain">
+                </a>
+              </div>
+              <div class="anim_appear-bottom position-absolute w-100 text-center">
+                <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">
+                  <svg class="d-inline-block" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_cart" /></svg>
+                </button>
+                <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-quick-view" data-bs-toggle="modal" data-bs-target="#quickView" title="Quick view">
+                  <svg class="d-inline-block" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><use href="#icon_view" /></svg>
+                </button>
+                <button class="btn btn-round btn-hover-red border-0 text-uppercase js-add-wishlist" title="Add To Wishlist">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="pc__info position-relative">
+              <p class="pc__category">{{ product.subcategory_id.name }}</p>
+              <h6 class="pc__title"><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h6>
+              <div class="product-card__price d-flex">
+                <span class="money price fs-5">₹{{ product.price }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- PAGINATION -->
+      <nav class="shop-pages d-flex justify-content-between mt-3" aria-label="Page navigation">
+        {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}{% if sort %}&sort={{ sort }}{% endif %}" class="btn-link d-inline-flex align-items-center">
+          <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
+          <span class="fw-medium">PREV</span>
+        </a>
+        {% else %}
+        <span class="btn-link d-inline-flex align-items-center disabled">
+          <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
+          <span class="fw-medium">PREV</span>
+        </span>
+        {% endif %}
+        
+        <ul class="pagination mb-0">
+          {% for num in products.paginator.page_range %}
+            {% if products.number == num %}
+              <li class="page-item"><a class="btn-link px-1 mx-2 btn-link_active" href="?page={{ num }}{% if sort %}&sort={{ sort }}{% endif %}">{{ num }}</a></li>
+            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+              <li class="page-item"><a class="btn-link px-1 mx-2" href="?page={{ num }}{% if sort %}&sort={{ sort }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        
+        {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}{% if sort %}&sort={{ sort }}{% endif %}" class="btn-link d-inline-flex align-items-center">
+          <span class="fw-medium me-1">NEXT</span>
+          <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
+        </a>
+        {% else %}
+        <span class="btn-link d-inline-flex align-items-center disabled">
+          <span class="fw-medium me-1">NEXT</span>
+          <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
+        </span>
+        {% endif %}
+      </nav>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<!-- JavaScript Libraries -->
+<script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
+<script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
+<script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
+<script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
+<script src="{% static 'user/assets/js/theme.js' %}"></script>
+
+<script>
+// Clear All Filters functionality
+$('#clear-all-filters').on('click', function() {
+  // Reset the price slider to default values
+  $('.price-range-slider').slider('setValue', [
+    parseFloat("{{ global_min_price|default:0 }}"),
+    parseFloat("{{ global_max_price|default:10000 }}")
+  ]);
+  
+  // Uncheck all brand checkboxes
+  $('.brand-checkbox').prop('checked', false).closest('li').removeClass('active-brand');
+  
+  // Remove active class from size filters
+  $('.js-size-filter').removeClass('active');
+  
+  // Reset sorting dropdown to default
+  $('.shop-acs__select').val('?sort=default');
+  
+  // Remove active states from category links
+  $('.menu-link').removeClass('fw-bold text-dark');
+  
+  // Close all subcategory dropdowns
+  $('.subcategory-toggle').attr('aria-expanded', 'false');
+  $('.subcategory-arrow').css('transform', 'rotate(0deg)');
+  $('.collapse').removeClass('show');
+  
+  // Redirect to base shop URL without any filters
+  window.location.href = "{% url 'shop' %}";
+});
+
+$(document).ready(function() {
+  // Initialize price slider with separate tooltips
+  var slider = $('.price-range-slider').slider({
+    tooltip_position:'top',
+    tooltip_split: true,
+    formatter: function(value) {
+      return '₹' + value.toLocaleString('en-IN');
+    },
+    min: parseFloat("{{ global_min_price|default:0 }}"),
+    max: parseFloat("{{ global_max_price|default:10000 }}"),
+    value: [
+      {% if request.GET.min_price %}{{ request.GET.min_price }}{% else %}{{ global_min_price|default:0 }}{% endif %},
+      {% if request.GET.max_price %}{{ request.GET.max_price }}{% else %}{{ global_max_price|default:10000 }}{% endif %}
+    ]
+  });
+
+  // Create dynamic range display
+  $('.price-range-slider').after('<div class="slider-range-display text-center mt-2" style="display:none;">₹<span class="min-val">'+slider.slider('getValue')[0]+'</span> - ₹<span class="max-val">'+slider.slider('getValue')[1]+'</span></div>');
+
+  // Hide range display when not sliding
+  slider.on('mouseleave', function() {
+    $('.slider-range-display').hide();
+  });
+
+  // Update on final selection
+  slider.on('change', function(e) {
+    var values = e.value.newValue || e.value;
+    $('.price-range__min').text('₹' + values[0].toLocaleString('en-IN'));
+    $('.price-range__max').text('₹' + values[1].toLocaleString('en-IN'));
+    
+    // Update URL
+    var urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('min_price', values[0]);
+    urlParams.set('max_price', values[1]);
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+  });
+
+  // Clear price filter
+  $('#clear-price').on('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('min_price');
+    urlParams.delete('max_price');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+  });
+
+  // Clear Category Filter
+  $('#clear-categories').on('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('category');
+    urlParams.delete('subcategory');
+    urlParams.delete('page');
+    
+    // Remove active states from UI
+    $('.menu-link').removeClass('fw-bold text-dark');
+    
+    // Close all subcategory dropdowns
+    $('.subcategory-toggle').attr('aria-expanded', 'false');
+    $('.subcategory-arrow').css('transform', 'rotate(0deg)');
+    $('.collapse').removeClass('show');
+    
+    window.location.search = urlParams.toString();
+  });
+
+  // Size filter functionality
+  $(document).on('click', '.js-size-filter', function() {
+    const sizeId = $(this).data('size');
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSizes = urlParams.getAll('size');
+    
+    // Toggle this size in the URL parameters
+    if ($(this).hasClass('active')) {
+      // Remove this size from the filter
+      const newSizes = currentSizes.filter(id => id !== sizeId.toString());
+      urlParams.delete('size');
+      newSizes.forEach(size => urlParams.append('size', size));
+    } else {
+      // Add this size to the filter
+      urlParams.append('size', sizeId);
+    }
+    
+    // Remove page parameter to go back to first page
+    urlParams.delete('page');
+    
+    // Update the URL
+    window.location.search = urlParams.toString();
+  });
+
+  // Clear sizes filter
+  $('#clear-sizes').on('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('size');
+    urlParams.delete('page');
+    $('.js-size-filter').removeClass('active');
+    window.location.search = urlParams.toString();
+  });
+
+  // Brand search functionality
+  $('#brand-search').on('input', function() {
+    const searchTerm = $(this).val().toLowerCase().trim();
+    $('#brand-list li').each(function() {
+      const brandName = $(this).find('.brand-name').text().toLowerCase();
+      $(this).toggle(searchTerm === '' || brandName.includes(searchTerm));
+    });
+  });
+
+  // Apply brands filter
+  $('#apply-brands').on('click', function() {
+    const selectedBrands = [];
+    $('.brand-checkbox:checked').each(function() {
+      selectedBrands.push($(this).val());
+    });
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('brand');
+    selectedBrands.forEach(brand => urlParams.append('brand', brand));
+    urlParams.delete('page');
+    
+    // Preserve other filters
+    ['category', 'subcategory', 'size', 'min_price', 'max_price', 'sort'].forEach(param => {
+      if (urlParams.has(param)) urlParams.set(param, urlParams.get(param));
+    });
+    
+    window.location.search = urlParams.toString();
+  });
+
+  // Clear brands filter
+  $('#clear-brands').on('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('brand');
+    urlParams.delete('page');
+    $('.brand-checkbox').prop('checked', false).closest('li').removeClass('active-brand');
+    window.location.search = urlParams.toString();
+  });
+
+  // Initialize active states
+  function initializeActiveStates() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Sizes
+    const selectedSizes = urlParams.getAll('size');
+    $('.js-size-filter').each(function() {
+      $(this).toggleClass('active', selectedSizes.includes($(this).data('size').toString()));
+    });
+    
+    // Categories
+    const currentCategory = urlParams.get('category');
+    const currentSubcategory = urlParams.get('subcategory');
+    $('.menu-link').each(function() {
+      const href = $(this).attr('href') || '';
+      $(this).toggleClass('fw-bold text-dark', 
+        href.includes(`category=${currentCategory}`) || 
+        href.includes(`subcategory=${currentSubcategory}`)
+      );
+    });
+    
+    // Brands
+    const selectedBrands = urlParams.getAll('brand');
+    $('.brand-checkbox').each(function() {
+      const isChecked = selectedBrands.includes($(this).val());
+      $(this).prop('checked', isChecked).closest('li').toggleClass('active-brand', isChecked);
+    });
+    
+    // Expand category if subcategory is selected
+    if (currentSubcategory) {
+      $('.list-item').each(function() {
+        const categoryId = $(this).find('a[href*="category="]').attr('href')?.split('=')[1];
+        if (categoryId) {
+          const subcategoryList = $(this).find('#subcategories-' + categoryId);
+          if (subcategoryList.length && subcategoryList.find(`a[href*="subcategory=${currentSubcategory}"]`).length) {
+            subcategoryList.addClass('show');
+            $(this).find('.subcategory-toggle').attr('aria-expanded', 'true');
+            $(this).find('.subcategory-arrow').css('transform', 'rotate(180deg)');
+          }
+        }
+      });
+    }
+  }
+
+  initializeActiveStates();
+  
+  // Toggle brand active state on change
+  $('.brand-checkbox').on('change', function() {
+    $(this).closest('li').toggleClass('active-brand', this.checked);
+  });
+});
+</script>
+{% endblock %}
