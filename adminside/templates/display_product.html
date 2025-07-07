@@ -287,7 +287,7 @@
       <div class="col-md-2">
         <button type="button" class="btn btn-outline-secondary w-100" id="clear-filters-btn" 
                 {% if not request.GET.search and not request.GET.category and not request.GET.brand %}disabled{% endif %}>
-          <i class="las la-broom"></i> Clear
+          <i class="las la-filter"></i> Clear
         </button>
       </div>
     </div>
@@ -305,6 +305,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="productDetailContent">
+
+
           <!-- Content will be loaded via AJAX -->
           <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -317,6 +319,11 @@
         </div>
       </div>
     </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     {% include 'footer.html' %}
   </div>
 </div>
@@ -326,6 +333,8 @@
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+
   <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips

@@ -48,6 +48,20 @@ class User(models.Model):
     last_login = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        """Automatically hash password when saving"""
+        if self.password and not self.password.startswith('pbkdf2_'):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
+        
+    def set_password(self, raw_password):
+        """Set hashed password"""
+        self.password = make_password(raw_password)
+        
+    def check_password(self, raw_password):
+        """Verify password"""
+        return check_password(raw_password, self.password)
     
     def __str__(self):
         return f"User#{self.id}: {self.email}"

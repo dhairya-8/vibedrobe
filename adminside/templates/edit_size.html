@@ -12,22 +12,7 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/uppy/uppy.min.css" rel="stylesheet' %}" type="text/css" />
-  <link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet" type="text/css" />
-  <style>
-    /* Message animation styles */
-    .alert-auto-dismiss {
-      animation: fadeOut 5s forwards;
-      animation-delay: 2s;
-    }
-    
-    @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; height: 0; padding: 0; margin: 0; border: 0; }
-    }
-  </style>
+ 
 {% endblock %}
 
 {% block content %}
@@ -96,7 +81,7 @@
                     </div>
                   </div>
                  <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary px-5">Update Size</button>
+                    <button type="submit" class="btn btn-primary px-5 me-3">Update Size</button>
                     <a href="{% url 'display_size' %}" class="btn btn-secondary px-5">Cancel</a>
                   </div>
                 </form>
@@ -141,16 +126,5 @@
       label.textContent = this.checked ? 'Active' : 'Inactive';
     });
     
-    // Auto-dismiss messages
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(function() {
-        let alerts = document.querySelectorAll('.alert-auto-dismiss');
-        alerts.forEach(alert => {
-          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s';
-          alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 300);
-        });
-      }, 3000);
-    });
   </script>
 {% endblock %}

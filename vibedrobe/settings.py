@@ -67,7 +67,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'adminside.context_processor.admin_profile_image',  # Custom context processor
-                'adminside.context_processor.custom_alerts',  # Custom alerts context processor
+                'adminside.context_processor.custom_alerts',  # Custom alerts context processor for adminside
+                'userside.context_processor.custom_message_tags',  # Custom message tags for userside
             ],
         },
     },

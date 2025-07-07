@@ -51,6 +51,10 @@ urlpatterns = [
     path('display_product/', display_product, name='display_product'),
     path('products/template/download/', download_json_template, name='download_json_template'),
     path('product_detail_modal/<int:product_id>/detail/', product_detail_modal, name='product_detail_modal'),
+    
+    path('toggle-status/<int:product_id>/', toggle_product_status, name='toggle_product_status'),
+    path('bulk-update-variants/<int:product_id>/', bulk_update_variants, name='bulk_update_variants'),
+
 
     # Product Variant URLs
     path('add_product_variant/<int:product_id>/', add_product_variant, name='add_product_variant'),
