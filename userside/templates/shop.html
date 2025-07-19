@@ -1,4 +1,5 @@
 {% extends 'base1.html' %}
+{% load product_filters %} 
 {% load static %}
 
 {% block title %}Shop Page | VibeDrobe{% endblock %}
@@ -22,6 +23,54 @@
 
       <div class="pt-4 pt-lg-0"></div>
 
+      <!-- GENDER FILTER -->
+<div class="accordion" id="gender-filters">
+  <div class="accordion-item mb-4 pb-3">
+    <h5 class="accordion-header" id="accordion-heading-gender">
+      <button class="accordion-button p-0 border-0 fs-5 text-uppercase" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-filter-gender" aria-expanded="true" aria-controls="accordion-filter-gender">
+        Gender
+        <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+        </svg>
+      </button>
+    </h5>
+    <div id="accordion-filter-gender" class="accordion-collapse collapse show border-0" aria-labelledby="accordion-heading-gender" data-bs-parent="#gender-filters">
+      <div class="accordion-body px-0 pb-0">
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2">
+            <a href="?gender=Female{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Female' %}fw-bold text-dark{% endif %}" 
+               data-gender="Female">
+              Women
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="?gender=Male{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Male' %}fw-bold text-dark{% endif %}" 
+               data-gender="Male">
+              Men
+            </a>
+          </li>
+          <li class="mb-2">
+            <a href="?gender=Unisex{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+               class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Unisex' %}fw-bold text-dark{% endif %}" 
+               data-gender="Unisex">
+              Unisex
+            </a>
+          </li>
+        </ul>
+        {% if request.GET.gender %}
+        <div class="mt-3">
+          <a href="?{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+             class="btn btn-sm btn-link text-danger p-0">
+            Clear Gender
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
       <!-- CATEGORIES FILTER -->
       <div class="accordion" id="categories-list">
         <div class="accordion-item mb-4 pb-3">
@@ -82,6 +131,7 @@
         </div>
       </div>
 
+      
       <!-- SIZES FILTER -->
       <div class="accordion" id="size-filters">
         <div class="accordion-item mb-4 pb-3">
@@ -240,17 +290,17 @@
         </div>
 
         <div class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-          <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" aria-label="Sort Items" name="total-number" onchange="location = this.value;">
-            <option value="?sort=default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
-            <option value="?sort=featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
-            <option value="?sort=popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
-            <option value="?sort=a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
-            <option value="?sort=z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
-            <option value="?sort=price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
-            <option value="?sort=price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
-            <option value="?sort=date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
-            <option value="?sort=date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
-          </select>
+          <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" aria-label="Sort Items" name="total-number" onchange="location = this.value + '{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}';">
+  <option value="?sort=default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
+  <option value="?sort=featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+  <option value="?sort=popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
+  <option value="?sort=a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
+  <option value="?sort=z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
+  <option value="?sort=price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
+  <option value="?sort=price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
+  <option value="?sort=date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
+  <option value="?sort=date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
+</select>
 
           {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort %}
           <button class="btn btn-link text-danger text-decoration-none fs-6 ms-3 order-2 order-md-1" id="clear-all-filters">
@@ -272,75 +322,100 @@
       <!-- PRODUCT GRID -->
       <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4" id="products-grid">
         {% for product in products %}
-        <div class="product-card-wrapper">
-          <div class="product-card product-card_style9 border rounded-3 mb-3 mb-md-4 mb-xxl-5">
-            <div class="position-relative pb-3">
-              <div class="pc__img-wrapper pc__img-wrapper_wide3" style="padding-bottom: 25%;">
+<div class="product-card-wrapper">
+  <div class="product-card product-card_style9 border rounded-3 mb-3 mb-md-4 mb-xxl-5">
+    <div class="position-relative pb-3">
+      <!-- Image Gallery Container - Modified to preserve your layout -->
+      <div class="pc__img-wrapper pc__img-wrapper_wide3" style="padding-bottom: 25%; position: relative;">
+        <div class="product-gallery swiper h-100 w-100" style="position: absolute; top: 0; left: 0;">
+          <div class="swiper-wrapper h-100">
+            <!-- Base Image -->
+            <div class="swiper-slide h-100">
+              <a href="{% url 'product_detail' product.id %}">
+                <img loading="lazy" src="{{ product.base_image.url }}" 
+                     class="pc__img w-100 h-100 object-fit-contain">
+              </a>
+            </div>
+            <!-- Gallery Images -->
+            {% for gallery_image in product.product_gallery_set.all|dictsort:"image_order" %}
+              {% if not gallery_image.image_path.url|is_duplicate:product.base_image.url %}
+              <div class="swiper-slide h-100">
                 <a href="{% url 'product_detail' product.id %}">
-                  <img loading="lazy" src="{{ product.base_image.url }}" alt="{{ product.name }}" class="pc__img w-100 h-100 object-fit-contain">
+                  <img loading="lazy" src="{{ gallery_image.image_path.url }}" 
+                       class="pc__img w-100 h-100 object-fit-contain">
                 </a>
               </div>
-              <div class="anim_appear-bottom position-absolute w-100 text-center">
-                <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">
-                  <svg class="d-inline-block" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_cart" /></svg>
-                </button>
-                <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-quick-view" data-bs-toggle="modal" data-bs-target="#quickView" title="Quick view">
-                  <svg class="d-inline-block" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><use href="#icon_view" /></svg>
-                </button>
-                <button class="btn btn-round btn-hover-red border-0 text-uppercase js-add-wishlist" title="Add To Wishlist">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="pc__info position-relative">
-              <p class="pc__category">{{ product.subcategory_id.name }}</p>
-              <h6 class="pc__title"><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h6>
-              <div class="product-card__price d-flex">
-                <span class="money price fs-5">₹{{ product.price }}</span>
-              </div>
-            </div>
+              {% endif %}
+            {% endfor %}
           </div>
+          <!-- Navigation Arrows -->
+          <div class="swiper-button-next"></div>
+          <div class="swiper-button-prev"></div>
         </div>
+      </div>
+      
+      <!-- Product Actions -->
+      <div class="anim_appear-bottom position-absolute w-100 text-center">
+        <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">
+          <svg class="d-inline-block" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_cart" /></svg>
+        </button>
+        <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-quick-view" data-bs-toggle="modal" data-bs-target="#quickView" title="Quick view">
+          <svg class="d-inline-block" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><use href="#icon_view" /></svg>
+        </button>
+        <button class="btn btn-round btn-hover-red border-0 text-uppercase js-add-wishlist" title="Add To Wishlist">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="pc__info position-relative">
+      <p class="pc__category">{{ product.subcategory_id.name }}</p>
+      <h6 class="pc__title"><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></h6>
+      <div class="product-card__price d-flex">
+        <span class="money price fs-5">₹{{ product.price }}</span>
+      </div>
+    </div>
+  </div>
+</div>
         {% endfor %}
       </div>
 
       <!-- PAGINATION -->
-      <nav class="shop-pages d-flex justify-content-between mt-3" aria-label="Page navigation">
-        {% if products.has_previous %}
-        <a href="?page={{ products.previous_page_number }}{% if sort %}&sort={{ sort }}{% endif %}" class="btn-link d-inline-flex align-items-center">
-          <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
-          <span class="fw-medium">PREV</span>
-        </a>
-        {% else %}
-        <span class="btn-link d-inline-flex align-items-center disabled">
-          <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
-          <span class="fw-medium">PREV</span>
-        </span>
-        {% endif %}
-        
-        <ul class="pagination mb-0">
-          {% for num in products.paginator.page_range %}
-            {% if products.number == num %}
-              <li class="page-item"><a class="btn-link px-1 mx-2 btn-link_active" href="?page={{ num }}{% if sort %}&sort={{ sort }}{% endif %}">{{ num }}</a></li>
-            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
-              <li class="page-item"><a class="btn-link px-1 mx-2" href="?page={{ num }}{% if sort %}&sort={{ sort }}{% endif %}">{{ num }}</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
-        
-        {% if products.has_next %}
-        <a href="?page={{ products.next_page_number }}{% if sort %}&sort={{ sort }}{% endif %}" class="btn-link d-inline-flex align-items-center">
-          <span class="fw-medium me-1">NEXT</span>
-          <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
-        </a>
-        {% else %}
-        <span class="btn-link d-inline-flex align-items-center disabled">
-          <span class="fw-medium me-1">NEXT</span>
-          <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
-        </span>
-        {% endif %}
-      </nav>
+<nav class="shop-pages d-flex justify-content-between mt-3" aria-label="Page navigation">
+  {% if products.has_previous %}
+    <a href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn-link d-inline-flex align-items-center">
+      <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
+      <span class="fw-medium">PREV</span>
+    </a>
+  {% else %}
+    <span class="btn-link d-inline-flex align-items-center disabled">
+      <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm" /></svg>
+      <span class="fw-medium">PREV</span>
+    </span>
+  {% endif %}
+  
+  <ul class="pagination mb-0">
+    {% for num in products.paginator.page_range %}
+      {% if products.number == num %}
+        <li class="page-item"><a class="btn-link px-1 mx-2 btn-link_active" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+      {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+        <li class="page-item"><a class="btn-link px-1 mx-2" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+  
+  {% if products.has_next %}
+    <a href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn-link d-inline-flex align-items-center">
+      <span class="fw-medium me-1">NEXT</span>
+      <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
+    </a>
+  {% else %}
+    <span class="btn-link d-inline-flex align-items-center disabled">
+      <span class="fw-medium me-1">NEXT</span>
+      <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm" /></svg>
+    </span>
+  {% endif %}
+</nav>
     </div>
   </section>
 </main>
@@ -505,7 +580,7 @@ $(document).ready(function() {
     urlParams.delete('page');
     
     // Preserve other filters
-    ['category', 'subcategory', 'size', 'min_price', 'max_price', 'sort'].forEach(param => {
+    ['category', 'subcategory', 'size', 'min_price', 'max_price', 'sort', 'gender'].forEach(param => {
       if (urlParams.has(param)) urlParams.set(param, urlParams.get(param));
     });
     
@@ -522,54 +597,91 @@ $(document).ready(function() {
   });
 
   // Initialize active states
-  function initializeActiveStates() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // Sizes
-    const selectedSizes = urlParams.getAll('size');
-    $('.js-size-filter').each(function() {
-      $(this).toggleClass('active', selectedSizes.includes($(this).data('size').toString()));
-    });
-    
-    // Categories
-    const currentCategory = urlParams.get('category');
-    const currentSubcategory = urlParams.get('subcategory');
-    $('.menu-link').each(function() {
-      const href = $(this).attr('href') || '';
-      $(this).toggleClass('fw-bold text-dark', 
-        href.includes(`category=${currentCategory}`) || 
-        href.includes(`subcategory=${currentSubcategory}`)
-      );
-    });
-    
-    // Brands
-    const selectedBrands = urlParams.getAll('brand');
-    $('.brand-checkbox').each(function() {
-      const isChecked = selectedBrands.includes($(this).val());
-      $(this).prop('checked', isChecked).closest('li').toggleClass('active-brand', isChecked);
-    });
-    
-    // Expand category if subcategory is selected
-    if (currentSubcategory) {
-      $('.list-item').each(function() {
-        const categoryId = $(this).find('a[href*="category="]').attr('href')?.split('=')[1];
-        if (categoryId) {
-          const subcategoryList = $(this).find('#subcategories-' + categoryId);
-          if (subcategoryList.length && subcategoryList.find(`a[href*="subcategory=${currentSubcategory}"]`).length) {
-            subcategoryList.addClass('show');
-            $(this).find('.subcategory-toggle').attr('aria-expanded', 'true');
-            $(this).find('.subcategory-arrow').css('transform', 'rotate(180deg)');
-          }
+  // Initialize active states
+function initializeActiveStates() {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Sizes
+  const selectedSizes = urlParams.getAll('size');
+  $('.js-size-filter').each(function() {
+    $(this).toggleClass('active', selectedSizes.includes($(this).data('size').toString()));
+  });
+  
+  // Gender
+  const selectedGender = urlParams.get('gender');
+  $('.gender-link').each(function() {
+    $(this).toggleClass('fw-bold text-dark', $(this).data('gender') === selectedGender);
+  });
+  
+  // Categories
+  const currentCategory = urlParams.get('category');
+  const currentSubcategory = urlParams.get('subcategory');
+  $('.menu-link').not('.gender-link').each(function() {
+    const href = $(this).attr('href') || '';
+    $(this).toggleClass('fw-bold text-dark', 
+      href.includes(`category=${currentCategory}`) || 
+      href.includes(`subcategory=${currentSubcategory}`)
+    );
+  });
+  
+  // Brands
+  const selectedBrands = urlParams.getAll('brand');
+  $('.brand-checkbox').each(function() {
+    const isChecked = selectedBrands.includes($(this).val());
+    $(this).prop('checked', isChecked).closest('li').toggleClass('active-brand', isChecked);
+  });
+  
+  // Expand category if subcategory is selected
+  if (currentSubcategory) {
+    $('.list-item').each(function() {
+      const categoryId = $(this).find('a[href*="category="]').attr('href')?.split('=')[1];
+      if (categoryId) {
+        const subcategoryList = $(this).find('#subcategories-' + categoryId);
+        if (subcategoryList.length && subcategoryList.find(`a[href*="subcategory=${currentSubcategory}"]`).length) {
+          subcategoryList.addClass('show');
+          $(this).find('.subcategory-toggle').attr('aria-expanded', 'true');
+          $(this).find('.subcategory-arrow').css('transform', 'rotate(180deg)');
         }
-      });
-    }
+      }
+    });
   }
+}
 
   initializeActiveStates();
   
   // Toggle brand active state on change
   $('.brand-checkbox').on('change', function() {
     $(this).closest('li').toggleClass('active-brand', this.checked);
+  });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize galleries
+  document.querySelectorAll('.product-gallery').forEach(function(gallery) {
+    const slides = gallery.querySelectorAll('.swiper-slide');
+    const nextBtn = gallery.querySelector('.swiper-button-next');
+    const prevBtn = gallery.querySelector('.swiper-button-prev');
+    
+    // Set data attribute for CSS
+    gallery.setAttribute('data-slides', slides.length);
+    
+    // Only initialize if we have multiple slides
+    if (slides.length > 1) {
+      new Swiper(gallery, {
+        loop: true,
+        observer: true,
+        observeParents: true,
+        navigation: {
+          nextEl: nextBtn,
+          prevEl: prevBtn,
+        }
+      });
+    } else {
+      // Hide arrows if not needed
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'none';
+    }
   });
 });
 </script>

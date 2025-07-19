@@ -1,11 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-<<<<<<< HEAD
-  Display Cart | VibeDrobe
-=======
   User Carts | VibeDrobe
->>>>>>> origin/dev
 {% endblock %}
 
 {% block css %}
@@ -18,11 +14,8 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
-<<<<<<< HEAD
-=======
   <!-- Custom CSS for cart -->
   <link href="{% static 'admin/assets/css/cart.css' %}" rel="stylesheet" type="text/css" />
->>>>>>> origin/dev
 {% endblock %}
 
 {% block content %}
@@ -30,24 +23,12 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
-<<<<<<< HEAD
-=======
-
         {% include 'custom_alerts.html' with position='inline' %}
-        
->>>>>>> origin/dev
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
-<<<<<<< HEAD
-                  <div class="col-auto">
-                    <h4 class="card-title">View Cart</h4>
-                  </div>
-                  <!-- end col -->
-                 
-=======
                   <div class="col">
                     <h4 class="card-title">User Carts</h4>
                   </div>
@@ -62,37 +43,11 @@
                     </div>
                   </div>
                   {% endif %}
->>>>>>> origin/dev
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
-<<<<<<< HEAD
-                <div class="table-responsive">
-                  <table class="table">
-                    <thead class="table-light">
-                      <tr>
-                        <th>ID</th>
-                        <th>User Name</th>
-                        <th>Total Price</th>
-                        <th>Product Quantity</th>
-                        
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>1</td>
-                        <td>Priya</td>
-                        <td>900/-</td>
-                        <td>3</td>
-                        
-                      </tr>
-       
-                    </tbody>
-                  </table>
-                </div>
-=======
                 {% if show_all %}
                 <nav>
                   <div class="nav nav-tabs" id="nav-tab"></div>
@@ -181,7 +136,6 @@
                 {% empty %}
                 <div class="alert alert-warning">No carts found</div>
                 {% endfor %}
->>>>>>> origin/dev
               </div>
               <!-- end card-body -->
             </div>
@@ -191,43 +145,20 @@
         <!-- end row -->
       </div>
       <!-- container -->
-<<<<<<< HEAD
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
 
-=======
->>>>>>> origin/dev
       {% include 'footer.html' %}
       <!-- end footer -->
     </div>
     <!-- end page content -->
   </div>
-<<<<<<< HEAD
-  <!-- end page-wrapper -->
-{% endblock %}
-
-<!-- Javascript -->
-
-=======
     <!-- end page-wrapper -->
 {% endblock %}
-
->>>>>>> origin/dev
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-<<<<<<< HEAD
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
-  <script src="{% static 'admin/assets/js/app.js' %}"></script>
-{% endblock %}
-<!-- end body -->
-=======
+
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
   
   <script>
@@ -266,4 +197,3 @@
     });
   </script>
 {% endblock %}
->>>>>>> origin/dev

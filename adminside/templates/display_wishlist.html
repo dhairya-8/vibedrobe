@@ -1,26 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-<<<<<<< HEAD
-  Display Wishlist | VibeDrobe
-{% endblock %}
-
-{% block css %}
-  <!-- App favicon -->
-  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
-
-  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
-  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
-  <!-- App css -->
-  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
-  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
-=======
   User Wishlists | VibeDrobe
 {% endblock %}
 
 {% block css %}
-  <!-- Same CSS includes as your cart page -->
   <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
@@ -28,94 +12,18 @@
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/cart.css' %}" rel="stylesheet" type="text/css" />
->>>>>>> origin/dev
 {% endblock %}
 
 {% block content %}
   <div class="page-wrapper">
-<<<<<<< HEAD
-    <!-- Page Content -->
-    <div class="page-content">
-      <div class="container-xxl">
-=======
     <div class="page-content">
       <div class="container-xxl">
         {% include 'custom_alerts.html' with position='inline' %}
-        
->>>>>>> origin/dev
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
-<<<<<<< HEAD
-                  <div class="col-auto">
-                    <h4 class="card-title">View Wishlist</h4>
-                  </div>
-                  <!-- end col -->
-                 
-                  <!-- end col -->
-                </div> <!-- end row -->
-              </div>
-              <!-- end card-header -->
-              <div class="card-body pt-0">
-                <div class="table-responsive">
-                  <table class="table">
-                    <thead class="table-light">
-                      <tr>
-                        <th>ID</th>
-                        <th>User Name</th>
-                        <th>Product ID</th>
-                       
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>1</td>
-                        <td>Dhairya</td>
-                        <td>1</td>
-                        
-                      </tr>
-       
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <!-- end card-body -->
-            </div>
-            <!-- end card -->
-          </div> <!-- end col -->
-        </div>
-        <!-- end row -->
-      </div>
-      <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
-
-      {% include 'footer.html' %}
-      <!-- end footer -->
-    </div>
-    <!-- end page content -->
-  </div>
-  <!-- end page-wrapper -->
-{% endblock %}
-
-<!-- Javascript -->
-
-{% block script %}
-  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
-  <script src="{% static 'admin/assets/js/app.js' %}"></script>
-{% endblock %}
-<!-- end body -->
-=======
                   <div class="col">
                     <h4 class="card-title">User Wishlists</h4>
                   </div>
@@ -137,7 +45,7 @@
                 <h4 class="card-title my-4 fs-15">All Wishlists</h4>
                 {% else %}
                 <div class="mb-3">
-                  <a href="{% url 'admin_wishlists' %}" class="btn btn-secondary">
+                  <a href="{% url 'display_wishlist' %}" class="btn btn-secondary">
                     <i class="las la-arrow-left me-1"></i> Back to All Wishlists
                   </a>
                 </div>
@@ -251,4 +159,3 @@
     });
   </script>
 {% endblock %}
->>>>>>> origin/dev

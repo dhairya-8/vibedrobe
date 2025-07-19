@@ -9,4 +9,4 @@ admin.site.register(Order_Address)
 admin.site.register(Shipping)
 admin.site.register(Shipping_Partners)
 admin.site.register(Cart)
-
+admin.site.register(Review)

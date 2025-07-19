@@ -9,16 +9,9 @@ Add Product | VibeDrobe
 <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
 <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
 <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
-<<<<<<< HEAD
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css" />
 
-=======
-<link href="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
-<link href="{% static 'admin/assets/libs/uppy/uppy.min.css' %}" rel="stylesheet" type="text/css" />
-<link href="{% static 'admin/assets/libs/huebee/huebee.min.css' %}" rel="stylesheet" type="text/css" />
-<link href="{% static 'admin/assets/libs/vanillajs-datepicker/css/datepicker.min.css' %}" rel="stylesheet"
-  type="text/css" />
->>>>>>> origin/dev
 <style>
   .image-preview {
     max-width: 200px;
@@ -65,7 +58,6 @@ Add Product | VibeDrobe
     border-radius: 4px;
     cursor: pointer;
   }
-<<<<<<< HEAD
 
   .gallery-preview {
     display: flex;
@@ -136,8 +128,7 @@ Add Product | VibeDrobe
     margin: 2em 0;
     color: #6c757d;
   }
-=======
->>>>>>> origin/dev
+
 </style>
 {% endblock %}
 
@@ -148,176 +139,10 @@ Add Product | VibeDrobe
       {% include 'custom_alerts.html' with position='inline' %}
       <div class="row justify-content-center">
         <div class="col-12">
-<<<<<<< HEAD
+
           <!-- Bulk Import Section -->
           <div class="card mb-4">
-=======
-          <div class="card">
-            <div class="card-header">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h4 class="card-title">Add New Product</h4>
-                </div>
-              </div>
-            </div>
-            <div class="card-body pt-0">
-              <form action="{% url 'add_product' %}" method="post" enctype="multipart/form-data" id="product-form">
-                {% csrf_token %}
-                <div class="tab-content">
-                  <div class="tab-pane active">
-                    <div class="row">
-                      <!-- Left Column -->
-                      <div class="col-md-6">
-                        <!-- Basic Info -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Product Name</label>
-                          <div class="col-lg-9">
-                            <input name="name" type="text" class="form-control" required maxlength="200" />
-                          </div>
-                        </div>
 
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Description</label>
-                          <div class="col-lg-9">
-                            <textarea name="description" class="form-control" rows="3" required
-                              maxlength="2000"></textarea>
-                          </div>
-                        </div>
-
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Price (₹)</label>
-                          <div class="col-lg-9">
-                            <input name="price" type="number" step="0.01" min="0" class="form-control" required />
-                          </div>
-                        </div>
-
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Base Image</label>
-                          <div class="col-lg-9">
-                            <div class="file-upload-wrapper">
-                              <input type="file" name="base_image" id="base_image" class="file-upload-input"
-                                accept="image/*" required />
-                              <label for="base_image" class="file-upload-label">
-                                <span class="file-upload-button">Choose File</span>
-                                <span id="file-name">No file chosen</span>
-                              </label>
-                            </div>
-                            <div id="image-preview-container" class="mt-2"></div>
-                            <small class="text-muted">Upload product main image (Max 2MB)</small>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Right Column -->
-                      <div class="col-md-6">
-                        <!-- Category Selection -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Subcategory</label>
-                          <div class="col-lg-9">
-                            <select name="subcategory_id" class="form-control" required>
-                              <option value="">Select Subcategory</option>
-                              {% for category in categories %}
-                              <optgroup label="{{ category.name }}">
-                                {% for subcategory in category.subcategories.all %}
-                                <option value="{{ subcategory.id }}">{{ subcategory.name }}</option>
-                                {% endfor %}
-                              </optgroup>
-                              {% endfor %}
-                            </select>
-                          </div>
-                        </div>
-
-                        <!-- Brand Selection -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Brand</label>
-                          <div class="col-lg-9">
-                            <select name="brand_id" class="form-control" required>
-                              <option value="">Select Brand</option>
-                              {% for brand in brands %}
-                              <option value="{{ brand.id }}">{{ brand.name }}</option>
-                              {% endfor %}
-                            </select>
-                          </div>
-                        </div>
-
-                        <!-- Material Selection -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Material</label>
-                          <div class="col-lg-9">
-                            <select name="material_id" class="form-control" required>
-                              <option value="">Select Material</option>
-                              {% for material in materials %}
-                              <option value="{{ material.id }}">{{ material.name }}</option>
-                              {% endfor %}
-                            </select>
-                          </div>
-                        </div>
-
-                        <!-- Color -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Color</label>
-                          <div class="col-lg-9">
-                            <input name="color" type="text" class="form-control" required maxlength="15" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Second Row -->
-                    <div class="row mt-3">
-                      <div class="col-md-6">
-                        <!-- Gender -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">Gender</label>
-                          <div class="col-lg-9">
-                            <select name="gender" class="form-control" required>
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
-                              <option value="Unisex">Unisex</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <!-- SKU -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end required-field">SKU</label>
-                          <div class="col-lg-9">
-                            <input name="sku" type="text" class="form-control" required maxlength="50" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="col-md-6">
-                        <!-- Weight -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end">Weight (kg)</label>
-                          <div class="col-lg-9">
-                            <input name="weight" type="number" step="0.01" min="0" class="form-control" />
-                          </div>
-                        </div>
-
-                        <!-- Dimensions -->
-                        <div class="form-group row mb-3">
-                          <label class="col-lg-3 col-form-label text-end">Dimensions</label>
-                          <div class="col-lg-9">
-                            <input name="dimensions" type="text" class="form-control" maxlength="50" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                  <div class="text-center mt-4 action-buttons">
-                    <a href="{% url 'display_product' %}" class="btn btn-secondary px-5 me-3"><i class="fas fa-arrow-left me-2"></i> Back</a>
-                    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-plus-circle me-2"></i> Add Product</button>
-                  </div>
-              </form>
-
-            </div>
-          </div>
-          <!-- Below your existing form -->
-          <div class="card mt-4">
->>>>>>> origin/dev
             <div class="card-header bg-primary text-white">
               <h5 class="mb-0">
                 <i class="fas fa-file-import me-2"></i>
@@ -351,7 +176,6 @@ Add Product | VibeDrobe
               </div>
             </div>
           </div>
-<<<<<<< HEAD
 
           <!-- Main Product Form -->
           <div class="card">
@@ -546,12 +370,7 @@ Add Product | VibeDrobe
       </div>
     </div>
     {% include 'footer.html' %}
-=======
-        </div>
-      </div>
-    </div>
-      {% include 'footer.html' %}
->>>>>>> origin/dev
+
   </div>
 </div>
 {% endblock %}
@@ -562,16 +381,11 @@ Add Product | VibeDrobe
 <script src="{% static 'admin/assets/js/app.js' %}"></script>
 <script src="{% static 'admin/assets/libs/mobius1-selectr/selectr.min.js' %}"></script>
 <script src="{% static 'admin/assets/js/pages/forms-advanced.js' %}"></script>
-<<<<<<< HEAD
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
 
 <script>
   // Base image upload and preview
-=======
-
-<script>
-  // File upload and preview functionality
->>>>>>> origin/dev
   document.getElementById('base_image').addEventListener('change', function (e) {
     const fileName = document.getElementById('file-name')
     const container = document.getElementById('image-preview-container')
@@ -608,8 +422,7 @@ Add Product | VibeDrobe
       fileName.textContent = 'No file chosen'
     }
   })
-
-<<<<<<< HEAD
+  
   // Gallery images dropzone
   Dropzone.autoDiscover = false;
   
@@ -738,26 +551,5 @@ Add Product | VibeDrobe
       alert('Error occurred while saving product');
     });
   });
-=======
-  // Form validation
-  document.getElementById('product-form').addEventListener('submit', function (e) {
-    const requiredFields = this.querySelectorAll('[required]')
-    let isValid = true
-
-    requiredFields.forEach((field) => {
-      if (!field.value.trim()) {
-        field.classList.add('is-invalid')
-        isValid = false
-      } else {
-        field.classList.remove('is-invalid')
-      }
-    })
-
-    if (!isValid) {
-      e.preventDefault()
-      alert('Please fill all required fields')
-    }
-  })
->>>>>>> origin/dev
 </script>
 {% endblock %}

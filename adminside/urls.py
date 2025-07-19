@@ -76,7 +76,6 @@ urlpatterns = [
     path('display_wishlist/', display_wishlist, name='display_wishlist'),
     path('display_wishlist/user/<int:user_id>/', display_wishlist, name='admin_user_wishlist'),
     
-
     path('display_payment/',display_payment,name='display_payment'),
     
     # Report URLs
