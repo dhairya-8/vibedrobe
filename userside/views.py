@@ -1,14 +1,16 @@
 import re
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from adminside.models import *
-from django.shortcuts import render, get_object_or_404
-from adminside.models import *
 from django.core.paginator import Paginator
-from django.db.models import Min, Max, Count
+from django.db.models import Min, Max, Count, Avg
 from django.http import JsonResponse
+from django.db.models import Prefetch
+from .forms import ReviewForm 
+from django.views.decorators.http import require_POST
 
 
 def homepage(request):
@@ -191,15 +193,23 @@ def shop(request):
     size_ids = request.GET.getlist('size')
     brand_ids = request.GET.getlist('brand')
     sort = request.GET.get('sort', 'default')
-    
+    gender = request.GET.get('gender', None)
+
     # Base queryset
     products = Product.objects.filter(is_active=True).prefetch_related(
-        'product_gallery_set'
+        Prefetch(
+            'product_gallery_set',
+            queryset=Product_Gallery.objects.order_by('image_order'),
+            to_attr='ordered_gallery_images')
     ).select_related(
         'subcategory_id',
         'brand_id'
     )
     
+     #gender
+    if gender:
+        products = products.filter(gender=gender)
+        
     # Apply filters
     if size_ids:
         products = products.filter(variants__size_id__in=size_ids).distinct()
@@ -298,22 +308,144 @@ def shop(request):
         'max_price': max_price,
         'global_min_price': global_min_price,
         'global_max_price': global_max_price,
+        'current_gender': gender,
     }
     return render(request, 'shop.html', context)
-
-
+   
 def product_detail(request, product_id):
-    product = get_object_or_404(Product, id=product_id, is_active=True)
-    variants = product.variants.filter(is_active=True)
-    gallery_images = product.product_gallery_set.all().order_by('image_order')
+    product = get_object_or_404(
+        Product.objects.select_related('subcategory_id', 'brand_id', 'material_id'),
+        id=product_id,
+        is_active=True
+    )
+    
+    # Initialize has_purchased with default value
+    has_purchased = False
+    recently_viewed_products = []
+    
+    # Get all active variants with size information
+    variants = Product_Variants.objects.filter(
+        product_id=product,
+        is_active=True
+    ).select_related('size_id').order_by('size_id__name')
+    
+    # Check stock status at product level (sum of all variants)
+    total_stock = sum(variant.stock_quantity for variant in variants)
+    in_stock = total_stock > 0
+    
+    # Get gallery images ordered by image_order
+    gallery_images = Product_Gallery.objects.filter(
+        product_id=product
+    ).order_by('image_order')
+    
+    # Get product tags
+    tags = Product_Tags.objects.filter(product_id=product)
+    
+    # Get reviews with proper user instances
+    reviews = Review.objects.filter(
+        product_id=product
+    ).select_related('user_id').order_by('-created_at')
+    
+    # Calculate average rating
+    rating_agg = reviews.aggregate(
+        average=Avg('rating'),
+        count=Count('id')
+    )
+    average_rating = round(rating_agg['average'] or 0)
+    rating_counts = {i: reviews.filter(rating=i).count() for i in range(5, 0, -1)}
+    
+    # Get related products (same subcategory and gender) excluding current product
+    related_products = Product.objects.filter(
+        subcategory_id=product.subcategory_id,
+        gender=product.gender
+    ).exclude(id=product.id).order_by('?')[:8]
+    
+    # Track recently viewed for authenticated users
+    if request.user.is_authenticated:
+        RecentlyViewed.objects.update_or_create(
+            user=request.user,
+            product=product,
+            defaults={'viewed_at': timezone.now()}
+        )
+        recently_viewed = RecentlyViewed.objects.filter(
+            user=request.user
+        ).exclude(product=product).order_by('-viewed_at')[:4]
+        recently_viewed_products = [rv.product for rv in recently_viewed]
+        
+        # Check if user has purchased this product
+        has_purchased = Order_Details.objects.filter(
+            order_id__user_id=request.user,
+            product_variant_id__product_id=product
+        ).exists()
     
     context = {
         'product': product,
         'variants': variants,
+        'in_stock': in_stock,
+        'total_stock': total_stock,
         'gallery_images': gallery_images,
+        'tags': tags,
+        'reviews': reviews,
+        'average_rating': average_rating,
+        'rating_counts': rating_counts,
+        'related_products': related_products,
+        'recently_viewed_products': recently_viewed_products,
+        'has_purchased': has_purchased,
     }
+    
     return render(request, 'product_detail.html', context)
 
+@login_required
+def submit_review(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            # Check if user already reviewed this product
+            existing_review = Review.objects.filter(
+                user=request.user,
+                product=product
+            ).first()
+            
+            if existing_review:
+                messages.error(request, 'You have already reviewed this product')
+                return redirect('product_detail', product_id=product.id)
+            
+            try:
+                review = form.save(commit=False)
+                review.user = request.user  # Use the User instance
+                review.product = product
+                review.save()
+                
+                messages.success(request, 'Thank you for your review!')
+            except Exception as e:
+                messages.error(request, f'Error submitting review: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return redirect('product_detail', product_id=product.id)
+
+@login_required
+@require_POST
+def delete_review(request, review_id):
+    review = get_object_or_404(Review, id=review_id, user_id=request.user)
+    product_id = review.product_id.id
+    review.delete()
+    messages.success(request, 'Your review has been deleted.')
+    return redirect('product_detail', product_id=product_id)
+
+@require_POST
+def check_variant_stock(request, variant_id):
+    variant = get_object_or_404(Product_Variants, id=variant_id)
+    return JsonResponse({
+        'in_stock': variant.stock_quantity > 0,
+        'stock': variant.stock_quantity,
+        'price': float(variant.product_id.price + variant.additional_price),
+    })
+    
 def add_to_cart(request, product_id):
     # Implement your cart logic here
     # This is just a placeholder

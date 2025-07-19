@@ -25,9 +25,12 @@ urlpatterns = [
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
     
-    # Priya's URLs
     # Product detail page
-    path('product/<int:product_id>/', product_detail, name='product_detail'),  
+    path('product/<int:product_id>/', product_detail, name='product_detail'),
+    path('product/<int:product_id>/submit-review/', submit_review, name='submit_review'),
+    path('review/<int:review_id>/delete/', delete_review, name='delete_review'),
+    path('variant/<int:variant_id>/stock/', check_variant_stock, name='check_variant_stock'),
+    
     # Add to cart
     path('add-to-cart/<int:product_id>/', add_to_cart, name='add_to_cart'), 
     # Add to wishlist

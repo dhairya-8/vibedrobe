@@ -33,7 +33,7 @@
             </div>
             <!-- <p class="slideshow_markup font-special text-uppercase position-absolute end-0 bottom-0">Summer</p> -->
             <div class="slideshow-character position-absolute bottom-0 pos_right-center">
-              <img loading="lazy" src="{% static 'user/assets/images/slideshow-character1.png' %}" width="400" height="733" alt="Woman Fashion 1" class="slideshow-character__img animate animate_fade animate_btt animate_delay-9 h-auto w-auto">
+              <img loading="lazy" src="{% static 'user/assets/images/slideshow-character2.png' %}" width="400" height="733" alt="Woman Fashion 1" class="slideshow-character__img animate animate_fade animate_btt animate_delay-9 h-auto w-auto">
               <div class="character_markup">
                 <p class="text-uppercase font-sofia fw-bold animate animate_fade animate_rtl animate_delay-10">Summer</p>
               </div>
@@ -42,7 +42,7 @@
               <h6 class="text_dash text-uppercase text-red fs-base fw-medium animate animate_fade animate_btt animate_delay-3">New Trend</h6>
               <h2 class="text-uppercase h1 fw-normal mb-0 animate animate_fade animate_btt animate_delay-5">Summer Sale Stylish</h2>
               <h2 class="text-uppercase h1 fw-bold animate animate_fade animate_btt animate_delay-5">Womens</h2>
-              <a href="#" class="btn-link btn-link_lg default-underline text-uppercase fw-medium animate animate_fade animate_btt animate_delay-7">Discover More</a>
+              <a href="{% url 'shop' %}?gender=Female" class="btn-link btn-link_lg default-underline text-uppercase fw-medium animate animate_fade animate_btt animate_delay-7">Discover More</a>
             </div>
           </div>
         </div><!-- /.slideshow-item -->
@@ -53,7 +53,7 @@
               <img loading="lazy" src="{% static 'user/assets/images/slideshow-pattern.png' %}" width="1761" height="778" alt="Pattern" class="slideshow-bg__img object-fit-cover">
             </div>
             <div class="slideshow-character position-absolute bottom-0 pos_right-center">
-              <img loading="lazy" src="{% static 'user/assets/images/slideshow-character2.png' %}" width="400" height="690" alt="Woman Fashion 2" class="slideshow-character__img animate animate_fade animate_rtl animate_delay-10 h-auto w-auto">
+              <img loading="lazy" src="{% static 'user/assets/images/char.png' %}" width="400" height="690" alt="Woman Fashion 2" class="slideshow-character__img animate animate_fade animate_rtl animate_delay-10 h-auto w-auto">
             </div>
             <div class="slideshow-text container position-absolute start-50 top-50 translate-middle">
               <h6 class="text_dash text-uppercase text-red fs-base fw-medium animate animate_fade animate_btt animate_delay-3">Summer 2020</h6>
@@ -86,7 +86,7 @@
               <div class="content_abs content_bottom content_left content_bottom-md content_left-md">
                 <p class="text-uppercase mb-1">Hot List</p>
                 <h3 class="text-uppercase"><strong>Women</strong> Collection</h3>
-                <a href="#" class="btn-link default-underline text-uppercase fw-medium">Shop Now</a>
+                <a href="{% url 'shop' %}?gender=Female" class="btn-link default-underline text-uppercase fw-medium">Shop Now</a>
               </div><!-- /.content_abs content_bottom content_left content_bottom-md content_left-md -->
             </div>
           </div><!-- /.col-md-6 -->
@@ -97,7 +97,7 @@
               <div class="content_abs content_bottom content_left content_bottom-md content_left-md">
                 <p class="text-uppercase mb-1">Hot List</p>
                 <h3 class="text-uppercase"><strong>Men</strong> Collection</h3>
-                <a href="#" class="btn-link default-underline text-uppercase fw-medium">Shop Now</a>
+                <a href="{% url 'shop' %}?gender=Male" class="btn-link default-underline text-uppercase fw-medium">Shop Now</a>
               </div><!-- /.content_abs content_bottom content_left content_bottom-md content_left-md -->
             </div>
             <div class="position-relative flex-grow-1 mt-lg-1">
@@ -1338,6 +1338,4 @@
   <!-- Footer Scripts -->
   <script src="{% static 'user/assets/js/theme.js' %}"></script>
   {% endblock %}
-</body>
-
 </html>

@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 
-
 # Models for admin and user 
 class Admin(models.Model):
     email = models.EmailField(unique=True,null=False, blank=False,max_length=100)
@@ -145,6 +144,12 @@ class Product(models.Model):
     
     def __str__(self):
         return f"Product#{self.id}: {self.name[:50]} ({self.brand_id.name})"
+    
+    def get_average_rating(self):
+        """Returns the average rating for this product"""
+        from django.db.models import Avg
+        result = self.review_set.aggregate(average=Avg('rating'))
+        return round(result['average'] or 0)
     
 class Product_Variants(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
@@ -346,6 +351,21 @@ class Review(models.Model):
     title = models.CharField(max_length=100, null=True)
     comment = models.TextField(max_length=1000, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user_id', 'product_id') 
 
     def __str__(self):
         return f"Review: {self.rating}★ for {self.product_id.name}"
+    
+class RecentlyViewed(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        ordering = ['-viewed_at']
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.product.name}"
