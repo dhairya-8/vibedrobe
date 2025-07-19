@@ -36,8 +36,7 @@ urlpatterns = [
     
     # Product detail page
     path('product/<int:product_id>/', product_detail, name='product_detail'),
-    path('product/<int:product_id>/submit-review/', submit_review, name='submit_review'),
-    path('review/<int:review_id>/delete/', delete_review, name='delete_review'),
+
     path('variant/<int:variant_id>/stock/', check_variant_stock, name='check_variant_stock'),
     
     # Add to cart

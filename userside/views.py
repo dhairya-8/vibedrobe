@@ -1,13 +1,14 @@
 import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from .decorators import user_login_required
 from django.contrib import messages
 from django.utils import timezone
 from adminside.models import *
 from django.core.paginator import Paginator
-from django.db.models import Min, Max, Count, Avg
+from django.db.models import Min, Max, Count, Avg, Prefetch
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 
 def homepage(request):
@@ -535,48 +536,6 @@ def product_detail(request, product_id):
     }
     
     return render(request, 'product_detail.html', context)
-
-@login_required
-def submit_review(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    
-    if request.method == 'POST':
-        form = ReviewForm(request.POST)
-        if form.is_valid():
-            # Check if user already reviewed this product
-            existing_review = Review.objects.filter(
-                user=request.user,
-                product=product
-            ).first()
-            
-            if existing_review:
-                messages.error(request, 'You have already reviewed this product')
-                return redirect('product_detail', product_id=product.id)
-            
-            try:
-                review = form.save(commit=False)
-                review.user = request.user  # Use the User instance
-                review.product = product
-                review.save()
-                
-                messages.success(request, 'Thank you for your review!')
-            except Exception as e:
-                messages.error(request, f'Error submitting review: {str(e)}')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    
-    return redirect('product_detail', product_id=product.id)
-
-@login_required
-@require_POST
-def delete_review(request, review_id):
-    review = get_object_or_404(Review, id=review_id, user_id=request.user)
-    product_id = review.product_id.id
-    review.delete()
-    messages.success(request, 'Your review has been deleted.')
-    return redirect('product_detail', product_id=product_id)
 
 @require_POST
 def check_variant_stock(request, variant_id):
