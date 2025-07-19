@@ -41,7 +41,7 @@ class User(models.Model):
     contact = models.BigIntegerField(null=False, blank=False)
     date_of_birth = models.DateField(null=False, blank=False)
     gender = models.CharField(max_length=20, choices=[('1', 'Female'), ('2', 'Male')])
-    profile_image = models.ImageField(upload_to='user_profile_pictures/', null=True, blank=True)
+    profile_image = models.ImageField(upload_to='userside/user_profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)
     registration_date = models.DateField(null=False, blank=False)
@@ -69,20 +69,29 @@ class User(models.Model):
 
 class User_Address(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    address_type = models.CharField(max_length=20, null=False, blank=False)
+    ADDRESS_TYPE_CHOICES = [
+        ('home', 'Home'),
+        ('work', 'Work'),
+        ('other', 'Other'),
+    ]
+    address_type = models.CharField(max_length=20, null=False, blank=False, choices=ADDRESS_TYPE_CHOICES, default='home')
+    address_name = models.CharField(max_length=80, null=False, blank=False, default='Home', help_text="Name for this address (e.g., Home, Work)")
     full_name = models.CharField(max_length=100, null=False, blank=False)
     phone = models.BigIntegerField(null=False, blank=False)
     address_line_1 = models.CharField(max_length=200, null=False, blank=False)
-    address_line_2 = models.CharField(max_length=200, null=False, blank=False)
+    address_line_2 = models.CharField(max_length=200, blank=True, default='')
     city = models.CharField(max_length=50, null=False, blank=False)
     state = models.CharField(max_length=50, null=False, blank=False)
     pincode = models.CharField(max_length=10, null=False, blank=False)
-    country = models.CharField(max_length=200, null=False, blank=False)
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
-    def _str_(self):
-        return self.full_name
+    def __str__(self):
+        return f"{self.address_name} ({self.get_address_type_display()})"
+
+    def get_full_address(self):
+        return f"{self.address_line_1}{', ' + self.address_line_2 if self.address_line_2 else ''}, {self.city}, {self.state} {self.pincode},"
     
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
@@ -229,7 +238,16 @@ class Wishlist(models.Model):
 class Order_Master(models.Model):
     order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=25, null=False, blank=False)
+    
+    STATUS_CHOICES = [
+        ('processing', 'Processing'),
+        ('confirmed', 'Confirmed'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
     subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
     tax_amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
     shipping_charge = models.DecimalField(decimal_places=2, max_digits=10, default=0)
@@ -239,6 +257,19 @@ class Order_Master(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            # Example: ORD-20230712-0001
+            date_str = timezone.now().strftime('%Y%m%d')
+            last_order = Order_Master.objects.filter(order_number__contains=date_str).last()
+            if last_order:
+                last_num = int(last_order.order_number.split('-')[-1])
+                new_num = last_num + 1
+            else:
+                new_num = 1
+            self.order_number = f"ORD-{date_str}-{new_num:04d}"
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"
     
@@ -264,7 +295,7 @@ class Order_Address(models.Model):
     city = models.CharField(max_length=50, null=False, blank=False)
     state = models.CharField(max_length=50, null=False, blank=False)
     pincode = models.CharField(max_length=10, null=False, blank=False)
-
+ 
     def __str__(self):
         return f"Address for Order#{self.order_id.order_number}: {self.full_name} ({self.address_type})"
 

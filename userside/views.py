@@ -9,13 +9,15 @@ from adminside.models import *
 from django.core.paginator import Paginator
 from django.db.models import Min, Max, Count
 from django.http import JsonResponse
-
+from .decorators import user_login_required
 
 def homepage(request):
    return render(request, 'homepage.html')
 
 def login_register_view(request):
     """Handle both login and registration in one view"""
+    active_tab = request.GET.get('tab', 'login')
+    
     # Handle login form submission
     if request.method == 'POST' and 'login_email' in request.POST:
         email = request.POST.get('login_email')
@@ -25,23 +27,18 @@ def login_register_view(request):
         try:
             user = User.objects.get(email=email)
             if user.check_password(password):
-                # Set session data
+                # Set essential session data only
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
-                request.session['user_name'] = user.first_name
-                print(f"User logged in: {user.username} ({user.email})")
-                
-                # Update last login
-                user.last_login = timezone.now()
-                user.save(update_fields=['last_login'])
+                request.session['user_name'] = user.username
                 
                 # Remember me functionality
                 request.session.set_expiry(1209600 if remember_me else 0)
                 
                 messages.success(request, 'Login successful!')
-                return redirect('homepage')
+                return redirect('homepage')  # Always redirect to homepage after login
             else:
-                messages.info(request, 'Incorrect password')
+                messages.error(request, 'Incorrect password')
         except User.DoesNotExist:
             messages.error(request, 'Email not registered')
         
@@ -129,11 +126,15 @@ def login_register_view(request):
         return render(request, 'register.html', {
             'register_errors': errors,
             'register_form_data': form_data,
-            'active_tab': 'register'
+            'active_tab': 'register',
+            
         })
     
-    # GET request - show form
-    return render(request, 'register.html')
+    # GET request - show form with active tab from query parameter
+    return render(request, 'register.html', {
+        'active_tab': active_tab,
+        
+    })
 
 def validate_user_data(form_data):
     """Validate only the 4 required fields"""
@@ -174,6 +175,8 @@ def user_logout(request):
     messages.success(request, 'You have been logged out')
     return redirect('homepage')
 
+# Account Management Views
+@user_login_required
 def account_dashboard(request):
     """Render the account dashboard"""
     if 'user_id' not in request.session:
@@ -183,6 +186,146 @@ def account_dashboard(request):
         user_id = request.session['user_id']
         user = User.objects.get(id=user_id)
         return render(request, 'account_dashboard.html', {'user': user})
+    
+def account_orders(request):
+    # Get all orders for the current user
+    user_id_session = request.session.get('user_id')
+    print(f"User ID from session: {user_id_session}")
+    orders = Order_Master.objects.filter(user_id=user_id_session).order_by('-order_date')
+    
+    # Prepare order data with details
+    order_list = []
+    for order in orders:
+        # Get all items for this order
+        order_items = Order_Details.objects.filter(order_id=order)
+        item_count = order_items.count()
+        
+        order_list.append({
+            'order': order,
+            'items': order_items,
+            'item_count': item_count,
+        })
+    
+    context = {
+        'order_list': order_list,
+    }
+    return render(request, 'account_orders.html', context)
+
+# NEED TO WORK ON THIS, STATUS - INCOMPLETE
+def order_detail(request, order_id):
+    order = get_object_or_404(Order_Master, id=order_id, user_id=request.user)
+    order_items = Order_Details.objects.filter(order_id=order)
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+    return render(request, 'order_detail.html', context)
+
+def account_addresses(request):
+    
+    user_id_from_session = request.session.get('user_id')
+    addresses = User_Address.objects.filter(user_id=user_id_from_session).order_by('-is_default', '-updated_at')
+    default_address = addresses.filter(is_default=True).first()
+    
+    context = {
+        'addresses': addresses,
+        'default_address': default_address,
+    }
+    return render(request, 'account_addresses.html', context)
+
+@user_login_required
+def add_address(request):
+    if request.method == 'POST':
+        try:
+            user_id = request.session['user_id']
+            
+            address = User_Address(
+                user_id_id=user_id,
+                address_type=request.POST.get('address_type'),
+                address_name=request.POST.get('address_name'),
+                full_name=request.POST.get('full_name'),
+                phone=request.POST.get('phone'),
+                address_line_1=request.POST.get('address_line_1'),
+                address_line_2=request.POST.get('address_line_2', ''),
+                city=request.POST.get('city'),
+                state=request.POST.get('state'),
+                pincode=request.POST.get('pincode'),
+                is_default=request.POST.get('is_default') == 'on'
+            )
+            
+            if address.is_default:
+                User_Address.objects.filter(user_id_id=user_id).update(is_default=False)
+            
+            address.save()
+            messages.success(request, 'Address added successfully!')
+            return redirect('account_addresses')
+            
+        except Exception as e:
+            messages.error(request, f'Error adding address: {str(e)}')
+    
+    return render(request, 'account_add_address.html')
+
+@user_login_required
+def edit_address(request, address_id):
+    user_id = request.session['user_id']
+    address = get_object_or_404(User_Address, id=address_id, user_id_id=user_id)
+    
+    if request.method == 'POST':
+        try:
+            address.address_type = request.POST.get('address_type')
+            address.address_name = request.POST.get('address_name')
+            address.full_name = request.POST.get('full_name')
+            address.phone = request.POST.get('phone')
+            address.address_line_1 = request.POST.get('address_line_1')
+            address.address_line_2 = request.POST.get('address_line_2', '')
+            address.city = request.POST.get('city')
+            address.state = request.POST.get('state')
+            address.pincode = request.POST.get('pincode')
+            
+            new_default = request.POST.get('is_default') == 'on'
+            if new_default and not address.is_default:
+                User_Address.objects.filter(user_id_id=user_id).update(is_default=False)
+                address.is_default = True
+            elif not new_default and address.is_default:
+                address.is_default = False
+            
+            address.save()
+            messages.success(request, 'Address updated successfully!')
+            return redirect('account_addresses')
+        
+        except Exception as e:
+            messages.error(request, f'Error updating address: {str(e)}')
+    
+    return render(request, 'address_edit.html', {'address': address})
+
+@user_login_required
+def delete_address(request, address_id):
+    user_id = request.session['user_id']
+    address = get_object_or_404(User_Address, id=address_id, user_id_id=user_id)
+    
+    if address.is_default:
+        messages.error(request, 'Cannot delete default address. Set another address as default first.')
+    else:
+        address.delete()
+        messages.success(request, 'Address deleted successfully!')
+    
+    return redirect('account_addresses')
+
+@user_login_required
+def set_default_address(request, address_id):
+    user_id = request.session['user_id']
+    address = get_object_or_404(User_Address, id=address_id, user_id_id=user_id)
+    
+    if not address.is_default:
+        User_Address.objects.filter(user_id_id=user_id).update(is_default=False)
+        address.is_default = True
+        address.save()
+        messages.success(request, 'Default address updated!')
+    else:
+        messages.info(request, 'This address is already your default')
+    
+    return redirect('account_addresses')
 
 def shop(request):
     # Get filter parameters
@@ -300,7 +443,6 @@ def shop(request):
         'global_max_price': global_max_price,
     }
     return render(request, 'shop.html', context)
-
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True)

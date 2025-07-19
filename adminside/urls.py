@@ -7,7 +7,7 @@ urlpatterns = [
     path('',index,name='index'),    
     path('index/',index,name='index'),
     path('login/',login,name='login'),
-    path('logout/',logout,name='logout'),
+    path('logout/',logout,name='logout_admin'),
 
     # Admin URLs
     path('display_admin/',display_admin,name='display_admin'),

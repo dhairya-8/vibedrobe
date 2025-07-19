@@ -7,7 +7,6 @@ from decimal import Decimal, InvalidOperation
 from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.conf import settings
-import random, string, os, json, logging
 import random, string, os, json
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
@@ -19,7 +18,7 @@ from datetime import datetime
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.db import transaction
 from django.views.decorators.http import require_POST

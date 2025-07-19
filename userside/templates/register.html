@@ -45,6 +45,7 @@
                     <form action="{% url 'login_register' %}" method="post" enctype="multipart/form-data"
                         name="login-form" class="needs-validation" novalidate>
                         {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ next_url }}">
                         <div class="form-floating mb-3">
                             <input name="login_email" type="email"
                                 class="form-control form-control_gray {% if login_errors.email %}is-invalid{% endif %}"
@@ -94,7 +95,7 @@
                     <form action="{% url 'login_register' %}" method="post" name="register-form"
                         class="needs-validation" novalidate>
                         {% csrf_token %}
-
+                        <input type="hidden" name="next" value="{{ next_url }}">
                         <!-- Username -->
                         <div class="form-floating mb-3">
                             <input name="register_username" type="text"
@@ -175,20 +176,33 @@
 <script src="{% static 'user/assets/js/theme.js' %}"></script>
 
 <script>
-    // Add this to your existing JavaScript
-    $(document).ready(function () {
-        // Handle click on "Create Account" link in login form
-        $('.js-show-register').click(function (e) {
-            e.preventDefault();
-            $('#register-tab').tab('show');
-        });
+$(document).ready(function () {
+    // Handle tab switching from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    
+    if (activeTab === 'register') {
+        $('#register-tab').tab('show');
+    }
 
-        // Handle click on "Sign In" link in registration form
-        $('.js-show-login').click(function (e) {
-            e.preventDefault();
-            $('#login-tab').tab('show');
-        });
+    // Handle click on "Create Account" link
+    $('.js-show-register').click(function (e) {
+        e.preventDefault();
+        const nextUrl = new URLSearchParams(window.location.search).get('next');
+        const newUrl = window.location.pathname + `?tab=register${nextUrl ? '&next=' + nextUrl : ''}`;
+        window.history.pushState({}, '', newUrl);
+        $('#register-tab').tab('show');
     });
+
+    // Handle click on "Sign In" link
+    $('.js-show-login').click(function (e) {
+        e.preventDefault();
+        const nextUrl = new URLSearchParams(window.location.search).get('next');
+        const newUrl = window.location.pathname + `?tab=login${nextUrl ? '&next=' + nextUrl : ''}`;
+        window.history.pushState({}, '', newUrl);
+        $('#login-tab').tab('show');
+    });
+});
 </script>
 
 {% endblock %}

@@ -8,6 +8,15 @@ urlpatterns = [
     
     # Account URLs
     path('account-dashboard/', account_dashboard, name='account_dashboard'),
+    path('account-orders/', account_orders, name='account_orders'),
+    path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
+    
+    # Address URLs 
+    path('account-addresses/', account_addresses, name='account_addresses'),
+    path('account-addresses/add/', add_address, name='add_address'),
+    path('account-addresses/edit/<int:address_id>/', edit_address, name='edit_address'),
+    path('account-addresses/delete/<int:address_id>/', delete_address, name='delete_address'),
+    path('account-addresses/set-default/<int:address_id>/', set_default_address, name='set_default_address'),
     
     # Shop URLs
     path('', homepage, name='homepage'),
