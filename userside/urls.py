@@ -19,11 +19,14 @@ urlpatterns = [
     path('cart/items/update/', update_cart_item, name='update_cart_item'),
     path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),    path('checkout/', checkout, name='checkout'),
     path('order-confirm/', orderconfirm, name='orderconfirm'),
+  
+    # ==================== Quick Add to Cart/Wishlist (Shop) URLs ====================
+    path('quick_add-to-cart/<int:product_id>/', quick_add_to_cart, name='quick_add_to_cart'),
+    path('quick_add-to-wishlist/<int:product_id>/', quick_add_to_wishlist, name='quick_add_to_wishlist'),
 
     # ==================== Product Interaction URLs ====================
     path('add-to-wishlist/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
-    path('variant/<int:variant_id>/stock/', check_variant_stock, name='check_variant_stock'),
-    
+    path('variant/<int:variant_id>/stock/', check_variant_stock, name='check_variant_stock'),  
     path('wishlist/', wishlist, name='wishlist'),
     path('wishlist/add/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
     path('wishlist/remove/<int:item_id>/', remove_from_wishlist, name='remove_from_wishlist'),
@@ -31,12 +34,12 @@ urlpatterns = [
 
 
     # ==================== Account Management URLs ====================
-    path('account-dashboard/', account_dashboard, name='account_dashboard'),
-    
+    path('account-dashboard/', account_dashboard, name='account_dashboard'), 
     # Order related
     path('account-orders/', account_orders, name='account_orders'),
     path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
-    
+    path('account-details/', account_details, name='account_details'),
+    path('account/deactivate/', deactivate_account, name='deactivate_account'),   
     # Address related
     path('account-addresses/', account_addresses, name='account_addresses'),
     path('account-addresses/add/', add_address, name='add_address'),
@@ -47,4 +50,5 @@ urlpatterns = [
     # ==================== Static Pages ====================
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
+
 ]

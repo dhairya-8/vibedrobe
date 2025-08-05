@@ -64,7 +64,7 @@
                         <td>{{ user.id }}</td>
                         <td>
                           {% if user.profile_image %}
-                            <img src="{{ user.profile_image.url }}" alt="profile" class="rounded-circle avatar-sm">
+                            <img src="{{ user.profile_image.url }}" alt="profile" class="rounded-circle avatar-sm" height="50" width="50">
                           {% else %}
                             <img src="{% static 'admin/assets/images/users/avatar-1.jpg' %}" alt="profile" class="rounded-circle avatar-sm" width="50">
                           {% endif %}

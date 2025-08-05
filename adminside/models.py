@@ -1,6 +1,7 @@
 from django.db import models
-from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.hashers import make_password, check_password
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -30,40 +31,41 @@ class Admin(models.Model):
 
     def __str__(self):
         return f"Admin: {self.username} ({self.role})"
+
+class User(AbstractBaseUser):
+    # Required registration fields (4 fields)
+    email = models.EmailField(unique=True, max_length=100)
+    username = models.CharField(max_length=50, unique=True)
+    first_name = models.CharField(max_length=50)
+    password = models.CharField(max_length=255)  # Will be hashed automatically
     
-class User(models.Model):
-    email = models.EmailField(unique=True,null=False, blank=False,max_length=100)
-    username = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    password = models.CharField(max_length=255, null=False, blank=False)
-    first_name = models.CharField(max_length=50, null=False, blank=False)
-    last_name = models.CharField(max_length=50, null=False, blank=False)
-    contact = models.BigIntegerField(null=False, blank=False)
-    date_of_birth = models.DateField(null=False, blank=False)
-    gender = models.CharField(max_length=20, choices=[('1', 'Female'), ('2', 'Male')])
+    # Additional fields (with defaults)
+    last_name = models.CharField(max_length=50, default='')
+    contact = models.BigIntegerField(default=0)
+    date_of_birth = models.DateField(auto_now_add=True)  # Default to registration date
+    gender = models.CharField(max_length=20, choices=[('female', 'Female'), ('male', 'Male')], default='male')
     profile_image = models.ImageField(upload_to='userside/user_profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_verified = models.BooleanField(default=True)
-    registration_date = models.DateField(null=False, blank=False)
+    registration_date = models.DateField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        """Automatically hash password when saving"""
-        if self.password and not self.password.startswith('pbkdf2_'):
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
-        
+    # Required for AbstractBaseUser
+    USERNAME_FIELD = 'email'
+    
+    def __str__(self):
+        return f"User#{self.id}: {self.email}"
+    
+    # Your existing methods can remain the same
     def set_password(self, raw_password):
         """Set hashed password"""
         self.password = make_password(raw_password)
         
     def check_password(self, raw_password):
         """Verify password"""
-        return check_password(raw_password, self.password)
-
-    def __str__(self):
-        return f"User#{self.id}: {self.email}"
+        return super().check_password(raw_password)  # Uses AbstractBaseUser's method
 
 class User_Address(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -236,7 +238,7 @@ class Wishlist(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Wish: User#{self.user_id.id} > Product#{self.product_id.id}"
+        return f"Wishlist: User#{self.user_id.id} > Product#{self.product_id.id}"
 
     @property
     def in_stock(self):

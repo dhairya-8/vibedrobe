@@ -1,18 +1,17 @@
 import re
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import login as auth_login
 from .decorators import user_login_required
 from django.contrib import messages
 from django.utils import timezone
 from adminside.models import *
 from django.core.paginator import Paginator
 from django.db.models import Min, Max, Count, Avg, Prefetch
-from django.http import JsonResponse
+from django.db import IntegrityError
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import PermissionDenied
 from django.urls import reverse
+from .utils import *
+
 
 def homepage(request):
    return render(request, 'homepage.html')
@@ -29,8 +28,22 @@ def login_register_view(request):
         
         try:
             user = User.objects.get(email=email)
+            
+            # Check if account is deactivated
+            if not user.is_active:
+                messages.error(request, 'Account is deactivated. Please contact support to reactivate.')
+                return render(request, 'register.html', {
+                    'login_form_data': {'email': email},
+                    'active_tab': 'login'
+                })
+            
             if user.check_password(password):
-                # Set essential session data only
+                # Check again in case the account was deactivated between query and login
+                if not user.is_active:
+                    messages.error(request, 'Account is currently deactivated')
+                    return redirect('login_register')
+                
+                # Set session data
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
                 request.session['user_name'] = user.username
@@ -38,8 +51,11 @@ def login_register_view(request):
                 # Remember me functionality
                 request.session.set_expiry(1209600 if remember_me else 0)
                 
+                # Use Django's login() for session management
+                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                
                 messages.success(request, 'Login successful!')
-                return redirect('homepage')  # Always redirect to homepage after login
+                return redirect('homepage')
             else:
                 messages.error(request, 'Incorrect password')
         except User.DoesNotExist:
@@ -50,7 +66,7 @@ def login_register_view(request):
             'active_tab': 'login'
         })
     
-    # Handle registration form submission (only 4 required fields now)
+    # Handle registration form submission (existing code remains same)
     elif request.method == 'POST' and 'register_email' in request.POST:
         form_data = {
             'username': request.POST.get('register_username'),
@@ -59,68 +75,33 @@ def login_register_view(request):
             'first_name': request.POST.get('first_name'),
         }
         
-        errors = {}
-        
-        # Validate username
-        if not form_data['username']:
-            errors['username'] = 'Username is required'
-        elif len(form_data['username']) < 4:
-            errors['username'] = 'Username must be at least 4 characters'
-        elif User.objects.filter(username=form_data['username']).exists():
-            errors['username'] = 'Username already taken'
-        
-        # Validate email
-        if not form_data['email']:
-            errors['email'] = 'Email is required'
-        elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', form_data['email']):
-            errors['email'] = 'Enter a valid email address'
-        elif User.objects.filter(email=form_data['email']).exists():
-            errors['email'] = 'Email already registered'
-        
-        # Validate password
-        if not form_data['password']:
-            errors['password'] = 'Password is required'
-        elif len(form_data['password']) < 8:
-            errors['password'] = 'Password must be at least 8 characters'
-        
-        # Validate first name
-        if not form_data['first_name']:
-            errors['first_name'] = 'First name is required'
+        errors = validate_user_data(form_data)
         
         if not errors:
             try:
-                # Create user with minimal fields first
+                # Create user with minimal fields
                 user = User.objects.create(
-                    username=form_data['username'],
                     email=form_data['email'],
+                    username=form_data['username'],
                     first_name=form_data['first_name'],
-                    is_active=True,
-                    is_verified=True,
-                    registration_date=timezone.now().date(),
-                    # Set default values for required fields
-                    last_name='',  # Can be updated later
-                    contact=0,     # Can be updated later
-                    date_of_birth=timezone.now().date(),  # Can be updated later
-                    gender='1'     # Can be updated later
+                    is_active=True,  # Ensure new accounts are active
+                    # Other fields will use their defaults
                 )
-                # Set password properly
                 user.set_password(form_data['password'])
                 user.save()
                 
                 # Auto-login after registration
-                auth_user = authenticate(request, email=form_data['email'], password=form_data['password'])
-                if auth_user:
-                    login(request, auth_user)
-                    request.session['user_id'] = user.id
-                    request.session['user_email'] = user.email
-                    request.session['user_name'] = user.first_name
+                request.session['user_id'] = user.id
+                request.session['user_email'] = user.email
+                request.session['user_name'] = user.first_name
+                auth_login(request, user)
                 
                 messages.success(request, 'Registration successful! Please complete your profile.')
+                success(f"Welcome {user.first_name}!", detailed=True)
                 return redirect('profile')
                 
             except Exception as e:
                 messages.error(request, f'Registration failed: {str(e)}')
-                # Print the error for debugging
                 print(f"Registration error: {str(e)}")
         else:
             for field, error in errors.items():
@@ -130,17 +111,13 @@ def login_register_view(request):
             'register_errors': errors,
             'register_form_data': form_data,
             'active_tab': 'register',
-            
         })
     
-    # GET request - show form with active tab from query parameter
-    return render(request, 'register.html', {
-        'active_tab': active_tab,
-        
-    })
+    # GET request
+    return render(request, 'register.html', {'active_tab': active_tab})
 
 def validate_user_data(form_data):
-    """Validate only the 4 required fields"""
+    """Validate only the 4 required fields during registration"""
     errors = {}
     
     # Username validation
@@ -172,13 +149,15 @@ def validate_user_data(form_data):
     return errors
 
 def user_logout(request):
-    """Handle user logout"""
+    """Logout clears session and uses Django's logout"""
+    from django.contrib.auth import logout as auth_logout
+    auth_logout(request)
     request.session.flush()
-    print("User logged out")
     messages.success(request, 'You have been logged out')
     return redirect('homepage')
 
-# Account Management Views
+
+# ============================= Account Views =============================
 @user_login_required
 def account_dashboard(request):
     """Render the account dashboard"""
@@ -189,42 +168,72 @@ def account_dashboard(request):
         user_id = request.session['user_id']
         user = User.objects.get(id=user_id)
         return render(request, 'account_dashboard.html', {'user': user})
-    
+
+@user_login_required    
 def account_orders(request):
-    # Get all orders for the current user
-    user_id_session = request.session.get('user_id')
-    print(f"User ID from session: {user_id_session}")
-    orders = Order_Master.objects.filter(user_id=user_id_session).order_by('-order_date')
-    
-    # Prepare order data with details
-    order_list = []
-    for order in orders:
-        # Get all items for this order
-        order_items = Order_Details.objects.filter(order_id=order)
-        item_count = order_items.count()
+    try:
+        user_id_session = request.session.get('user_id')
+        info(f'User ID: {user_id_session}')
         
-        order_list.append({
-            'order': order,
-            'items': order_items,
-            'item_count': item_count,
-        })
-    
-    context = {
-        'order_list': order_list,
-    }
-    return render(request, 'account_orders.html', context)
+        if not user_id_session:
+            error('No session found')
+            messages.error(request, 'Your session expired. Please login again.')
+            return redirect('login')
+            
+        orders = Order_Master.objects.filter(user_id=user_id_session).order_by('-order_date')
+        success(f'Found {orders.count()} orders')
+        
+        order_list = []
+        for order in orders:
+            order_list.append({
+                'order': order,
+                'item_count': order.order_details_set.count()
+            })
+        
+        return render(request, 'account_orders.html', {'order_list': order_list})
+        
+    except Exception as e:
+        error(f'Error: {str(e)}', detailed=True)
+        messages.error(request, 'We encountered an error loading your orders.')
+        return render(request, 'account_orders.html', {'order_list': []})
 
-# NEED TO WORK ON THIS, STATUS - INCOMPLETE
+@user_login_required
 def order_detail(request, order_id):
-    order = get_object_or_404(Order_Master, id=order_id, user_id=request.user)
-    order_items = Order_Details.objects.filter(order_id=order)
-    
-    context = {
-        'order': order,
-        'order_items': order_items,
-    }
-    return render(request, 'order_detail.html', context)
+    try:
+        user_id_session = request.session.get('user_id')
+        info(f'Loading order {order_id} for user {user_id_session}')
+        
+        if not user_id_session:
+            error('Session expired during modal load')
+            messages.error(request, 'Your session expired. Please refresh the page.')
+            return redirect('account_orders')
+            
+        order = Order_Master.objects.get(id=order_id, user_id=user_id_session)
+        success(f"""Order #{order.order_number}
+            Status: {order.status}
+            Total: ₹{order.total_amount}
+            Items: {order.order_details_set.count()}""", detailed=True)
+        
+        context = {
+            'order': order,
+            'order_items': order.order_details_set.all(),
+            'shipping_address': order.order_address_set.filter(address_type='shipping').first(),
+            'payment': order.payment_set.first(),
+            'shipping': order.shipping_set.first(),
+        }
+        return render(request, 'account_order_detail_modal.html', context)
+        
+    except Order_Master.DoesNotExist:
+        error(f'Order {order_id} not found')
+        messages.error(request, 'The requested order was not found.')
+        return redirect('account_orders')
+        
+    except Exception as e:
+        error(f'Modal error: {str(e)}', detailed=True)
+        messages.error(request, 'Failed to load order details. Please try again.')
+        return redirect('account_orders')
 
+@user_login_required
 def account_addresses(request):
     
     user_id_from_session = request.session.get('user_id')
@@ -300,7 +309,7 @@ def edit_address(request, address_id):
         except Exception as e:
             messages.error(request, f'Error updating address: {str(e)}')
     
-    return render(request, 'address_edit.html', {'address': address})
+    return render(request, 'account_edit_address.html', {'address': address})
 
 @user_login_required
 def delete_address(request, address_id):
@@ -330,6 +339,71 @@ def set_default_address(request, address_id):
     
     return redirect('account_addresses')
 
+@user_login_required
+def account_details(request):
+    if request.method == 'POST':
+        if request.POST.get('form_type') == 'profile':
+            # Handle profile update
+            user = request.user
+            user.first_name = request.POST.get('first_name')
+            user.last_name = request.POST.get('last_name')
+            user.contact = request.POST.get('contact')
+            user.date_of_birth = request.POST.get('date_of_birth')
+            user.gender = request.POST.get('gender')
+            
+            if 'profile_image' in request.FILES:
+                user.profile_image = request.FILES['profile_image']
+            
+            user.save()
+            messages.success(request, 'Profile updated successfully!')
+            
+        elif request.POST.get('form_type') == 'password':
+            # Handle password change
+            current_password = request.POST.get('current_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+            
+            if not request.user.check_password(current_password):
+                messages.error(request, 'Current password is incorrect')
+            elif new_password1 != new_password2:
+                messages.error(request, 'New passwords do not match')
+            elif len(new_password1) < 8:
+                messages.error(request, 'Password must be at least 8 characters')
+            else:
+                request.user.set_password(new_password1)
+                request.user.save()
+                
+                # Re-login the user to maintain session
+                from django.contrib.auth import login
+                login(request, request.user)
+                
+                messages.success(request, 'Password changed successfully!')
+                return redirect('account_details')
+        
+        return redirect('account_details')
+    
+    return render(request, 'account_details.html')
+
+@user_login_required
+def deactivate_account(request):
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        if request.user.check_password(password):
+            request.user.is_active = False
+            request.user.save()
+            
+            from django.contrib.auth import logout
+            logout(request)
+            
+            messages.success(request, 'Account deactivated successfully')
+            return redirect('homepage')
+        else:
+            messages.error(request, 'Incorrect password')
+            return redirect('account_details')
+    return redirect('account_details')
+
+
+# ============================= Shop Views =============================
 def shop(request):
     # Get filter parameters
     category_id = request.GET.get('category')
@@ -553,7 +627,7 @@ def product_detail(request, product_id):
 @require_POST
 def check_variant_stock(request, variant_id):
     variant = get_object_or_404(Product_Variants, id=variant_id)
-    return JsonResponse({
+    return ({
         'in_stock': variant.stock_quantity > 0,
         'stock': variant.stock_quantity,
         'price': float(variant.product_id.price + variant.additional_price),
@@ -823,6 +897,75 @@ def move_to_cart(request, item_id):
         messages.error(request, "Error moving item to cart")
         return redirect('wishlist')
 
+# ========================= Single Add to Cart/Wihslist and Quick-view =========================
+@user_login_required
+def quick_add_to_cart(request, product_id):
+    try:
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        variant = product.variants.filter(is_active=True).first()
+        
+        if not variant:
+            messages.error(request, "This product is currently unavailable.")
+            return redirect('shop')
+        
+        if variant.stock_quantity <= 0:
+            messages.warning(request, f"Sorry, {product.name} is out of stock.")
+            return redirect('shop')
+        
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user_id=request.user)
+        
+        # Check if item already exists in cart
+        cart_item, created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'price_at_time': product.price + (variant.additional_price or 0),
+                'quantity': 1
+            }
+        )
+        
+        if not created:
+            # If item exists and we can add more
+            new_quantity = cart_item.quantity + 1
+            if new_quantity <= variant.stock_quantity:
+                cart_item.quantity = new_quantity
+                cart_item.save()
+                messages.success(request, f"Added one more {product.name} to your cart. Total: {new_quantity}")
+            else:
+                messages.warning(request, 
+                    f"You already have {cart_item.quantity} in cart. Only {variant.stock_quantity} available.")
+        else:
+            messages.success(request, f"✓ {product.name} added to cart!")
+        
+    except Exception as e:
+        messages.error(request, "Couldn't add item to cart. Please try again.")
+        # Log the error here in production
+    
+    return redirect('shop')
+
+
+@user_login_required
+def quick_add_to_wishlist(request, product_id):
+    try:
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        
+        # Check if product is already in wishlist
+        if Wishlist.objects.filter(user_id=request.user, product_id=product).exists():
+            messages.info(request, f"{product.name} is already in your wishlist 💖")
+        else:
+            Wishlist.objects.create(user_id=request.user, product_id=product)
+            messages.success(request, f"✓ {product.name} added to wishlist!")
+            
+    except IntegrityError:
+        messages.error(request, "Couldn't add to wishlist. Please try again.")
+    except Exception as e:
+        messages.error(request, "An unexpected error occurred.")
+        # Log the error here in production
+    
+    return redirect('shop')
+
+# ========================= Static Pages =========================
 def contactus(request):
    return render(request, 'contactus.html')
 

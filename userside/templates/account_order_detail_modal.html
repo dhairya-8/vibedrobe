@@ -1,0 +1,142 @@
+<div class="modal-header">
+    <h5 class="modal-title">Order #{{ order.order_number }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <!-- Order Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <p><strong>Order Date:</strong> {{ order.order_date|date:"F j, Y" }}</p>
+            <p><strong>Status:</strong> 
+                <span class="order-status order-status--{{ order.status|lower }}">
+                    {{ order.get_status_display }}
+                </span>
+            </p>
+        </div>
+        <div class="col-md-4">
+            <p><strong>Subtotal:</strong> ₹{{ order.subtotal }}</p>
+            <p><strong>Shipping:</strong> ₹{{ order.shipping_charge }}</p>
+        </div>
+        <div class="col-md-4">
+            <p><strong>Tax:</strong> ₹{{ order.tax_amount }}</p>
+            <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <h6>Order Items</h6>
+    <div class="table-responsive mb-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_items %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="{{ item.product_variant_id.product_id.base_image.url }}" 
+                                 class="order-product-img me-3" 
+                                 alt="{{ item.product_name }}">
+                            <div>
+                                <h6 class="mb-1">{{ item.product_name }}</h6>
+                                <small>SKU: {{ item.product_sku }}</small><br>
+                                <small>Size: {{ item.product_variant_id.size_id.name }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>₹{{ item.unit_price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ item.total_price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Shipping Address -->
+    <h6>Shipping Address</h6>
+    <div class="card mb-4">
+        <div class="card-body">
+            <p class="mb-1"><strong>{{ shipping_address.full_name }}</strong></p>
+            <p class="mb-1">{{ shipping_address.address_line_1 }}</p>
+            {% if shipping_address.address_line_2 %}
+            <p class="mb-1">{{ shipping_address.address_line_2 }}</p>
+            {% endif %}
+            <p class="mb-1">{{ shipping_address.city }}, {{ shipping_address.state }} - {{ shipping_address.pincode }}</p>
+            <p class="mb-0">Phone: {{ shipping_address.phone }}</p>
+        </div>
+    </div>
+
+    <!-- Payment Information -->
+    <h6>Payment Information</h6>
+    <div class="card mb-4">
+        <div class="card-body">
+            <p class="mb-1"><strong>Method:</strong> {{ payment.payment_method }}</p>
+            <p class="mb-1"><strong>Status:</strong> {{ payment.status }}</p>
+            <p class="mb-0"><strong>Transaction ID:</strong> {{ payment.payment_id }}</p>
+        </div>
+    </div>
+
+    <!-- Tracking Information -->
+    <h6>Tracking Information</h6>
+    <div class="card">
+        <div class="card-body">
+            {% if shipping %}
+            <p class="mb-3"><strong>Courier:</strong> {{ shipping.shipping_partners_id.name }}</p>
+            <p class="mb-3"><strong>Tracking Number:</strong> {{ shipping.tracking_number|default:"Not available" }}</p>
+            
+            <div class="tracking-steps">
+                <div class="tracking-step {% if order.status != 'cancelled' %}active{% endif %}">
+                    <div class="tracking-badge">1</div>
+                    <div>
+                        <strong>ORDER PLACED</strong>
+                        <div class="text-muted small">{{ order.order_date|date:"M j, Y" }}</div>
+                    </div>
+                </div>
+                
+                <div class="tracking-step {% if order.status in 'confirmed,shipped,delivered' %}active{% endif %}">
+                    <div class="tracking-badge">2</div>
+                    <div>
+                        <strong>CONFIRMED</strong>
+                        {% if order.status in 'confirmed,shipped,delivered' %}
+                        <div class="text-muted small">{{ order.order_date|date:"M j, Y" }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="tracking-step {% if order.status in 'shipped,delivered' %}active{% endif %}">
+                    <div class="tracking-badge">3</div>
+                    <div>
+                        <strong>SHIPPED</strong>
+                        {% if shipping.shipped_date %}
+                        <div class="text-muted small">{{ shipping.shipped_date|date:"M j, Y" }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="tracking-step {% if order.status == 'delivered' %}active{% endif %}">
+                    <div class="tracking-badge">4</div>
+                    <div>
+                        <strong>DELIVERED</strong>
+                        {% if shipping.delivered_date %}
+                        <div class="text-muted small">{{ shipping.delivered_date|date:"M j, Y" }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p class="mb-0">Shipping information not available yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    <a href="#" class="btn btn-primary" target="_blank">Print Invoice</a>
+</div>
