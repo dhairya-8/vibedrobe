@@ -552,7 +552,7 @@
       <nav class="navigation">
         <ul class="navigation__list list-unstyled d-flex">
           <li class="navigation__item">
-            <a href="{% url 'homepage' %}" class="navigation__link">Home</a>         
+            <a href="{% url 'homepage' %}" class="navigation__link">Home</a>
             <!-- /.box-menu -->
           </li>
           <li class="navigation__item">
@@ -600,7 +600,9 @@
       </nav>
       <!-- /.navigation -->
 
+      <!-- RIGHT SECTION -->
       <div class="header-tools d-flex align-items-center">
+        <!-- SEARCH BAR -->
         <div class="header-tools__item hover-container">
           <div class="js-hover__open position-relative">
             <a class="js-search-popup search-field__actor" href="#">
@@ -655,40 +657,14 @@
         </div>
         <!-- /.header-tools__item hover-container -->
 
-        <div class="header-tools__item hover-container">
-
-  {% if request.session.user_id %}
-    <!-- User is logged in: show profile picture or username with dropdown -->
-    <div class="dropdown">
-      <a class="header-tools__link dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-        <!-- You can replace this with a profile image or username -->
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <use href="#icon_user" />
-        </svg>
-        <span class="ms-2">{{ request.session.user_name }}</span>
-      </a>
-      <ul class="dropdown-menu" aria-labelledby="userDropdown">
-        <li><a class="dropdown-item" href="{% url 'account_dashboard' %}">My Account</a></li>
-        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
-      </ul>
-    </div>
-  {% else %}
-    <!-- No user logged in: show login icon/text without dropdown -->
-    <a class="header-tools__item" href="{% url 'login_register' %}">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <use href="#icon_user" />
-      </svg>
-      <span class="header-tools__text d-none d-lg-inline-block">&nbsp;Login</span>
-    </a>
-  {% endif %}
-</div>
-
+        <!-- WISH-LIST ICON -->
         <a class="header-tools__item" href="#">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <use href="#icon_heart" />
           </svg>
         </a>
 
+        <!-- CART DRAWER -->
         <a href="#" class="header-tools__item header-tools__cart js-open-aside" data-aside="cartDrawer">
           <svg class="d-block" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <use href="#icon_cart" />
@@ -696,11 +672,37 @@
           <span class="cart-amount d-block position-absolute js-cart-items-count">3</span>
         </a>
 
-        <a class="header-tools__item" href="#" data-bs-toggle="modal" data-bs-target="#siteMap">
-          <svg class="nav-icon" width="25" height="18" viewBox="0 0 25 18" xmlns="http://www.w3.org/2000/svg">
-            <use href="#icon_nav" />
-          </svg>
-        </a>
+        <!-- USER ICON AND LOGIN -->
+        <div class="header-tools__item">
+          {% if request.session.user_id %}
+            <!-- User is logged in: show navigation-style dropdown -->
+            <div class="navigation__item position-relative">
+              <a href="#" class="navigation__link d-flex align-items-center">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                  <use href="#icon_user" />
+                </svg>
+                {{ request.session.user_name }}
+              </a>
+              <ul class="default-menu list-unstyled">
+                <li class="sub-menu__item">
+                  <a href="{% url 'account_dashboard' %}" class="menu-link menu-link_us-s">My Account</a>
+                </li>
+                <li class="sub-menu__item">
+                  <a href="{% url 'logout' %}" class="menu-link menu-link_us-s">Logout</a>
+                </li>
+              </ul>
+            </div>
+          {% else %}
+            <!-- No user logged in: show simple navigation link -->
+            <div class="navigation__item">
+              <a class="navigation__link d-flex align-items-center" href="{% url 'login_register' %}">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                  <use href="#icon_user" />
+                </svg>Login
+              </a>
+            </div>
+          {% endif %}
+        </div>
       </div>
       <!-- /.header__tools -->
     </div>

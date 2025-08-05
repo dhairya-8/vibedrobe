@@ -10,6 +10,9 @@ urlpatterns = [
     path('account-dashboard/', account_dashboard, name='account_dashboard'),
     path('account-orders/', account_orders, name='account_orders'),
     path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
+    path('account-details/', account_details, name='account_details'),
+    path('account/deactivate/', deactivate_account, name='deactivate_account'),
+
     
     # Address URLs 
     path('account-addresses/', account_addresses, name='account_addresses'),
@@ -22,6 +25,9 @@ urlpatterns = [
     path('', homepage, name='homepage'),
     path('homepage/', homepage, name='homepage'),
     path('shop/', shop, name='shop'),
+    
+    path('add-to-cart/<int:product_id>/', add_to_cart, name='add_to_cart'),
+    path('add-to-wishlist/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
     
     # Cart & Checkout URLs
     path('checkout/', checkout, name='checkout'),
@@ -36,12 +42,7 @@ urlpatterns = [
     
     # Product detail page
     path('product/<int:product_id>/', product_detail, name='product_detail'),
-
     path('variant/<int:variant_id>/stock/', check_variant_stock, name='check_variant_stock'),
-    
-    # Add to cart
-    path('add-to-cart/<int:product_id>/', add_to_cart, name='add_to_cart'), 
-    # Add to wishlist
-    path('add-to-wishlist/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
+
 
 ]

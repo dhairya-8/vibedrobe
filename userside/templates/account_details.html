@@ -1,0 +1,386 @@
+{% extends "base1.html" %}
+{% load static %}
+
+{% block title %} Account Details | VibeDrobe {% endblock %}
+
+{% block css %}
+  <!-- Your existing CSS imports -->
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="author" content="flexkit">
+  <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.gstatic.com/">
+  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Allura&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
+  <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  
+  <style>
+    .account-details-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .form-section {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    .form-title {
+      font-size: 1.5rem;
+      margin-bottom: 25px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: 500;
+      color: #666;
+    }
+    .tab-button.active {
+      color: #000;
+      border-bottom-color: #000;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .profile-image-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .profile-image-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: bold;
+      color: white;
+      background-color: #6c5ce7;
+    }
+    .image-upload-btn {
+      display: inline-block;
+      padding: 8px 15px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .image-upload-btn:hover {
+      background: #e5e5e5;
+    }
+    .flatpickr-input {
+      background-color: white !important;
+      cursor: pointer;
+    }
+    .deactivate-btn {
+      margin-left: auto;
+      background-color: #ff4444 !important;
+      border-color: #ff4444 !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border-radius: 4px !important;
+      font-size: 14px !important;
+    }
+    .deactivate-btn:hover {
+      background-color: #cc0000 !important;
+      border-color: #cc0000 !important;
+    }
+    .modal-content {
+      border-radius: 10px;
+    }
+    .modal-header {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .modal-footer {
+      border-top: none;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <div class="mb-4 pb-4"></div>
+  <section class="my-account container">
+    <h2 class="page-title">Account Details</h2>
+    <div class="row">
+      <div class="col-lg-3">
+        <ul class="account-nav">
+          <li><a href="{% url 'account_dashboard' %}" class="menu-link menu-link_us-s">Dashboard</a></li>
+          <li><a href="{% url 'account_orders' %}" class="menu-link menu-link_us-s">Orders</a></li>
+          <li><a href="{% url 'account_addresses' %}" class="menu-link menu-link_us-s">Addresses</a></li>
+          <li><a href="{% url 'account_details' %}" class="menu-link menu-link_us-s menu-link_active">Account Details</a></li>
+          <li><a href="{% url 'logout' %}" class="menu-link menu-link_us-s">Logout</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-9">
+        <div class="account-details-container">
+          <!-- Messages Display -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} mb-4">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Tab Buttons with Deactivate -->
+          <div class="tab-buttons">
+            <div class="d-flex">
+              <button class="tab-button active" data-tab="profile">Profile Details</button>
+              <button class="tab-button" data-tab="password">Change Password</button>
+            </div>
+            <button class="btn btn-sm deactivate-btn" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+              Deactivate Account
+            </button>
+          </div>
+          
+          <!-- Profile Details Section -->
+          <div id="profile-section" class="form-section tab-content active">
+            <h3 class="form-title">Personal Information</h3>
+            
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="form_type" value="profile">
+              
+              <div class="profile-image-container">
+                {% if user.profile_image %}
+                  <img src="{{ user.profile_image.url }}" alt="Profile Image" class="profile-image-preview" id="profile-image-preview">
+                {% else %}
+                  <div class="profile-image-preview" id="profile-image-preview">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                  </div>
+                {% endif %}
+                <div>
+                  <label for="profile-image-upload" class="image-upload-btn">Change Image</label>
+                  <input type="file" name="profile_image" id="profile-image-upload" accept="image/*" style="display: none;">
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-4">
+                  <label class="form-label">First Name</label>
+                  <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                </div>
+                <div class="col-md-6 mb-4">
+                  <label class="form-label">Last Name</label>
+                  <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                <small class="text-muted">Contact support to change email</small>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" name="contact" class="form-control" value="{{ user.contact }}" required>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-4">
+                  <label class="form-label">Date of Birth</label>
+                  <input type="text" name="date_of_birth" class="form-control flatpickr-input" 
+                         value="{{ user.date_of_birth|date:'Y-m-d' }}" placeholder="Select Date" readonly required>
+                </div>
+                <div class="col-md-6 mb-4">
+                  <label class="form-label">Gender</label>
+                  <select name="gender" class="form-control" required>
+                    <option value="1" {% if user.gender == '1' %}selected{% endif %}>Female</option>
+                    <option value="2" {% if user.gender == '2' %}selected{% endif %}>Male</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Change Password Section -->
+          <div id="password-section" class="form-section tab-content">
+            <h3 class="form-title">Change Password</h3>
+            
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="form_type" value="password">
+              
+              <div class="mb-4">
+                <label class="form-label">Current Password</label>
+                <input type="password" name="current_password" class="form-control" required>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">New Password</label>
+                <input type="password" name="new_password1" class="form-control" required>
+                <small class="text-muted">Minimum 8 characters with at least 1 uppercase letter</small>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" name="new_password2" class="form-control" required>
+              </div>
+              
+              <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary">Change Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Deactivate Account Modal -->
+  <div class="modal fade" id="deactivateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Deactivate Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form method="post" action="{% url 'deactivate_account' %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>Are you sure you want to deactivate your account? You have to contact support for reactivation!</p>
+            <div class="mb-3">
+              <label for="deactivatePassword" class="form-label">Enter your password to confirm:</label>
+              <input type="password" class="form-control" id="deactivatePassword" name="password" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger">Deactivate Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block script %}
+  <!-- Your existing JS imports -->
+  <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
+  <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
+  <!-- Flatpickr JS -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize datepicker
+      flatpickr(".flatpickr-input", {
+        dateFormat: "Y-m-d",
+        maxDate: "today",
+        allowInput: true
+      });
+      
+      // Tab switching
+      const tabButtons = document.querySelectorAll('.tab-button');
+      tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+          
+          this.classList.add('active');
+          const tabId = this.getAttribute('data-tab');
+          document.getElementById(`${tabId}-section`).classList.add('active');
+        });
+      });
+      
+      // Profile image preview
+      const profileImageInput = document.getElementById('profile-image-upload');
+      const profileImagePreview = document.getElementById('profile-image-preview');
+      if (profileImageInput && profileImagePreview) {
+        profileImageInput.addEventListener('change', function() {
+          const file = this.files[0];
+          if (file) {
+            if (profileImagePreview.tagName === 'DIV') {
+              // Convert the div to an img element
+              const newImg = document.createElement('img');
+              newImg.id = 'profile-image-preview';
+              newImg.className = 'profile-image-preview';
+              newImg.alt = 'Profile Image';
+              profileImagePreview.parentNode.replaceChild(newImg, profileImagePreview);
+              profileImagePreview = newImg;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              profileImagePreview.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+      
+      // Form validation
+      const forms = document.querySelectorAll('form');
+      forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+          let valid = true;
+          
+          // Check required fields
+          const requiredFields = form.querySelectorAll('[required]');
+          requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+              field.classList.add('is-invalid');
+              valid = false;
+            } else {
+              field.classList.remove('is-invalid');
+            }
+          });
+          
+          // Password validation
+          if (form.querySelector('[name="new_password1"]')) {
+            const pass1 = form.querySelector('[name="new_password1"]');
+            const pass2 = form.querySelector('[name="new_password2"]');
+            
+            if (pass1.value !== pass2.value) {
+              pass2.classList.add('is-invalid');
+              valid = false;
+            }
+            
+            if (pass1.value.length < 8) {
+              pass1.classList.add('is-invalid');
+              valid = false;
+            }
+          }
+          
+          if (!valid) {
+            e.preventDefault();
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

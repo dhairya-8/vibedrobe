@@ -56,6 +56,37 @@
       color: #383d41;
     }
   </style>
+
+  <style>
+    /* Modal-specific styles */
+    .order-modal .modal-dialog {
+      max-width: 800px;
+    }
+    .order-product-img {
+      width: 80px;
+      height: 100px;
+      object-fit: cover;
+    }
+    .tracking-step {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .tracking-badge {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #6c757d;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+    }
+    .tracking-step.active .tracking-badge {
+      background: #28a745;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -76,13 +107,10 @@
               <a href="{% url 'account_addresses' %}" class="menu-link menu-link_us-s">Addresses</a>
             </li>
             <li>
-              <a href="account_edit.html" class="menu-link menu-link_us-s">Account Details</a>
+              <a href="{% url 'account_details' %}" class="menu-link menu-link_us-s">Account Details</a>
             </li>
             <li>
-              <a href="account_wishlist.html" class="menu-link menu-link_us-s">Wishlist</a>
-            </li>
-            <li>
-              <a href="login_register.html" class="menu-link menu-link_us-s">Logout</a>
+              <a href="{% url 'logout' %}" class="menu-link menu-link_us-s">Logout</a>
             </li>
           </ul>
         </div>
@@ -105,17 +133,18 @@
                     <td>#{{ order_data.order.order_number }}</td>
                     <td>{{ order_data.order.order_date|date:'F j, Y' }}</td>
                     <td>
-                      <span class="order-status order-status--{{ order_data.order.status|lower }}">{{ order_data.order.status }}</span>
+                      <span class="order-status order-status--{{ order_data.order.status|lower }}">{{ order_data.order.get_status_display }}</span>
                     </td>
                     <td>₹{{ order_data.order.total_amount }}</td>
                     <td>{{ order_data.item_count }} item(s)</td>
                     <td>
-                      <a href="{% url 'order_detail' order_data.order.id %}" class="btn btn-primary">VIEW</a>
+                      <!-- Payment status available if needed -->
+                      {% if order_data.payment %}
+                        <small class="text-muted">{{ order_data.payment.status }}</small>
+                      {% endif %}
+
+                      <button class="btn btn-primary view-order-btn" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="{{ order_data.order.id }}">VIEW</button>
                     </td>
-                  </tr>
-                {% empty %}
-                  <tr>
-                    <td colspan="6" class="text-center">You haven't placed any orders yet.</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -124,6 +153,15 @@
         </div>
       </div>
     </section>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <!-- Modal content will be loaded via AJAX -->
+        </div>
+      </div>
+    </div>
   </main>
 {% endblock %}
 
@@ -138,5 +176,38 @@
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
 
   <!-- Footer Scripts -->
-  <script src="{% static 'user/assets/js/theme.js' %}"></script>
+  <script src="{% static 'user/assets/js/theme.js' %}"></script>!<!-- ajax script for loading order detail modal -->
+  <script>
+    $(document).ready(function () {
+      $('#orderModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget)
+        const orderId = button.data('order-id')
+        const modal = $(this)
+    
+        modal.find('.modal-content').html(`
+          <div class="modal-header">
+            <h5 class="modal-title">Loading Order Details...</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        `)
+    
+        // Update this line to match your actual URL pattern
+        $.get(`/account-orders/${orderId}/`, function (data) {
+          modal.find('.modal-content').html(data)
+        }).fail(function (xhr, status, error) {
+          console.error('Error loading order details:', status, error)
+          modal.find('.modal-content').html(`
+            <div class="alert alert-danger m-3">
+              Failed to load order details. Please try again.
+            </div>
+          `)
+        })
+      })
+    })
+  </script>
 {% endblock %}

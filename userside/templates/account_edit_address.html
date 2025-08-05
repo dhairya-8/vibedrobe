@@ -1,7 +1,7 @@
 {% extends "base1.html" %}
 {% load static %}
 
-{% block title %} Add Address | VibeDrobe {% endblock %}
+{% block title %}Edit Address | VibeDrobe{% endblock %}
 
 {% block css %}
   <!-- Your existing CSS imports -->
@@ -34,6 +34,13 @@
       padding-bottom: 10px;
       border-bottom: 1px solid #eee;
     }
+    .is-invalid {
+      border-color: #dc3545;
+    }
+    .invalid-feedback {
+      color: #dc3545;
+      font-size: 0.875em;
+    }
   </style>
 {% endblock %}
 
@@ -41,23 +48,31 @@
 <main>
   <div class="mb-4 pb-4"></div>
   <section class="my-account container">
-    <h2 class="page-title">Add New Address</h2>
+    <h2 class="page-title">Edit Address</h2>
     <div class="row">
       <div class="col-lg-3">
         <ul class="account-nav">
           <li><a href="{% url 'account_dashboard' %}" class="menu-link menu-link_us-s">Dashboard</a></li>
           <li><a href="{% url 'account_orders' %}" class="menu-link menu-link_us-s">Orders</a></li>
-          <li><a href="{% url 'account_addresses' %}" class="menu-link menu-link_us-s">Addresses</a></li>
-          <li><a href="{% url 'account_details' %}" class="menu-link menu-link_us-s menu-link_active">Account Details</a></li>
+          <li><a href="{% url 'account_addresses' %}" class="menu-link menu-link_us-s menu-link_active">Addresses</a></li>
+          <li><a href="{% url 'account_details' %}" class="menu-link menu-link_us-s">Account Details</a></li>
           <li><a href="{% url 'logout' %}" class="menu-link menu-link_us-s">Logout</a></li>
         </ul>
       </div>
       <div class="col-lg-9">
         <div class="address-form-container">
           <div class="form-section">
-            <h3 class="form-title">Address Information</h3>
+            <h3 class="form-title">Edit Address Information</h3>
             
-            <form method="post" action="{% url 'add_address' %}">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-4">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            {% endif %}
+            
+            <form method="post" id="editAddressForm">
               {% csrf_token %}
               
               <div class="row">
@@ -65,73 +80,80 @@
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Address Type</label>
                   <select name="address_type" class="form-select" required>
-                    <option value="home" selected>Home</option>
-                    <option value="work">Work</option>
-                    <option value="other">Other</option>
+                    <option value="home" {% if address.address_type == 'home' %}selected{% endif %}>Home</option>
+                    <option value="work" {% if address.address_type == 'work' %}selected{% endif %}>Work</option>
+                    <option value="other" {% if address.address_type == 'other' %}selected{% endif %}>Other</option>
                   </select>
                 </div>
                 
                 <!-- Address Name -->
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Address Name (e.g., Home, Office)</label>
-                  <input type="text" name="address_name" class="form-control" required>
+                  <input type="text" name="address_name" class="form-control" value="{{ address.address_name }}" required>
+                  <div class="invalid-feedback">Please provide an address name</div>
                 </div>
               </div>
               
               <!-- Full Name -->
               <div class="mb-4">
                 <label class="form-label">Full Name</label>
-                <input type="text" name="full_name" class="form-control" required>
+                <input type="text" name="full_name" class="form-control" value="{{ address.full_name }}" required>
+                <div class="invalid-feedback">Please provide your full name</div>
               </div>
               
               <!-- Phone Number -->
               <div class="mb-4">
                 <label class="form-label">Phone Number</label>
-                <input type="tel" name="phone" class="form-control" required>
+                <input type="tel" name="phone" class="form-control" value="{{ address.phone }}" required>
+                <div class="invalid-feedback">Please provide a valid 10-digit phone number</div>
               </div>
               
               <!-- Address Line 1 -->
               <div class="mb-4">
                 <label class="form-label">Address Line 1</label>
-                <input type="text" name="address_line_1" class="form-control" required>
+                <input type="text" name="address_line_1" class="form-control" value="{{ address.address_line_1 }}" required>
+                <div class="invalid-feedback">Please provide address line 1</div>
               </div>
               
               <!-- Address Line 2 -->
               <div class="mb-4">
                 <label class="form-label">Address Line 2 (Optional)</label>
-                <input type="text" name="address_line_2" class="form-control">
+                <input type="text" name="address_line_2" class="form-control" value="{{ address.address_line_2 }}">
               </div>
               
               <div class="row">
                 <!-- City -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">City</label>
-                  <input type="text" name="city" class="form-control" required>
+                  <input type="text" name="city" class="form-control" value="{{ address.city }}" required>
+                  <div class="invalid-feedback">Please provide your city</div>
                 </div>
                 
                 <!-- State -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">State</label>
-                  <input type="text" name="state" class="form-control" required>
+                  <input type="text" name="state" class="form-control" value="{{ address.state }}" required>
+                  <div class="invalid-feedback">Please provide your state</div>
                 </div>
                 
                 <!-- Pincode -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">Pincode</label>
-                  <input type="text" name="pincode" class="form-control" required>
+                  <input type="text" name="pincode" class="form-control" value="{{ address.pincode }}" required>
+                  <div class="invalid-feedback">Please provide a valid 6-digit pincode</div>
                 </div>
               </div>
               
               <!-- Default Address Checkbox -->
               <div class="form-check mb-4">
-                <input class="form-check-input" type="checkbox" name="is_default" id="defaultAddress">
+                <input class="form-check-input" type="checkbox" name="is_default" id="defaultAddress" {% if address.is_default %}checked{% endif %}>
                 <label class="form-check-label" for="defaultAddress">Set as default address</label>
               </div>
               
               <!-- Form Buttons -->
               <div class="d-flex justify-content-between mt-4">
                 <a href="{% url 'account_addresses' %}" class="btn btn-outline-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary">Save Address</button>
+                <button type="submit" class="btn btn-primary">Update Address</button>
               </div>
             </form>
           </div>
@@ -146,26 +168,21 @@
   <!-- Your existing JS imports -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
-  <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
-  <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
-  <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
-  <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
-  <script src="{% static 'user/assets/js/theme.js' %}"></script>
   
-  <!-- Add form validation -->
+  <!-- Enhanced form validation -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Basic form validation
-      const form = document.querySelector('form');
+      const form = document.getElementById('editAddressForm');
+      
       form.addEventListener('submit', function(e) {
-        let valid = true;
+        let isValid = true;
         
-        // Check required fields
+        // Validate required fields
         const requiredFields = form.querySelectorAll('[required]');
         requiredFields.forEach(field => {
           if (!field.value.trim()) {
             field.classList.add('is-invalid');
-            valid = false;
+            isValid = false;
           } else {
             field.classList.remove('is-invalid');
           }
@@ -175,21 +192,48 @@
         const phoneField = form.querySelector('[name="phone"]');
         if (phoneField && !/^[6-9]\d{9}$/.test(phoneField.value.trim())) {
           phoneField.classList.add('is-invalid');
-          valid = false;
+          isValid = false;
         }
         
         // Validate pincode (6 digits)
         const pincodeField = form.querySelector('[name="pincode"]');
         if (pincodeField && !/^\d{6}$/.test(pincodeField.value.trim())) {
           pincodeField.classList.add('is-invalid');
-          valid = false;
+          isValid = false;
         }
         
-        if (!valid) {
+        if (!isValid) {
           e.preventDefault();
-          alert('Please fill all required fields correctly');
+          // Scroll to first invalid field
+          const firstInvalid = form.querySelector('.is-invalid');
+          if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
       });
+      
+      // Real-time validation for phone and pincode
+      const phoneField = form.querySelector('[name="phone"]');
+      if (phoneField) {
+        phoneField.addEventListener('input', function() {
+          if (/^[6-9]\d{0,9}$/.test(this.value)) {
+            this.classList.remove('is-invalid');
+          } else {
+            this.classList.add('is-invalid');
+          }
+        });
+      }
+      
+      const pincodeField = form.querySelector('[name="pincode"]');
+      if (pincodeField) {
+        pincodeField.addEventListener('input', function() {
+          if (/^\d{0,6}$/.test(this.value)) {
+            this.classList.remove('is-invalid');
+          } else {
+            this.classList.add('is-invalid');
+          }
+        });
+      }
     });
   </script>
 {% endblock %}

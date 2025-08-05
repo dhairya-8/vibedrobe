@@ -35,16 +35,15 @@
             <li><a href="{% url 'account_dashboard' %}" class="menu-link menu-link_us-s menu-link_active">Dashboard</a></li>
             <li><a href="{% url 'account_orders' %}" class="menu-link menu-link_us-s">Orders</a></li>
             <li><a href="{% url 'account_addresses' %}" class="menu-link menu-link_us-s">Addresses</a></li>
-            <li><a href="account_edit.html" class="menu-link menu-link_us-s">Account Details</a></li>
-            <li><a href="account_wishlist.html" class="menu-link menu-link_us-s">Wishlist</a></li>
-            <li><a href="login_register.html" class="menu-link menu-link_us-s">Logout</a></li>
+            <li><a href="{% url 'account_details' %}" class="menu-link menu-link_us-s">Account Details</a></li>
+            <li><a href="{% url 'logout' %}" class="menu-link menu-link_us-s">Logout</a></li>
           </ul>
         </div>
         <div class="col-lg-9">
           <div class="page-content my-account__dashboard">
             {% if request.session.user_name %}
               <p>Hello <strong>{{ request.session.user_name }}</strong> (not <strong>{{ request.session.user_name }}?</strong> <a href="{% url 'logout' %}" class="unerline-link">Log out</a>)</p>
-            <p>From your account dashboard you can view your <a class="unerline-link" href="{% url 'account_orders' %}">recent orders</a>, manage your <a class="unerline-link" href="account_edit_address.html">shipping and billing addresses</a>, and <a class="unerline-link" href="account_edit.html">edit your password and account details.</a></p>
+            <p>From your account dashboard you can view your <a class="unerline-link" href="{% url 'account_orders' %}">recent orders</a>, manage your <a class="unerline-link" href="{% url 'account_addresses' %}">shipping and billing addresses</a>, and <a class="unerline-link" href="{% url 'account_details' %}">edit your password and account details.</a></p>
             {% else %}
             <p>Hello Guest! <a href="login_register.html">Log in</a></p>
             {% endif %}
