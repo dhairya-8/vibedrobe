@@ -215,7 +215,7 @@ class Cart(models.Model):
         return f"Cart#{self.id} for User#{self.user_id.id}"
 
 class Cart_Items(models.Model):
-    cart_id = models.ForeignKey(Cart, on_delete=models.PROTECT)
+    cart_id = models.ForeignKey(Cart, on_delete=models.PROTECT, related_name='items')
     product_variant_id = models.ForeignKey(Product_Variants, on_delete=models.CASCADE)
     quantity = models.IntegerField(null=False, blank=False, default=1)
     price_at_time = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
@@ -224,7 +224,6 @@ class Cart_Items(models.Model):
     def __str__(self):
         return f"{self.quantity}x Variant#{self.product_variant_id.id}"
 
-    
     @property
     def total_price(self):
         return self.price_at_time * self.quantity
@@ -241,6 +240,10 @@ class Wishlist(models.Model):
     def __str__(self):
         return f"Wishlist: User#{self.user_id.id} > Product#{self.product_id.id}"
 
+    @property
+    def in_stock(self):
+        return self.product_id.variants.filter(stock_quantity__gt=0).exists()
+    
 class Order_Master(models.Model):
     order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -391,13 +394,13 @@ class Review(models.Model):
         return f"Review: {self.rating}★ for {self.product_id.name}"
     
 class RecentlyViewed(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product')
+        unique_together = ('user_id', 'product_id')
         ordering = ['-viewed_at']
 
     def __str__(self):
-        return f"{self.user.username} viewed {self.product.name}"
+        return f"{self.user_id.username} viewed {self.product_id.name}"

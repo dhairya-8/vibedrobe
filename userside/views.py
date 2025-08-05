@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from django.db.models import Min, Max, Count, Avg, Prefetch
 from django.db import IntegrityError
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 from .utils import *
 
 
@@ -530,88 +531,99 @@ def shop(request):
     return render(request, 'shop.html', context)
 
 def product_detail(request, product_id):
-    product = get_object_or_404(
-        Product.objects.select_related('subcategory_id', 'brand_id', 'material_id'),
-        id=product_id,
-        is_active=True
-    )
-    
-    # Initialize has_purchased with default value
-    has_purchased = False
-    recently_viewed_products = []
-    
-    # Get all active variants with size information
-    variants = Product_Variants.objects.filter(
-        product_id=product,
-        is_active=True
-    ).select_related('size_id').order_by('size_id__name')
-    
-    # Check stock status at product level (sum of all variants)
-    total_stock = sum(variant.stock_quantity for variant in variants)
-    in_stock = total_stock > 0
-    
-    # Get gallery images ordered by image_order
-    gallery_images = Product_Gallery.objects.filter(
-        product_id=product
-    ).order_by('image_order')
-    
-    # Get product tags
-    tags = Product_Tags.objects.filter(product_id=product)
-    
-    # Get reviews with proper user instances
-    reviews = Review.objects.filter(
-        product_id=product
-    ).select_related('user_id').order_by('-created_at')
-    
-    # Calculate average rating
-    rating_agg = reviews.aggregate(
-        average=Avg('rating'),
-        count=Count('id')
-    )
-    average_rating = round(rating_agg['average'] or 0)
-    rating_counts = {i: reviews.filter(rating=i).count() for i in range(5, 0, -1)}
-    
-    # Get related products (same subcategory and gender) excluding current product
-    related_products = Product.objects.filter(
-        subcategory_id=product.subcategory_id,
-        gender=product.gender
-    ).exclude(id=product.id).order_by('?')[:8]
-    
-    # Track recently viewed for authenticated users
-    if request.user.is_authenticated:
-        RecentlyViewed.objects.update_or_create(
-            user=request.user,
-            product=product,
-            defaults={'viewed_at': timezone.now()}
+    try:
+        product = get_object_or_404(
+            Product.objects.select_related('subcategory_id', 'brand_id', 'material_id'),
+            id=product_id,
+            is_active=True
         )
-        recently_viewed = RecentlyViewed.objects.filter(
-            user=request.user
-        ).exclude(product=product).order_by('-viewed_at')[:4]
-        recently_viewed_products = [rv.product for rv in recently_viewed]
         
-        # Check if user has purchased this product
-        has_purchased = Order_Details.objects.filter(
-            order_id__user_id=request.user,
-            product_variant_id__product_id=product
-        ).exists()
+        # Check if product is in user's wishlist
+        in_wishlist = False
+        if 'user_id' in request.session:
+            in_wishlist = Wishlist.objects.filter(
+                user_id=request.session['user_id'],
+                product_id=product
+            ).exists()
+        
+        # Get all active variants with size information
+        variants = Product_Variants.objects.filter(
+            product_id=product,
+            is_active=True
+        ).select_related('size_id').order_by('size_id__name')
+        
+        # Check stock status
+        total_stock = sum(variant.stock_quantity for variant in variants)
+        in_stock = total_stock > 0
+        
+        # Get gallery images
+        gallery_images = Product_Gallery.objects.filter(
+            product_id=product
+        ).order_by('image_order')
+        
+        # Get product tags
+        tags = Product_Tags.objects.filter(product_id=product)
+        
+        # Get related products
+        related_products = Product.objects.filter(
+            subcategory_id=product.subcategory_id,
+            gender=product.gender,
+            is_active=True
+        ).exclude(id=product.id).order_by('?')[:8]
+        
+        # Track recently viewed
+        recently_viewed_products = []
+        has_purchased = False
+        
+        if 'user_id' in request.session:
+            try:
+                user = User.objects.get(id=request.session['user_id'])
+            
+                # Update recently viewed
+                RecentlyViewed.objects.update_or_create(
+                    user_id=user,
+                    product_id=product,
+                    defaults={'viewed_at': timezone.now()}
+                )
+            
+                # Get recently viewed products
+                recently_viewed = RecentlyViewed.objects.filter(
+                    user_id=user
+                ).exclude(product_id=product).select_related('product_id').order_by('-viewed_at')[:4]
+            
+                recently_viewed_products = [rv.product_id for rv in recently_viewed]
+            
+                # Check if user purchased this product
+                has_purchased = Order_Details.objects.filter(
+                    order_id__user_id=user,
+                    product_variant_id__product_id=product
+                ).exists()
+            
+            except User.DoesNotExist:
+                messages.error(request, "Your session has expired. Please login again.")
+            except Exception as e:
+                print(f"Error in product detail: {str(e)}")
+        
+        context = {
+            'product': product,
+            'in_wishlist': in_wishlist,
+            'variants': variants,
+            'in_stock': in_stock,
+            'total_stock': total_stock,
+            'gallery_images': gallery_images,
+            'tags': tags,
+            'related_products': related_products,
+            'recently_viewed_products': recently_viewed_products,
+            'has_purchased': has_purchased,
+        }
+        
+        return render(request, 'product_detail.html', context)
+        
+    except Exception as e:
+        print(f"Error in product_detail: {str(e)}")
+        messages.error(request, "An error occurred while loading the product.")
+        return redirect('homepage')
     
-    context = {
-        'product': product,
-        'variants': variants,
-        'in_stock': in_stock,
-        'total_stock': total_stock,
-        'gallery_images': gallery_images,
-        'tags': tags,
-        'reviews': reviews,
-        'average_rating': average_rating,
-        'rating_counts': rating_counts,
-        'related_products': related_products,
-        'recently_viewed_products': recently_viewed_products,
-        'has_purchased': has_purchased,
-    }
-    
-    return render(request, 'product_detail.html', context)
-
 @require_POST
 def check_variant_stock(request, variant_id):
     variant = get_object_or_404(Product_Variants, id=variant_id)
@@ -621,10 +633,273 @@ def check_variant_stock(request, variant_id):
         'price': float(variant.product_id.price + variant.additional_price),
     })
 
+@user_login_required
+@require_POST
+def add_to_cart(request, product_id):
+    try:
+        user_id = request.session['user_id']
+        variant_id = request.POST.get('variant_id')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        if not variant_id:
+            messages.error(request, "Please select a size before adding to cart.")
+            return redirect('product_detail', product_id=product_id)
+        
+        variant = get_object_or_404(
+            Product_Variants,
+            id=variant_id,
+            product_id=product_id,
+            is_active=True
+        )
+        
+        if variant.stock_quantity < quantity:
+            messages.warning(request, f"Only {variant.stock_quantity} available in stock.")
+            return redirect('product_detail', product_id=product_id)
+        
+        cart, created = Cart.objects.get_or_create(user_id_id=user_id)
+        
+        cart_item, item_created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'quantity': quantity,
+                'price_at_time': float(variant.product_id.price) + float(variant.additional_price or 0)
+            }
+        )
+        
+        if not item_created:
+            new_quantity = cart_item.quantity + quantity
+            if new_quantity > variant.stock_quantity:
+                messages.warning(request, f"Cannot add more than available stock ({variant.stock_quantity})")
+                return redirect('product_detail', product_id=product_id)
+            cart_item.quantity = new_quantity
+            cart_item.save()
+        
+        # Only add one success message
+        messages.success(request, "Product added to cart successfully!")
+        return redirect(f"{reverse('product_detail', args=[product_id])}?show_cart=1")
+        
+    except Exception as e:
+        print(f"Error in add_to_cart: {str(e)}")
+        # Only show error if no success message was already shown
+        if not any(message.tags == 'success' for message in messages.get_messages(request)):
+            messages.error(request, "An error occurred while adding to cart. Please try again.")
+        return redirect('product_detail', product_id=product_id)
+     
+@user_login_required
+def cart(request):
+    try:
+        user_id = request.session.get('user_id')
+        if not user_id:
+            messages.error(request, "Please login to view your cart.")
+            return redirect('login')
+            
+        # Get or create the user's cart
+        cart_obj, created = Cart.objects.get_or_create(user_id_id=user_id)
+        
+        cart_items = Cart_Items.objects.filter(cart_id=cart_obj).select_related(
+            'product_variant_id__product_id', 
+            'product_variant_id__size_id'
+        ).order_by('-id')  # Newest items first
+        
+        cart_total = sum(item.price_at_time * item.quantity for item in cart_items)
+        
+        context = {
+            'cart_items': cart_items,
+            'cart_total': cart_total,
+            'cart_count': cart_items.count()
+        }
+        return render(request, 'cart.html', context)
+        
+    except Exception as e:
+        messages.error(request, "An error occurred while loading your cart.")
+        return redirect('homepage')
+
+@user_login_required
+@require_POST
+def update_cart_item(request):
+    try:
+        user_id = request.session['user_id']
+        item_id = request.POST.get('cart_item_id')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        cart = Cart.objects.get(user_id_id=user_id)
+        cart_item = Cart_Items.objects.get(id=item_id, cart_id=cart)
+        
+        # Validate stock
+        if quantity > cart_item.product_variant_id.stock_quantity:
+            messages.warning(request, f"Only {cart_item.product_variant_id.stock_quantity} available in stock")
+            return redirect('cart')
+        
+        # Update or remove
+        if quantity <= 0:
+            cart_item.delete()
+            messages.success(request, "Item removed from cart")
+        else:
+            cart_item.quantity = quantity
+            cart_item.save()
+            messages.success(request, "Cart updated successfully")
+            
+        return redirect('cart')
+        
+    except Exception as e:
+        messages.error(request, "Error updating cart item")
+        return redirect('cart')
+    
+@user_login_required
+def remove_cart_item(request, product_id, variant_id):
+    try:
+        user_id = request.session.get('user_id')
+        if not user_id:
+            messages.error(request, "Please login to modify your cart.")
+            return redirect('login')
+            
+        cart_obj = Cart.objects.get(user_id_id=user_id)
+        cart_item = Cart_Items.objects.get(
+            cart_id=cart_obj,
+            product_variant_id__product_id=product_id,
+            product_variant_id__id=variant_id
+        )
+        
+        product_name = cart_item.product_variant_id.product_id.name
+        cart_item.delete()
+        
+        messages.success(request, f"{product_name} removed from your cart.")
+        return redirect('cart')
+        
+    except Cart.DoesNotExist:
+        messages.error(request, "Your cart was not found.")
+    except Cart_Items.DoesNotExist:
+        messages.error(request, "Item not found in cart.")
+    except Exception as e:
+        messages.error(request, "An error occurred while removing item from cart.")
+    
+    return redirect('cart')
+
+@user_login_required
+def move_to_wishlist(request, item_id):
+    try:
+        cart_item = Cart_Items.objects.get(id=item_id, cart_id__user_id=request.session['user_id'])
+        # Add your logic to move to wishlist here
+        cart_item.delete()
+        messages.success(request, "Item moved to wishlist")
+    except Exception as e:
+        messages.error(request, "Error moving item to wishlist")
+    return redirect('cart')
+
+@user_login_required
+def wishlist(request):
+    """Display user's wishlist"""
+    try:
+        user_id = request.session['user_id']
+        wishlist_items = Wishlist.objects.filter(
+            user_id=user_id
+        ).select_related(
+            'product_id__brand_id'
+        ).prefetch_related(
+            'product_id__variants'
+        ).order_by('-added_at')
+        
+        context = {
+            'wishlist_items': wishlist_items,
+            'wishlist_count': wishlist_items.count()
+        }
+        return render(request, 'wishlist.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Error loading your wishlist")
+        return redirect('homepage')
+
+@user_login_required
+def add_to_wishlist(request, product_id):
+    """Add item to wishlist"""
+    try:
+        user_id = request.session['user_id']
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            is_active=True
+        )
+        
+        # Check if already in wishlist
+        if Wishlist.objects.filter(user_id=user_id, product_id=product).exists():
+            messages.info(request, "This item is already in your wishlist")
+        else:
+            Wishlist.objects.create(
+                user_id_id=user_id,
+                product_id=product
+            )
+            messages.success(request, "Added to wishlist!")
+            
+        return redirect('product_detail', product_id=product_id)
+        
+    except Exception as e:
+        messages.error(request, "Error adding to wishlist")
+        return redirect('product_detail', product_id=product_id)
+
+@user_login_required
+def remove_from_wishlist(request, item_id):
+    """Remove item from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        item = get_object_or_404(
+            Wishlist,
+            id=item_id,
+            user_id=user_id
+        )
+        product_name = item.product_id.name
+        item.delete()
+        messages.success(request, f"Removed {product_name} from wishlist")
+        return redirect('wishlist')
+        
+    except Exception as e:
+        messages.error(request, "Error removing from wishlist")
+        return redirect('wishlist')
+
+@user_login_required
+def move_to_cart(request, item_id):
+    """Move wishlist item to cart"""
+    try:
+        user_id = request.session['user_id']
+        wishlist_item = get_object_or_404(
+            Wishlist,
+            id=item_id,
+            user_id=user_id
+        )
+        variant = wishlist_item.product_variant
+        
+        # Check stock
+        if variant.stock_quantity < 1:
+            messages.warning(request, "This item is currently out of stock")
+            return redirect('wishlist')
+        
+        # Add to cart
+        cart, created = Cart.objects.get_or_create(user_id_id=user_id)
+        cart_item, item_created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'quantity': 1,
+                'price_at_time': variant.product.price + variant.additional_price
+            }
+        )
+        
+        if not item_created:
+            cart_item.quantity += 1
+            cart_item.save()
+        
+        # Remove from wishlist
+        wishlist_item.delete()
+        messages.success(request, "Item moved to cart successfully!")
+        return redirect('cart')
+        
+    except Exception as e:
+        messages.error(request, "Error moving item to cart")
+        return redirect('wishlist')
 
 # ========================= Single Add to Cart/Wihslist and Quick-view =========================
 @user_login_required
-def add_to_cart(request, product_id):
+def quick_add_to_cart(request, product_id):
     try:
         product = get_object_or_404(Product, id=product_id, is_active=True)
         variant = product.variants.filter(is_active=True).first()
@@ -671,7 +946,7 @@ def add_to_cart(request, product_id):
 
 
 @user_login_required
-def add_to_wishlist(request, product_id):
+def quick_add_to_wishlist(request, product_id):
     try:
         product = get_object_or_404(Product, id=product_id, is_active=True)
         
