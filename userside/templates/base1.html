@@ -64,7 +64,24 @@
       }
     });
   </script>
-  
+  <script>
+$(document).ready(function() {
+    // Initialize cart drawer toggle
+    function initCartDrawer() {
+        // Open cart drawer if flag is set
+        {% if open_cart_drawer %}
+            $('#cartDrawer').addClass('active');
+            $('body').addClass('aside-active');
+        {% endif %}
+        
+        // Close drawer button
+        $('.js-close-aside').on('click', function() {
+            $('#cartDrawer').removeClass('active');
+            $('body').removeClass('aside-active');
+        });
+    }
+});
+</script>
 </body>
 
 </html>
