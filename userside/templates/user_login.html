@@ -1,7 +1,7 @@
 {% extends 'base1.html' %}
 {% load static %}
 {% block title %}
-  Product Detail Page | VibeDrobe
+  Login and Register | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -26,7 +26,19 @@
       <div class="tab-content pt-2" id="login_register_tab_content">
         <div class="tab-pane fade show active" id="tab-item-login" role="tabpanel" aria-labelledby="login-tab">
           <div class="login-form">
-            <form name="login-form" class="needs-validation" novalidate>
+            {% if messages %}
+              <div class="messages">
+                {% for message in messages %}
+                  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <form name="login-form" method="post" action="{% url 'login_register' %}" class="needs-validation" novalidate>
+              {% csrf_token %}
+              <input type="hidden" name="form_type" value="login">
               <div class="form-floating mb-3">
                 <input name="login_email" type="email" class="form-control form-control_gray" id="customerNameEmailInput1" placeholder="Email address *" required />
                 <label for="customerNameEmailInput1">Email address *</label>
@@ -44,25 +56,35 @@
                   <input name="remember" class="form-check-input form-check-input_fill" type="checkbox" value="" id="flexCheckDefault1" />
                   <label class="form-check-label text-secondary" for="flexCheckDefault1">Remember me</label>
                 </div>
-                <a href="#" class="btn-text ms-auto">Lost password?</a>
+                <!-- FIXED URL REFERENCE: Changed from 'forgotpassword' to 'forgotpassword' -->
+                <a href="{% url 'forgotpassword' %}">Lost password?</a>
+
               </div>
 
               <button class="btn btn-primary w-100 text-uppercase" type="submit">Log In</button>
 
               <div class="customer-option mt-4 text-center">
                 <span class="text-secondary">No account yet?</span>
-                <a href="#register-tab" class="btn-text js-show-register">Create Account</a>
+                <a href="#register-tab" class="btn-text js-show-register" data-bs-toggle="tab">Create Account</a>
               </div>
             </form>
           </div>
         </div>
         <div class="tab-pane fade" id="tab-item-register" role="tabpanel" aria-labelledby="register-tab">
           <div class="register-form">
-            <form name="register-form" method="post" action="/userside/user_login" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% if form.errors %}
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please correct the errors below:</strong>
+                {{ form.errors }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endif %}
+            <form name="register-form" method="post" action="{% url 'login_register' %}" enctype="multipart/form-data" class="needs-validation" novalidate>
               {% csrf_token %}
+              <input type="hidden" name="form_type" value="register">
               <div class="form-floating mb-3">
                 <input name="register_username" type="text" class="form-control form-control_gray" id="register_username" placeholder="Username" required />
-                <label for="customerNameRegisterInput">Username *</label>
+                <label for="register_username">Username *</label>
               </div>
               <div class="pb-3"></div>
               <div class="form-floating mb-3">

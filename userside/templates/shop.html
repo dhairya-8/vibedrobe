@@ -9,6 +9,38 @@
     <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
     <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
     <link rel="stylesheet" href="{% static 'user/assets/css/shop.css' %}" type="text/css">
+    <style>
+        .product-count-badge {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+        
+        .product-count-badge .count-number {
+            color: #dc3545;
+            font-weight: 600;
+            margin: 0 4px;
+        }
+        
+        .product-count-icon {
+            margin-right: 6px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .product-count-badge {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -48,32 +80,35 @@
                         <div class="accordion-body px-0 pb-0">
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
-                                    <a href="?gender=Female{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                    <a href="javascript:void(0)" 
                                        class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Female' %}fw-bold text-dark{% endif %}" 
                                        data-gender="Female">
                                         Women
+                                        <span class="text-secondary ms-2">{{ women_count }}</span>
                                     </a>
                                 </li>
                                 <li class="mb-2">
-                                    <a href="?gender=Male{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                    <a href="javascript:void(0)" 
                                        class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Male' %}fw-bold text-dark{% endif %}" 
                                        data-gender="Male">
                                         Men
+                                        <span class="text-secondary ms-2">{{ men_count }}</span>
                                     </a>
                                 </li>
                                 <li class="mb-2">
-                                    <a href="?gender=Unisex{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                    <a href="javascript:void(0)" 
                                        class="menu-link gender-link py-1 d-block {% if request.GET.gender == 'Unisex' %}fw-bold text-dark{% endif %}" 
                                        data-gender="Unisex">
                                         Unisex
+                                        <span class="text-secondary ms-2">{{ unisex_count }}</span>
                                     </a>
                                 </li>
                             </ul>
                             
                             {% if request.GET.gender %}
                                 <div class="mt-3">
-                                    <a href="?{% for key, value in request.GET.items %}{% if key != 'gender' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
-                                       class="btn btn-sm btn-link text-danger p-0">
+                                    <a href="javascript:void(0)" 
+                                       class="btn btn-sm btn-link text-danger p-0 js-clear-gender">
                                         Clear Gender
                                     </a>
                                 </div>
@@ -109,9 +144,11 @@
                                 {% for item in categories_with_subcategories %}
                                     <li class="list-item mb-2">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <a href="?category={{ item.category.id }}" 
-                                               class="menu-link py-1 flex-grow-1 {% if request.GET.category == item.category.id|stringformat:'i' %}fw-bold text-dark{% endif %}">
+                                            <a href="javascript:void(0)" 
+                                               class="menu-link category-link py-1 flex-grow-1 {% if request.GET.category == item.category.id|stringformat:'i' %}fw-bold text-dark{% endif %}"
+                                               data-category="{{ item.category.id }}">
                                                 {{ item.category.name }}
+                                                <span class="text-secondary ms-2">{{ item.category.product_count }}</span>
                                             </a>
                                             
                                             {% if item.subcategory_ids %}
@@ -133,10 +170,11 @@
                                                 <ul class="list list-unstyled ps-3 mt-1">
                                                     {% for subcategory in item.category.subcategories.all %}
                                                         <li>
-                                                            <a href="?subcategory={{ subcategory.id }}" 
-                                                               class="menu-link py-1 d-block {% if request.GET.subcategory == subcategory.id|stringformat:'i' %}fw-bold text-dark{% endif %}">
+                                                            <a href="javascript:void(0)" 
+                                                               class="menu-link subcategory-link py-1 d-block {% if request.GET.subcategory == subcategory.id|stringformat:'i' %}fw-bold text-dark{% endif %}"
+                                                               data-subcategory="{{ subcategory.id }}">
                                                                 {{ subcategory.name }}
-                                                                <span class="text-secondary ms-2">{{ subcategory.product_set.count }}</span>
+                                                                <span class="text-secondary ms-2">{{ subcategory.product_count }}</span>
                                                             </a>
                                                         </li>
                                                     {% endfor %}
@@ -148,7 +186,7 @@
                             </ul>
                             
                             {% if request.GET.category or request.GET.subcategory %}
-                                <button class="btn btn-link p-0 text-danger text-decoration-none fs-6" id="clear-categories">
+                                <button class="btn btn-link p-0 text-danger text-decoration-none fs-6 js-clear-categories">
                                     Clear
                                 </button>
                             {% endif %}
@@ -158,50 +196,52 @@
             </div>
 
             <!-- SIZES FILTER -->
-            <div class="accordion" id="size-filters">
-                <div class="accordion-item mb-4 pb-3">
-                    <h5 class="accordion-header" id="accordion-heading-size">
-                        <button class="accordion-button p-0 border-0 fs-5 text-uppercase" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#accordion-filter-size" 
-                                aria-expanded="true" 
-                                aria-controls="accordion-filter-size">
-                            Sizes
-                            <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
-                            </svg>
-                        </button>
-                    </h5>
-                    
-                    <div id="accordion-filter-size" 
-                         class="accordion-collapse collapse show border-0" 
-                         aria-labelledby="accordion-heading-size" 
-                         data-bs-parent="#size-filters">
-                        <div class="accordion-body px-0 pb-0">
-                            <div class="d-flex flex-wrap">
-                                {% for size in sizes %}
-                                    <a href="javascript:void(0)" 
-                                       class="swatch-size btn btn-sm mb-3 me-3 js-size-filter {% if size.id in selected_sizes %}active{% else %}btn-outline-light{% endif %}" 
-                                       data-size="{{ size.id }}">
-                                        {{ size.name }}
-                                    </a>
-                                {% endfor %}
-                            </div>
-                            
-                            {% if selected_sizes %}
-                                <div class="mt-3">
-                                    <a href="javascript:void(0)" 
-                                       class="btn btn-sm btn-link text-danger p-0" 
-                                       id="clear-sizes">
-                                        Clear Sizes
-                                    </a>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+<div class="accordion" id="size-filters">
+    <div class="accordion-item mb-4 pb-3">
+        <h5 class="accordion-header" id="accordion-heading-size">
+            <button class="accordion-button p-0 border-0 fs-5 text-uppercase" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#accordion-filter-size" 
+                    aria-expanded="true" 
+                    aria-controls="accordion-filter-size">
+                Sizes
+                <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
+                </svg>
+            </button>
+        </h5>
+        
+        <div id="accordion-filter-size" 
+             class="accordion-collapse collapse show border-0" 
+             aria-labelledby="accordion-heading-size" 
+             data-bs-parent="#size-filters">
+            <div class="accordion-body px-0 pb-0">
+                <div class="d-flex flex-wrap">
+                    {% for size in sizes %}
+                        <a href="javascript:void(0)" 
+                           class="swatch-size btn btn-sm mb-3 me-3 js-size-filter {% if size.id in selected_sizes %}active{% else %}btn-outline-light{% endif %}" 
+                           data-size="{{ size.id }}"
+                           title="{{ size.product_count }} products">
+                            {{ size.name }}
+                            <span class="size-count">{{ size.product_count }}</span>
+                        </a>
+                    {% endfor %}
                 </div>
+                
+                {% if selected_sizes %}
+                    <div class="mt-3">
+                        <a href="javascript:void(0)" 
+                           class="btn btn-sm btn-link text-danger p-0" 
+                           id="clear-sizes">
+                            Clear Sizes
+                        </a>
+                    </div>
+                {% endif %}
             </div>
+        </div>
+    </div>
+</div>
 
             <!-- BRANDS FILTER -->
             <div class="accordion" id="brand-filters">
@@ -215,8 +255,7 @@
                                 aria-controls="accordion-filter-brand">
                             Brands
                             <svg class="accordion-button__icon type2" viewBox="0 0 10 6" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>
-                            </svg>
+<path d="M5.35668 0.159286C5.16235 -0.053094 4.83769 -0.0530941 4.64287 0.159286L0.147611 5.05963C-0.0492049 5.27473 -0.049205 5.62357 0.147611 5.83813C0.344427 6.05323 0.664108 6.05323 0.860924 5.83813L5 1.32706L9.13858 5.83867C9.33589 6.05378 9.65507 6.05378 9.85239 5.83867C10.0492 5.62357 10.0492 5.27473 9.85239 5.06018L5.35668 0.159286Z"/>                            </svg>
                         </button>
                     </h5>
                     
@@ -330,8 +369,8 @@
                     
                     <!-- Slide 1: Dresses -->
                     <div class="swiper-slide">
-                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #f5e6e0;">
-                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #f5e6e0;">
+                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #e9dee6ff;">
+                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #e9dee6ff;">
                                 <div class="slideshow-text container p-3 p-xl-5">
                                     <h2 class="text-uppercase section-title fw-normal mb-3 animate animate_fade animate_btt animate_delay-2">
                                         Women's <br><strong>DRESSES</strong>
@@ -341,10 +380,10 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="slide-split_media position-relative" style="background-color: #f5e6e0;">
-                                <div class="slideshow-bg" style="background-color: #f5e6e0;">
+                            <div class="slide-split_media position-relative" style="background-color: #e9dee6ff;">
+                                <div class="slideshow-bg" style="background-color: #e9dee6ff;">
                                     <img loading="lazy" 
-                                         src="{% static 'user/assets/images/shop/dresses_banner.jpeg' %}" 
+                                         src="{% static 'user/assets/images/shop/d3.png' %}" 
                                          width="630" 
                                          height="450" 
                                          alt="Women's dresses collection" 
@@ -356,8 +395,8 @@
 
                     <!-- Slide 2: Ethnic Wear -->
                     <div class="swiper-slide">
-                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #e8f4f8;">
-                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #e8f4f8;">
+                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #e9cfdbff;">
+                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #e9cfdbff;">
                                 <div class="slideshow-text container p-3 p-xl-5">
                                     <h2 class="text-uppercase section-title fw-normal mb-3 animate animate_fade animate_btt animate_delay-2">
                                         Ethnic <br><strong>WEAR</strong>
@@ -367,10 +406,10 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="slide-split_media position-relative" style="background-color: #e8f4f8;">
-                                <div class="slideshow-bg" style="background-color: #e8f4f8;">
+                            <div class="slide-split_media position-relative" style="background-color: #e9cfdbff;">
+                                <div class="slideshow-bg" style="background-color: #e9cfdbff;">
                                     <img loading="lazy" 
-                                         src="{% static 'user/assets/images/shop/ethnic_banner.jpg' %}" 
+                                         src="{% static 'user/assets/images/shop/e3.jpg' %}" 
                                          width="630" 
                                          height="450" 
                                          alt="Ethnic wear collection" 
@@ -382,8 +421,8 @@
 
                     <!-- Slide 3: Oversized T-Shirts -->
                     <div class="swiper-slide">
-                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #f0f8e8;">
-                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #f0f8e8;">
+                        <div class="slide-split h-100 d-block d-md-flex overflow-hidden" style="background-color: #dde4e6ff;">
+                            <div class="slide-split_text position-relative d-flex align-items-center" style="background-color: #dde4e6ff;">
                                 <div class="slideshow-text container p-3 p-xl-5">
                                     <h2 class="text-uppercase section-title fw-normal mb-3 animate animate_fade animate_btt animate_delay-2">
                                         Oversized <br><strong>T-SHIRTS</strong>
@@ -393,10 +432,10 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="slide-split_media position-relative" style="background-color: #f0f8e8;">
-                                <div class="slideshow-bg" style="background-color: #f0f8e8;">
+                            <div class="slide-split_media position-relative" style="background-color: #dde4e6ff;">
+                                <div class="slideshow-bg" style="background-color: #dde4e6ff;">
                                     <img loading="lazy" 
-                                         src="{% static 'user/assets/images/shop/os_tshirt_banner.png' %}" 
+                                         src="{% static 'user/assets/images/shop/o8.jpg' %}" 
                                          width="630" 
                                          height="450" 
                                          alt="Oversized t-shirts collection" 
@@ -415,30 +454,38 @@
 
             <div class="mb-3 pb-2 pb-xl-3"></div>
 
-            <!-- FILTER/SORT CONTROLS -->
-            <div class="d-flex justify-content-between mb-4 pb-md-2">
-                <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1" style="white-space: nowrap; display: inline-block !important;">
-                    <div style="display: inline-flex; align-items: center;">
-                        <a href="{% url 'homepage' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">Home</a>
-                        <span class="menu-link fw-medium px-2" style="color: #6c757d;">/</span>
-                        <a href="{% url 'shop' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">The Shop</a>
+            <!-- PRODUCT COUNT AND FILTER/SORT CONTROLS -->
+            <div class="d-flex justify-content-between mb-4 pb-md-2 flex-wrap">
+                <div class="d-flex align-items-center mb-2 mb-md-0">
+                    <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1" style="white-space: nowrap; display: inline-block !important;">
+                        <div style="display: inline-flex; align-items: center;">
+                            <a href="{% url 'homepage' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">Home</a>
+                            <span class="menu-link fw-medium px-2" style="color: #6c757d;">/</span>
+                            <a href="{% url 'shop' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">The Shop</a>
+                        </div>
                     </div>
+                    
+                    <!-- Product Count Badge -->
+                    <span class="product-count-badge">
+                        <i class="fas fa-box product-count-icon"></i>
+                        Showing <span class="count-number">{{ products.paginator.count }}</span> products
+                    </span>
                 </div>
 
                 <div class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
                     <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" 
                             aria-label="Sort Items" 
                             name="total-number" 
-                            onchange="location = this.value + '{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}';">
-                        <option value="?sort=default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
-                        <option value="?sort=featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
-                        <option value="?sort=popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
-                        <option value="?sort=a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
-                        <option value="?sort=z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
-                        <option value="?sort=price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
-                        <option value="?sort=price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
-                        <option value="?sort=date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
-                        <option value="?sort=date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
+                            id="sort-select">
+                        <option value="default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
+                        <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+                        <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
+                        <option value="a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
+                        <option value="z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
+                        <option value="price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
+                        <option value="price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
+                        <option value="date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
+                        <option value="date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
                     </select>
 
                     {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort %}
@@ -548,8 +595,9 @@
             <!-- PAGINATION -->
             <nav class="shop-pages d-flex justify-content-between mt-3" aria-label="Page navigation">
                 {% if products.has_previous %}
-                    <a href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                       class="btn-link d-inline-flex align-items-center">
+                    <a href="javascript:void(0)" 
+                       class="btn-link d-inline-flex align-items-center js-page-link"
+                       data-page="{{ products.previous_page_number }}">
                         <svg class="me-1" width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg">
                             <use href="#icon_prev_sm" />
                         </svg>
@@ -568,15 +616,17 @@
                     {% for num in products.paginator.page_range %}
                         {% if products.number == num %}
                             <li class="page-item">
-                                <a class="btn-link px-1 mx-2 btn-link_active" 
-                                   href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <a class="btn-link px-1 mx-2 btn-link_active js-page-link" 
+                                   href="javascript:void(0)"
+                                   data-page="{{ num }}">
                                     {{ num }}
                                 </a>
                             </li>
                         {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
                             <li class="page-item">
-                                <a class="btn-link px-1 mx-2" 
-                                   href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <a class="btn-link px-1 mx-2 js-page-link" 
+                                   href="javascript:void(0)"
+                                   data-page="{{ num }}">
                                     {{ num }}
                                 </a>
                             </li>
@@ -585,8 +635,9 @@
                 </ul>
                 
                 {% if products.has_next %}
-                    <a href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                       class="btn-link d-inline-flex align-items-center">
+                    <a href="javascript:void(0)" 
+                       class="btn-link d-inline-flex align-items-center js-page-link"
+                       data-page="{{ products.next_page_number }}">
                         <span class="fw-medium me-1">NEXT</span>
                         <svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg">
                             <use href="#icon_next_sm" />
@@ -618,227 +669,239 @@
 <script src="{% static 'user/assets/js/theme.js' %}"></script>
 
 <script>
-// Clear All Filters functionality
-$('#clear-all-filters').on('click', function() {
-    // Reset the price slider to default values
-    $('.price-range-slider').slider('setValue', [
-        parseFloat("{{ global_min_price|default:0 }}"),
-        parseFloat("{{ global_max_price|default:10000 }}")
-    ]);
+// Utility function to update URL with parameters
+function updateUrlParams(params) {
+    const urlParams = new URLSearchParams(window.location.search);
     
-    // Uncheck all brand checkboxes
-    $('.brand-checkbox').prop('checked', false).closest('li').removeClass('active-brand');
+    // Update parameters
+    for (const [key, value] of Object.entries(params)) {
+        if (value === null || value === '' || value === undefined) {
+            urlParams.delete(key);
+        } else if (Array.isArray(value)) {
+            urlParams.delete(key);
+            if (value.length > 0) {
+                value.forEach(v => urlParams.append(key, v));
+            }
+        } else {
+            urlParams.set(key, value);
+        }
+    }
     
-    // Remove active class from size filters
-    $('.js-size-filter').removeClass('active');
+    // Remove page parameter when changing filters
+    urlParams.delete('page');
     
-    // Reset sorting dropdown to default
-    $('.shop-acs__select').val('?sort=default');
-    
-    // Remove active states from category links
-    $('.menu-link').removeClass('fw-bold text-dark');
-    
-    // Close all subcategory dropdowns
-    $('.subcategory-toggle').attr('aria-expanded', 'false');
-    $('.subcategory-arrow').css('transform', 'rotate(0deg)');
-    $('.collapse').removeClass('show');
-    
-    // Redirect to base shop URL without any filters
+    // Build the new URL
+    const newUrl = window.location.pathname + '?' + urlParams.toString();
+    window.location.href = newUrl;
+}
+
+// Clear price filter
+document.getElementById('clear-price')?.addEventListener('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('min_price');
+    urlParams.delete('max_price');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Clear gender filter
+document.querySelector('.js-clear-gender')?.addEventListener('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('gender');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Clear category filter
+document.querySelector('.js-clear-categories')?.addEventListener('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('category');
+    urlParams.delete('subcategory');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Clear sizes filter
+document.getElementById('clear-sizes')?.addEventListener('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('size');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Clear brands filter
+document.getElementById('clear-brands')?.addEventListener('click', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('brand');
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Clear all filters
+document.getElementById('clear-all-filters')?.addEventListener('click', function() {
     window.location.href = "{% url 'shop' %}";
 });
 
-$(document).ready(function() {
-    // Initialize price slider with separate tooltips
-    var slider = $('.price-range-slider').slider({
-        tooltip_position: 'top',
-        tooltip_split: true,
-        formatter: function(value) {
-            return '₹' + value.toLocaleString('en-IN');
-        },
-        min: parseFloat("{{ global_min_price|default:0 }}"),
-        max: parseFloat("{{ global_max_price|default:10000 }}"),
-        value: [
-            {% if request.GET.min_price %}{{ request.GET.min_price }}{% else %}{{ global_min_price|default:0 }}{% endif %},
-            {% if request.GET.max_price %}{{ request.GET.max_price }}{% else %}{{ global_max_price|default:10000 }}{% endif %}
-        ]
-    });
-
-    // Create dynamic range display
-    $('.price-range-slider').after('<div class="slider-range-display text-center mt-2" style="display:none;">₹<span class="min-val">' + slider.slider('getValue')[0] + '</span> - ₹<span class="max-val">' + slider.slider('getValue')[1] + '</span></div>');
-
-    // Hide range display when not sliding
-    slider.on('mouseleave', function() {
-        $('.slider-range-display').hide();
-    });
-
-    // Update on final selection
-    slider.on('change', function(e) {
-        var values = e.value.newValue || e.value;
-        $('.price-range__min').text('₹' + values[0].toLocaleString('en-IN'));
-        $('.price-range__max').text('₹' + values[1].toLocaleString('en-IN'));
-        
-        // Update URL
-        var urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('min_price', values[0]);
-        urlParams.set('max_price', values[1]);
+// Gender filter
+document.querySelectorAll('.gender-link').forEach(link => {
+    link.addEventListener('click', function() {
+        const gender = this.dataset.gender;
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('gender', gender);
         urlParams.delete('page');
         window.location.search = urlParams.toString();
     });
+});
 
-    // Clear price filter
-    $('#clear-price').on('click', function() {
+// Category filter
+document.querySelectorAll('.category-link').forEach(link => {
+    link.addEventListener('click', function() {
+        const category = this.dataset.category;
         const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('min_price');
-        urlParams.delete('max_price');
-        urlParams.delete('page');
-        window.location.search = urlParams.toString();
-    });
-
-    // Clear Category Filter
-    $('#clear-categories').on('click', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('category');
+        urlParams.set('category', category);
         urlParams.delete('subcategory');
         urlParams.delete('page');
-        
-        // Remove active states from UI
-        $('.menu-link').removeClass('fw-bold text-dark');
-        
-        // Close all subcategory dropdowns
-        $('.subcategory-toggle').attr('aria-expanded', 'false');
-        $('.subcategory-arrow').css('transform', 'rotate(0deg)');
-        $('.collapse').removeClass('show');
-        
         window.location.search = urlParams.toString();
     });
+});
 
-    // Size filter functionality
-    $(document).on('click', '.js-size-filter', function() {
-        const sizeId = $(this).data('size');
+// Subcategory filter
+document.querySelectorAll('.subcategory-link').forEach(link => {
+    link.addEventListener('click', function() {
+        const subcategory = this.dataset.subcategory;
         const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('subcategory', subcategory);
+        urlParams.delete('page');
+        window.location.search = urlParams.toString();
+    });
+});
+
+// Size filter
+document.querySelectorAll('.js-size-filter').forEach(button => {
+    button.addEventListener('click', function() {
+        const sizeId = this.dataset.size;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Get current sizes
         const currentSizes = urlParams.getAll('size');
         
-        // Toggle this size in the URL parameters
-        if ($(this).hasClass('active')) {
-            // Remove this size from the filter
-            const newSizes = currentSizes.filter(id => id !== sizeId.toString());
+        // Toggle this size
+        if (currentSizes.includes(sizeId)) {
+            // Remove this size
+            const newSizes = currentSizes.filter(id => id !== sizeId);
             urlParams.delete('size');
             newSizes.forEach(size => urlParams.append('size', size));
         } else {
-            // Add this size to the filter
+            // Add this size
             urlParams.append('size', sizeId);
         }
         
-        // Remove page parameter to go back to first page
         urlParams.delete('page');
-        
-        // Update the URL
         window.location.search = urlParams.toString();
     });
+});
 
-    // Clear sizes filter
-    $('#clear-sizes').on('click', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('size');
-        urlParams.delete('page');
-        $('.js-size-filter').removeClass('active');
-        window.location.search = urlParams.toString();
+// Brand filter
+document.getElementById('apply-brands')?.addEventListener('click', function() {
+    const selectedBrands = [];
+    document.querySelectorAll('.brand-checkbox:checked').forEach(checkbox => {
+        selectedBrands.push(checkbox.value);
     });
-
-    // Brand search functionality
-    $('#brand-search').on('input', function() {
-        const searchTerm = $(this).val().toLowerCase().trim();
-        $('#brand-list li').each(function() {
-            const brandName = $(this).find('.brand-name').text().toLowerCase();
-            $(this).toggle(searchTerm === '' || brandName.includes(searchTerm));
-        });
-    });
-
-    // Apply brands filter
-    $('#apply-brands').on('click', function() {
-        const selectedBrands = [];
-        $('.brand-checkbox:checked').each(function() {
-            selectedBrands.push($(this).val());
-        });
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('brand');
-        selectedBrands.forEach(brand => urlParams.append('brand', brand));
-        urlParams.delete('page');
-        
-        // Preserve other filters
-        ['category', 'subcategory', 'size', 'min_price', 'max_price', 'sort', 'gender'].forEach(param => {
-            if (urlParams.has(param)) urlParams.set(param, urlParams.get(param));
-        });
-        
-        window.location.search = urlParams.toString();
-    });
-
-    // Clear brands filter
-    $('#clear-brands').on('click', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('brand');
-        urlParams.delete('page');
-        $('.brand-checkbox').prop('checked', false).closest('li').removeClass('active-brand');
-        window.location.search = urlParams.toString();
-    });
-
-    // Initialize active states
-    function initializeActiveStates() {
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // Sizes
-        const selectedSizes = urlParams.getAll('size');
-        $('.js-size-filter').each(function() {
-            $(this).toggleClass('active', selectedSizes.includes($(this).data('size').toString()));
-        });
-        
-        // Gender
-        const selectedGender = urlParams.get('gender');
-        $('.gender-link').each(function() {
-            $(this).toggleClass('fw-bold text-dark', $(this).data('gender') === selectedGender);
-        });
-        
-        // Categories
-        const currentCategory = urlParams.get('category');
-        const currentSubcategory = urlParams.get('subcategory');
-        $('.menu-link').not('.gender-link').each(function() {
-            const href = $(this).attr('href') || '';
-            $(this).toggleClass('fw-bold text-dark', 
-                href.includes(`category=${currentCategory}`) || 
-                href.includes(`subcategory=${currentSubcategory}`)
-            );
-        });
-        
-        // Brands
-        const selectedBrands = urlParams.getAll('brand');
-        $('.brand-checkbox').each(function() {
-            const isChecked = selectedBrands.includes($(this).val());
-            $(this).prop('checked', isChecked).closest('li').toggleClass('active-brand', isChecked);
-        });
-        
-        // Expand category if subcategory is selected
-        if (currentSubcategory) {
-            $('.list-item').each(function() {
-                const categoryId = $(this).find('a[href*="category="]').attr('href')?.split('=')[1];
-                if (categoryId) {
-                    const subcategoryList = $(this).find('#subcategories-' + categoryId);
-                    if (subcategoryList.length && subcategoryList.find(`a[href*="subcategory=${currentSubcategory}"]`).length) {
-                        subcategoryList.addClass('show');
-                        $(this).find('.subcategory-toggle').attr('aria-expanded', 'true');
-                        $(this).find('.subcategory-arrow').css('transform', 'rotate(180deg)');
-                    }
-                }
-            });
-        }
-    }
-
-    initializeActiveStates();
     
-    // Toggle brand active state on change
-    $('.brand-checkbox').on('change', function() {
-        $(this).closest('li').toggleClass('active-brand', this.checked);
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.delete('brand');
+    selectedBrands.forEach(brand => urlParams.append('brand', brand));
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Sort functionality
+document.getElementById('sort-select')?.addEventListener('change', function() {
+    const sortValue = this.value;
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('sort', sortValue);
+    urlParams.delete('page');
+    window.location.search = urlParams.toString();
+});
+
+// Pagination
+document.querySelectorAll('.js-page-link').forEach(link => {
+    link.addEventListener('click', function() {
+        const page = this.dataset.page;
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('page', page);
+        window.location.search = urlParams.toString();
     });
+});
+
+// Initialize active states when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Initialize sizes
+    const selectedSizes = urlParams.getAll('size');
+    document.querySelectorAll('.js-size-filter').forEach(button => {
+        if (selectedSizes.includes(button.dataset.size)) {
+            button.classList.add('active');
+        }
+    });
+    
+    // Initialize gender
+    const selectedGender = urlParams.get('gender');
+    document.querySelectorAll('.gender-link').forEach(link => {
+        if (link.dataset.gender === selectedGender) {
+            link.classList.add('fw-bold', 'text-dark');
+        }
+    });
+    
+    // Initialize categories
+    const currentCategory = urlParams.get('category');
+    const currentSubcategory = urlParams.get('subcategory');
+    
+    document.querySelectorAll('.category-link').forEach(link => {
+        if (link.dataset.category === currentCategory) {
+            link.classList.add('fw-bold', 'text-dark');
+        }
+    });
+    
+    document.querySelectorAll('.subcategory-link').forEach(link => {
+        if (link.dataset.subcategory === currentSubcategory) {
+            link.classList.add('fw-bold', 'text-dark');
+        }
+    });
+    
+    // Initialize brands
+    const selectedBrands = urlParams.getAll('brand');
+    document.querySelectorAll('.brand-checkbox').forEach(checkbox => {
+        if (selectedBrands.includes(checkbox.value)) {
+            checkbox.checked = true;
+            checkbox.closest('li').classList.add('active-brand');
+        }
+    });
+    
+    // Initialize price slider if it exists
+    if (typeof $('.price-range-slider').slider === 'function') {
+        $('.price-range-slider').slider({
+            tooltip_position: 'top',
+            tooltip_split: true,
+            formatter: function(value) {
+                return '₹' + value.toLocaleString('en-IN');
+            },
+            min: parseFloat("{{ global_min_price|default:0 }}"),
+            max: parseFloat("{{ global_max_price|default:10000 }}"),
+            value: [
+                {% if request.GET.min_price %}{{ request.GET.min_price }}{% else %}{{ global_min_price|default:0 }}{% endif %},
+                {% if request.GET.max_price %}{{ request.GET.max_price }}{% else %}{{ global_max_price|default:10000 }}{% endif %}
+            ]
+        }).on('change', function(e) {
+            const values = e.value.newValue || e.value;
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('min_price', values[0]);
+            urlParams.set('max_price', values[1]);
+            urlParams.delete('page');
+            window.location.search = urlParams.toString();
+        });
+    }
 });
 
 // Product Gallery Swiper Initialization

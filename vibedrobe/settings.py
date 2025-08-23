@@ -150,4 +150,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'info.vibedrobe@gmail.com'
 EMAIL_HOST_PASSWORD = 'gscr umrv eqjd fbxk'
 DEFAULT_FROM_EMAIL = 'VibeDrobe Fashion <noreply@vibedrobe.com>'
-# DEFAULT_FROM_EMAIL = 'VibeDrobe Support <support@vibedrobe.com>'
+CONTACT_EMAIL = 'info.vibedrobe@gmail.com'  # Where contact form submissions should go

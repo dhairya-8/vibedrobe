@@ -5,12 +5,14 @@ urlpatterns = [
     # ==================== Authentication URLs ====================
     path('login-register/', login_register_view, name='login_register'),
     path('logout/', user_logout, name='logout'),
-    path('forgot-password/', forgotpassword, name='forgotpassword'),
+    path('forgotpassword/', forgotpassword, name='forgotpassword'),
+    path('reset-password/<str:token>/', reset_password, name='reset_password'),
 
     # ==================== Core Application URLs ====================
     path('', homepage, name='homepage'),
     path('homepage/', homepage, name='homepage'),
     path('shop/', shop, name='shop'),
+    path('shop/new-arrivals/', new_arrivals, name='new_arrivals'),
     path('product/<int:product_id>/', product_detail, name='product_detail'),
 
     # ==================== Cart & Checkout URLs ====================
@@ -35,14 +37,14 @@ urlpatterns = [
     path('wishlist/remove/<int:item_id>/', remove_from_wishlist, name='remove_from_wishlist'),
     path('wishlist/move-to-cart/<int:item_id>/', move_to_cart, name='move_to_cart'),
 
-
     # ==================== Account Management URLs ====================
-    path('account-dashboard/', account_dashboard, name='account_dashboard'), 
+    path('account_dashboard/', account_dashboard, name='account_dashboard'), 
     # Order related
     path('account-orders/', account_orders, name='account_orders'),
     path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
     path('account-details/', account_details, name='account_details'),
     path('account/deactivate/', deactivate_account, name='deactivate_account'),   
+    
     # Address related
     path('account-addresses/', account_addresses, name='account_addresses'),
     path('account-addresses/add/', add_address, name='add_address'),
@@ -54,4 +56,6 @@ urlpatterns = [
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
 
+    path('cart/items/update/', update_cart_item, name='update_cart_item'),
+    path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
 ]

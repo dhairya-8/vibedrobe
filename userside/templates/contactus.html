@@ -1,7 +1,7 @@
 {% extends 'base1.html' %}
 {% load static %}
 {% block title %}
-  Product Detail Page | VibeDrobe
+  Contact Us | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -18,35 +18,86 @@
        <h2 class="page-title">CONTACT US</h2>
      </div>
    </section>
-   
-   
 
    <section class="contact-us container">
-     <div class="mw-930">
-       <div class="contact-us__form">
-         <form name="contact-us-form" class="needs-validation" novalidate>
+      <div class="mw-930">
+        <div class="row mb-5">
+          <div class="col-lg-6">
+            <h3 class="mb-4">Store in Ahmedabad</h3>
+            <p class="mb-4">1418 River Drive, Suite 35 Cottonhall, CA 9622<br>India</p>
+            <p class="mb-4">info.vibedrobe@gmail.com<br>+91 9811922936</p>
+          </div>
+        </div>
+        <div class="contact-us__form">
+         <form method="post" action="{% url 'contactus' %}" class="needs-validation" novalidate>
+           {% csrf_token %}
            <h3 class="mb-5">Get In Touch</h3>
            <div class="form-floating my-4">
-             <input type="text" class="form-control" id="contact_us_name" placeholder="Name *" required>
+             <input type="text" class="form-control" id="contact_us_name" name="name" placeholder="Name *" required>
              <label for="contact_us_name">Name *</label>
            </div>
            <div class="form-floating my-4">
-             <input type="email" class="form-control" id="contact_us_email" placeholder="Email address *" required>
-             <label for="contact_us_name">Email address *</label>
+             <input type="email" class="form-control" id="contact_us_email" name="email" placeholder="Email address *" required>
+             <label for="contact_us_email">Email address *</label>
            </div>
            <div class="my-4">
-             <textarea class="form-control form-control_gray" placeholder="Your Message" cols="30" rows="8" required></textarea>
+             <textarea class="form-control form-control_gray" name="message" placeholder="Your Message" cols="30" rows="8" required></textarea>
            </div>
            <div class="my-4">
              <button type="submit" class="btn btn-primary">Submit</button>
            </div>
          </form>
        </div>
+      </div>
+    </section>
+
+   <!-- FAQ Section -->
+   <section class="faq container mt-5">
+     <div class="mw-930">
+       <h3 class="text-center mb-5">Frequently Asked Questions</h3>
+       <div class="accordion" id="faqAccordion">
+         <div class="accordion-item">
+           <h2 class="accordion-header" id="headingOne">
+             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+               How long does shipping take?
+             </button>
+           </h2>
+           <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+             <div class="accordion-body">
+               Standard shipping typically takes 3-5 business days within the country. International shipping may take 7-14 business days depending on the destination.
+             </div>
+           </div>
+         </div>
+         <div class="accordion-item">
+           <h2 class="accordion-header" id="headingTwo">
+             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+               What is your return policy?
+             </button>
+           </h2>
+           <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+             <div class="accordion-body">
+               We offer a 30-day return policy for unworn items with original tags attached. Please contact us for a return authorization before sending items back.
+             </div>
+           </div>
+         </div>
+         <div class="accordion-item">
+           <h2 class="accordion-header" id="headingThree">
+             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+               How can I track my order?
+             </button>
+           </h2>
+           <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+             <div class="accordion-body">
+               Once your order is shipped, you will receive a confirmation email with a tracking number. You can use this number on our website or the carrier's website to track your package.
+             </div>
+           </div>
+         </div>
+       </div>
      </div>
    </section>
  </main>
-
 {% endblock %}
+
 {% block script %}
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
@@ -55,6 +106,30 @@
   <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
+
+  <!-- Form validation -->
+  <script>
+    // Example starter JavaScript for disabling form submissions if there are invalid fields
+    (function () {
+      'use strict'
+      
+      // Fetch all the forms we want to apply custom Bootstrap validation styles to
+      var forms = document.querySelectorAll('.needs-validation')
+      
+      // Loop over them and prevent submission
+      Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            }
+            
+            form.classList.add('was-validated')
+          }, false)
+        })
+    })()
+  </script>
 
   <!-- Footer Scripts -->
   <script src="{% static 'user/assets/js/theme.js' %}"></script>
