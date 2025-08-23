@@ -5,7 +5,12 @@
     {% for product in products %}
     <div class="product-card" data-product-id="{{ product.id }}">
         <div class="product-img-container">
-          <img src="{{ product.base_image.url }}" class="product-img" alt="{{ product.name }}">
+          {% if product.base_image %}
+    <img src="{{ product.base_image.url }}" class="product-img" alt="{{ product.name }}">
+{% else %}
+    <!-- Optional: placeholder or alternative content -->
+    <p>No image available</p>
+{% endif %}
           
           <div class="product-actions">
             <a href="{% url 'edit_product' product.id %}" class="action-btn btn btn-warning btn-sm" 

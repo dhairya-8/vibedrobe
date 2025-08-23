@@ -1308,9 +1308,14 @@ function pureFadeOut(e) {
     window.location.href='./shop_order_complete.html';
   });
 
-  document.querySelector('.js-show-register').addEventListener('click', function(e) {
-    document.querySelector(this.getAttribute("href")).click();
-  });
+  const registerButton = document.querySelector('.js-show-register');
+if (registerButton) {
+    registerButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute("href"));
+        if (target) target.click();
+    });
+  }
 
   $('button.js-add-wishlist, a.add-to-wishlist').on('click', function() {
     if($(this).hasClass("active"))

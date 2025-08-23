@@ -1064,11 +1064,15 @@ def add_product(request):
 @admin_login_required
 @require_GET
 def display_product(request):
-    # Base queryset with select_related for performance
-    products = Product.objects.all().select_related(
-        'brand_id', 
-        'subcategory_id__category_id'
-    ).order_by('-created_at')
+    
+    try:
+        # Base queryset with select_related for performance
+        products = Product.objects.all().select_related(
+            'brand_id', 
+            'subcategory_id__category_id'
+        ).order_by('-created_at')
+    except Exception as e:
+        print(f"\n error fetching the products - {e}")
     
     # Get filter parameters with proper cleaning
     search_term = request.GET.get('search', '').strip()
@@ -1094,7 +1098,6 @@ def display_product(request):
     # Annotate with variant count
     products = products.annotate(variant_count=Count('variants'))
     
-    # Pagination (12 items per page)
     paginator = Paginator(products, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
