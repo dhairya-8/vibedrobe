@@ -1,5 +1,6 @@
 from datetime import datetime
-
+from decimal import Decimal, ROUND_HALF_UP
+        
 # Example for usage of terminal debugger
 # one-line usage (shows simple messages)
 # error("Database connection failed!")

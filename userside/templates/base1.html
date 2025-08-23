@@ -22,11 +22,11 @@
       .wishlist-amount {
         position: absolute !important;
       
-        /* These two properties position the element at the bottom-right /
-              bottom: -0.05rem;
-              right: 0rem;
+        /* These two properties position the element at the bottom-right */
+        bottom: -0.05rem;
+        right: 0rem;
       
-              / Keep all your other styling */
+        /* Keep all your other styling */
         width: 1rem;
         height: 1rem;
         border-radius: 100%;
@@ -72,9 +72,6 @@
     <!-- Integrating footer -->
     {% include 'footer1.html' %}
 
-    <!-- Include cart drawer -->
-    {% include 'includes/cart_drawer.html' %}
-
     <!-- Javascript -->
     {% block script %}
 
@@ -82,7 +79,7 @@
 
     <!-- Preloader Script -->
     <script>
-      // Preloader functionality
+      // Simulate loading time for demo (remove this in production)
       setTimeout(() => {
         window.dispatchEvent(new Event('load'))
       }, 4000)
@@ -90,30 +87,9 @@
       window.addEventListener('load', function () {
         const preloader = document.getElementById('preloader')
         if (preloader) {
-          preloader.classList.add('hidden')
+          preloader.classList.add('hidden') // Add the 'hidden' class to trigger the fade-out
         }
       })
-      
-      
-      // Function to open cart drawer if URL has show_cart=1 parameter
-function openCartDrawerIfNeeded() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('show_cart') === '1') {
-        // Open the cart drawer
-        $('.js-open-aside[data-aside="cartDrawer"]').trigger('click');
-        
-        // Clean the URL without reloading the page
-        if (history.replaceState) {
-            const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]show_cart=1/, '');
-            history.replaceState({}, document.title, cleanUrl);
-        }
-    }
-}
-
-// Run when page loads
-$(document).ready(function() {
-    openCartDrawerIfNeeded();
-});
     </script>
   </body>
 </html>
