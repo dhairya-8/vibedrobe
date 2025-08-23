@@ -257,6 +257,11 @@ class Order_Master(models.Model):
     ]
     
     status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
+    mode_of_payment = models.CharField(max_length=30, null=False, blank=False, choices=[
+        ('cod', 'Cash on Delivery'),
+        ('online', 'Online Payment'),
+        ('upi', 'UPI Payment'),
+    ], default='cod')
     subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
     tax_amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
     shipping_charge = models.DecimalField(decimal_places=2, max_digits=10, default=0)
@@ -328,22 +333,15 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment#{self.payment_id}: {self.status} (${self.amount})"
-    
-class Shipping_Partners(models.Model):
-    name = models.CharField(max_length=50, unique=True,null=False, blank=False)
-    code = models.CharField(max_length=20, null=False, blank=False)
-    api_endpoint = models.CharField(max_length=200, null=True)
-    is_active = models.BooleanField(default=True)
-    base_rate = models.DecimalField(decimal_places=2,max_digits=8, default=0)
-
-    def __str__(self):
-        return f"Courier: {self.name}"
 
 class Shipping(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.CASCADE)
-    shipping_partners_id = models.ForeignKey(Shipping_Partners, on_delete=models.CASCADE)
     tracking_number = models.CharField(max_length=50, unique=True,null=True)
-    shipping_status = models.CharField(max_length=30, null=False, blank=False) # choices to be defined after discussion
+    shipping_status = models.CharField(max_length=30, null=False, blank=False, choices=[
+        ('confirm', 'Confirm'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),])
+        
     shipped_date = models.DateTimeField(null=True)
     excepted_delivery = models.DateField(null=True)
     delivered_date = models.DateTimeField(null=True)

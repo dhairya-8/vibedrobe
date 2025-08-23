@@ -69,7 +69,8 @@ TEMPLATES = [
                 'adminside.context_processor.admin_profile_image',  # Custom context processor
                 'adminside.context_processor.custom_alerts',  # Custom alerts context processor for adminside
                 'userside.context_processor.custom_message_tags', # Custom message tags for userside
-                'userside.context_processor.cart_context', 
+                'userside.context_processor.cart_and_wishlist_count',  # Cart and wishlist counts for userside
+                'userside.context_processor.cart_drawer',  # Cart drawer data for userside
             ],
         },
     },
@@ -148,5 +149,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'info.vibedrobe@gmail.com'
 EMAIL_HOST_PASSWORD = 'gscr umrv eqjd fbxk'
-DEFAULT_FROM_EMAIL = 'VibeDrobe Support <info.vibedrobe@gmail.com>'
+DEFAULT_FROM_EMAIL = 'VibeDrobe Fashion <noreply@vibedrobe.com>'
 # DEFAULT_FROM_EMAIL = 'VibeDrobe Support <support@vibedrobe.com>'

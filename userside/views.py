@@ -1,4 +1,4 @@
-import re
+import re, time
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login as auth_login
 from .decorators import user_login_required
@@ -11,6 +11,11 @@ from django.db import IntegrityError
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 from .utils import *
+from decimal import Decimal
+from django.db import transaction
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
 
 
 def homepage(request):
@@ -633,6 +638,8 @@ def check_variant_stock(request, variant_id):
         'price': float(variant.product_id.price + variant.additional_price),
     })
 
+
+# ============================= Cart and Wishlist Views =============================
 @user_login_required
 @require_POST
 def add_to_cart(request, product_id):
@@ -694,26 +701,105 @@ def cart(request):
             messages.error(request, "Please login to view your cart.")
             return redirect('login')
             
-        # Get or create the user's cart
         cart_obj, created = Cart.objects.get_or_create(user_id_id=user_id)
-        
         cart_items = Cart_Items.objects.filter(cart_id=cart_obj).select_related(
             'product_variant_id__product_id', 
             'product_variant_id__size_id'
-        ).order_by('-id')  # Newest items first
+        ).order_by('-id')
+
+        cart_total = Decimal('0')
+        total_gst = Decimal('0')
+        total_base_price = Decimal('0')
+        shipping_charge = Decimal('69')  # Fixed shipping charge
+
+        for item in cart_items:
+            gst_inclusive_price = item.price_at_time
+            quantity = Decimal(item.quantity)
+            
+            # Calculate base price and GST based on product price
+            if gst_inclusive_price >= Decimal('1000'):
+                # For items >= ₹1000 (12% GST)
+                base_price = gst_inclusive_price / Decimal('1.12')
+                gst_amount = gst_inclusive_price - base_price
+            else:
+                # For items < ₹1000 (5% GST)
+                base_price = gst_inclusive_price / Decimal('1.05')
+                gst_amount = gst_inclusive_price - base_price
+            
+            # Calculate totals for this item
+            item_base_total = base_price * quantity
+            item_gst_total = gst_amount * quantity
+            item_total = gst_inclusive_price * quantity
+            
+            # Add to cart totals
+            total_base_price += item_base_total
+            total_gst += item_gst_total
+            cart_total += item_total
         
-        cart_total = sum(item.price_at_time * item.quantity for item in cart_items)
-        
+        # Round values to 2 decimal places
+        total_base_price = total_base_price.quantize(Decimal('0.00'))
+        total_gst = total_gst.quantize(Decimal('0.00'))
+        cart_total = cart_total.quantize(Decimal('0.00'))
+        grand_total = cart_total + shipping_charge
+
         context = {
             'cart_items': cart_items,
+            'base_price_total': total_base_price,
             'cart_total': cart_total,
+            'total_gst': total_gst,
+            'shipping_charge': shipping_charge,
+            'grand_total': grand_total,
             'cart_count': cart_items.count()
         }
         return render(request, 'cart.html', context)
         
     except Exception as e:
         messages.error(request, "An error occurred while loading your cart.")
-        return redirect('homepage')
+        error(f"Cart error: {str(e)}")
+        return redirect('homepage')    
+
+@user_login_required
+def remove_cart_item_drawer(request, product_id, variant_id):
+    if request.user.is_authenticated:
+        try:
+            cart = Cart.objects.get(user_id=request.user.id)
+            item = Cart_Items.objects.get(
+                cart_id=cart,
+                product_variant_id__product_id=product_id,
+                product_variant_id=variant_id
+            )
+            product_name = item.product_variant_id.product_id.name
+            item.delete()
+            messages.success(request, f"'{product_name[:20]}...' removed from cart")
+        except (Cart.DoesNotExist, Cart_Items.DoesNotExist):
+            messages.error(request, "Item not found in your cart")
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+@user_login_required
+def empty_cart(request):
+    try:
+        user_id = request.session.get('user_id')
+        cart = Cart.objects.get(user_id_id=user_id)
+        count = Cart_Items.objects.filter(cart_id=cart).count()
+        
+        if count == 0:
+            messages.info(request, "Your cart is already empty")
+            return redirect('cart')
+            
+        Cart_Items.objects.filter(cart_id=cart).delete()
+        cart.updated_at = timezone.now()
+        cart.save()
+        
+        messages.success(request, f"Removed all {count} items from your cart")
+        return redirect('cart')
+        
+    except Cart.DoesNotExist:
+        messages.error(request, "No cart found to empty")
+    except Exception as e:
+        messages.error(request, "Failed to empty cart")
+        error(f"Empty cart error: {str(e)}")
+    
+    return redirect('cart')
 
 @user_login_required
 @require_POST
@@ -965,18 +1051,344 @@ def quick_add_to_wishlist(request, product_id):
     
     return redirect('shop')
 
+# ========================= Shipping and further =========================
+@user_login_required
+def checkout(request):
+    try:
+        user_id = request.session.get('user_id')
+        user = request.user
+        
+        # Get user's cart
+        cart_obj, created = Cart.objects.get_or_create(user_id_id=user_id)
+        cart_items = Cart_Items.objects.filter(cart_id=cart_obj).select_related(
+            'product_variant_id__product_id', 
+            'product_variant_id__size_id'
+        )
+        
+        if not cart_items.exists():
+            messages.error(request, "Your cart is empty. Add items to proceed to checkout.")
+            return redirect('cart')
+        
+        # Calculate cart totals
+        cart_data = get_cart_totals(cart_items)
+        
+        # Get user addresses
+        user_addresses = User_Address.objects.filter(user_id=user)
+        default_address = user_addresses.filter(is_default=True).first()
+        
+        if request.method == 'POST':
+            # Process the checkout form
+            address_id = request.POST.get('address_id')
+            payment_method = request.POST.get('payment_method', 'cod')  # Default to COD
+            
+            # Validate payment method (for now only COD is implemented)
+            if payment_method != 'cod':
+                messages.error(request, "Only Cash on Delivery is available at the moment.")
+                return redirect('checkout')
+            
+            # Get or create address
+            selected_address = None
+            if address_id and address_id != 'new':
+                # Use existing address
+                try:
+                    selected_address = User_Address.objects.get(id=address_id, user_id=user)
+                except User_Address.DoesNotExist:
+                    messages.error(request, "Selected address not found.")
+                    return redirect('checkout')
+            else:
+                # Create new address from form data
+                full_name = request.POST.get('full_name')
+                phone = request.POST.get('phone')
+                address_line_1 = request.POST.get('address_line_1')
+                address_line_2 = request.POST.get('address_line_2', '')
+                city = request.POST.get('city')
+                state = request.POST.get('state')
+                pincode = request.POST.get('pincode')
+                address_type = request.POST.get('address_type', 'home')
+                address_name = request.POST.get('address_name', 'Home')
+                
+                # Validate required fields
+                required_fields = {
+                    'full_name': full_name,
+                    'phone': phone,
+                    'address_line_1': address_line_1,
+                    'city': city,
+                    'state': state,
+                    'pincode': pincode
+                }
+                
+                missing_fields = [field for field, value in required_fields.items() if not value]
+                if missing_fields:
+                    messages.error(request, f"Please fill all required fields: {', '.join(missing_fields)}")
+                    return redirect('checkout')
+                
+                # Create new address
+                selected_address = User_Address(
+                    user_id=user,
+                    address_type=address_type,
+                    address_name=address_name,
+                    full_name=full_name,
+                    phone=phone,
+                    address_line_1=address_line_1,
+                    address_line_2=address_line_2,
+                    city=city,
+                    state=state,
+                    pincode=pincode,
+                    is_default=not user_addresses.exists()  # Set as default if no addresses exist
+                )
+                selected_address.save()
+            
+            # Create order using transaction to ensure data consistency
+            try:
+                with transaction.atomic():
+                    # Create order master
+                    order = Order_Master(
+                        user_id=user,
+                        subtotal=cart_data['cart_total'],
+                        tax_amount=cart_data['total_gst'],
+                        shipping_charge=cart_data['shipping_charge'],
+                        total_amount=cart_data['grand_total'],
+                        status='confirmed',  # For COD, we can confirm immediately
+                        mode_of_payment=payment_method
+                    )
+                    order.save()
+                    
+                    # Create order address
+                    order_address = Order_Address(
+                        order_id=order,
+                        address_type=selected_address.address_type,
+                        full_name=selected_address.full_name,
+                        phone=selected_address.phone,
+                        address_line_1=selected_address.address_line_1,
+                        address_line_2=selected_address.address_line_2,
+                        city=selected_address.city,
+                        state=selected_address.state,
+                        pincode=selected_address.pincode
+                    )
+                    order_address.save()
+                    
+                    # Create order details
+                    order_details_list = []
+                    for cart_item in cart_items:
+                        order_detail = Order_Details.objects.create(
+                            order_id=order,
+                            product_variant_id=cart_item.product_variant_id,
+                            quantity=cart_item.quantity,
+                            unit_price=cart_item.price_at_time,
+                            total_price=cart_item.total_price,
+                            product_name=cart_item.product_variant_id.product_id.name,
+                            product_sku=cart_item.product_variant_id.sku,
+                        )
+                        order_details_list.append(order_detail)
+                    
+                    # Create payment record for COD
+                    Payment.objects.create(
+                        payment_id=f"PAY-{int(time.time())}-{order.id}",
+                        order_id=order,
+                        user_id=user,
+                        amount=cart_data['grand_total'],
+                        payment_method='COD',
+                        payment_gateway='N/A',
+                        status='pending'  # Will be completed when order is delivered
+                    )
+                    
+                    # Clear the cart
+                    cart_items.delete()
+                    
+                    # Send confirmation email
+                    try:
+                        send_order_confirmation_email(order, order_details_list, order_address)
+                    except Exception as email_error:
+                        # Don't fail the order if email fails
+                        pass
+                    
+                    # Store success message for orderconfirm page
+                    messages.success(request, 'Your order has been placed successfully!')
+                    
+                    # Redirect to order success page
+                    return redirect('orderconfirm', order_id=order.id)
+                    
+            except Exception as e:
+                messages.error(request, "An error occurred while processing your order. Please try again.")
+                return redirect('checkout')
+        
+        context = {
+            'cart_items': cart_items,
+            'base_price_total': cart_data['base_price_total'],
+            'cart_total': cart_data['cart_total'],
+            'total_gst': cart_data['total_gst'],
+            'shipping_charge': cart_data['shipping_charge'],
+            'grand_total': cart_data['grand_total'],
+            'user_addresses': user_addresses,
+            'default_address': default_address,
+        }
+        
+        return render(request, 'checkout.html', context)
+        
+    except Exception as e:
+        messages.error(request, "An error occurred while loading checkout.")
+        return redirect('cart')
+    
+# Helper function to calculate cart totals
+def get_cart_totals(cart_items):
+    cart_total = Decimal('0')
+    total_gst = Decimal('0')
+    total_base_price = Decimal('0')
+    shipping_charge = Decimal('69')  # Fixed shipping charge
+
+    for item in cart_items:
+        gst_inclusive_price = item.price_at_time
+        quantity = Decimal(item.quantity)
+        
+        # Calculate base price and GST based on product price
+        if gst_inclusive_price >= Decimal('1000'):
+            # For items >= ₹1000 (12% GST)
+            base_price = gst_inclusive_price / Decimal('1.12')
+            gst_amount = gst_inclusive_price - base_price
+        else:
+            # For items < ₹1000 (5% GST)
+            base_price = gst_inclusive_price / Decimal('1.05')
+            gst_amount = gst_inclusive_price - base_price
+        
+        # Calculate totals for this item
+        item_base_total = base_price * quantity
+        item_gst_total = gst_amount * quantity
+        item_total = gst_inclusive_price * quantity
+        
+        # Add to cart totals
+        total_base_price += item_base_total
+        total_gst += item_gst_total
+        cart_total += item_total
+    
+    # Round values to 2 decimal places
+    total_base_price = total_base_price.quantize(Decimal('0.00'))
+    total_gst = total_gst.quantize(Decimal('0.00'))
+    cart_total = cart_total.quantize(Decimal('0.00'))
+    grand_total = cart_total + shipping_charge
+    
+    return {
+        'base_price_total': total_base_price,
+        'cart_total': cart_total,
+        'total_gst': total_gst,
+        'shipping_charge': shipping_charge,
+        'grand_total': grand_total,
+    }
+
+def send_order_confirmation_email(order, order_details, order_address):
+    """
+    Send professional order confirmation email with invoice
+    """
+    try:
+        # Email subject
+        subject = f'Order Confirmation - {order.order_number} | VibeDrobe'
+        
+        # From email (use your configured email)
+        from_email = settings.DEFAULT_FROM_EMAIL
+        
+        # To email (customer's email)
+        to_email = [order.user_id.email]
+        
+        # Context for email template
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'company_name': 'VibeDrobe',
+            'support_email': 'support@vibedrobe.com',
+            'website_url': 'https://www.vibedrobe.com',
+        }
+        
+        # Render HTML email template
+        html_content = render_to_string('emails/order_confirmation.html', context)
+        
+        # Create plain text version (fallback)
+        plain_text_content = f"""
+Thank you for your order!
+
+Hi {order_address.full_name},
+
+Your order has been confirmed and is being processed.
+
+Order Details:
+- Order Number: {order.order_number}
+- Date: {order.order_date.strftime('%d/%m/%Y')}
+- Total Amount: ₹{order.total_amount:.2f}
+- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
+
+Shipping Address:
+{order_address.full_name}
+{order_address.address_line_1}
+{order_address.address_line_2 if order_address.address_line_2 else ''}
+{order_address.city}, {order_address.state} - {order_address.pincode}
+Phone: {order_address.phone}
+
+Items Ordered:"""
+        
+        for item in order_details:
+            plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
+        
+        plain_text_content += f"""
+
+Subtotal: ₹{order.subtotal:.2f}
+GST: ₹{order.tax_amount:.2f}
+Shipping: ₹{order.shipping_charge:.2f}
+Total: ₹{order.total_amount:.2f}
+
+Thank you for choosing VibeDrobe!
+
+For support, contact us at support@vibedrobe.com
+"""
+        
+        # Create email message
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_text_content,
+            from_email=from_email,
+            to=to_email,
+        )
+        
+        # Attach HTML content
+        email.attach_alternative(html_content, "text/html")
+        
+        # Send email
+        email.send(fail_silently=False)
+        
+        return True
+        
+    except Exception as e:
+        return False
+    
+@user_login_required
+def orderconfirm(request, order_id):
+    try:
+        user_id = request.session.get('user_id')
+        user = request.user
+        
+        # Get the order with related data
+        order = get_object_or_404(Order_Master, id=order_id, user_id=user)
+        order_details = Order_Details.objects.filter(order_id=order)
+        order_address = Order_Address.objects.filter(order_id=order).first()
+        payment = Payment.objects.filter(order_id=order).first()
+        
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'payment': payment,
+        }
+        
+        return render(request, 'orderconfirm.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Order not found or you don't have permission to view this order.")
+        return redirect('homepage')
+    
 # ========================= Static Pages =========================
 def contactus(request):
    return render(request, 'contactus.html')
 
 def aboutus(request):
    return render(request, 'aboutus.html')
-
-def orderconfirm(request):
-   return render(request, 'orderconfirm.html')
-
-def checkout(request):
-   return render(request, 'checkout.html')
 
 def forgotpassword(request):
    return render(request, 'forgotpassword.html')

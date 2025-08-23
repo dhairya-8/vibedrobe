@@ -16,9 +16,12 @@ urlpatterns = [
     # ==================== Cart & Checkout URLs ====================
     path('cart/', cart, name='cart'),  # Main cart page
     path('cart/items/add/<int:product_id>/', add_to_cart, name='add_to_cart'),
+    path('empty-cart/', empty_cart, name='empty_cart'),
     path('cart/items/update/', update_cart_item, name='update_cart_item'),
-    path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),    path('checkout/', checkout, name='checkout'),
-    path('order-confirm/', orderconfirm, name='orderconfirm'),
+    path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
+    path('remove-cart-item-drawer/<int:product_id>/<int:variant_id>/', remove_cart_item_drawer, name='remove_cart_item_drawer'),
+    path('checkout/', checkout, name='checkout'),
+    path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
   
     # ==================== Quick Add to Cart/Wishlist (Shop) URLs ====================
     path('quick_add-to-cart/<int:product_id>/', quick_add_to_cart, name='quick_add_to_cart'),

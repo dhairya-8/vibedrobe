@@ -1,87 +1,95 @@
 {% load static %}
 <!DOCTYPE html>
 <html dir="ltr" lang="zxx">
+  <head>
+    <!-- Page Title -->
+    <title>
+      {% block title %}
 
-<head>
+      {% endblock %}
+    </title>
 
-  <!-- Page Title -->
-  <title>
-    {% block title %} {% endblock %}
-  </title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="author" content="flexkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="{% static 'user/assets/images/favicon.ico' %}" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.gstatic.com/" />
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Allura&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'user/assets/css/preloader.css' %}" />
 
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <meta name="author" content="flexkit" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="shortcut icon" href="{% static 'user/assets/images/favicon.ico' %}" type="image/x-icon" />
-  <link rel="preconnect" href="https://fonts.gstatic.com/" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap"
-    rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Allura&amp;display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{% static 'user/assets/css/preloader.css' %}" />
-  
-  <!-- CSS Block -->
-  {% block css %} {% endblock %}
-
-</head>
-
-<body>
-
-  <!-- Preloader -->
-  <div id="preloader">
-    <div class="luxury-spinner">
-      <div class="spinner-ring"></div>
-      <div class="spinner-ring"></div>
-      <div class="spinner-center"></div>
-    </div>
-  </div>
-
-  <!-- Integrating header -->
-  {% include 'header.html' %}
-
-  {% include 'alerts.html' %}
-  
-  <!-- Page Content Block -->
-  {% block content %} {% endblock %}
-
-  <!-- Integrating footer -->
-  {% include 'footer1.html' %}
-
-  <!-- Javascript -->
-  {% block script %} {% endblock %}
-
-  <!-- Preloader Script-->
-  <script>
-    // Simulate loading time for demo (remove this in production)
-    setTimeout(() => {
-      window.dispatchEvent(new Event('load'));
-    }, 4000);
-
-    window.addEventListener('load', function () {
-      const preloader = document.getElementById('preloader');
-      if (preloader) {
-        preloader.classList.add('hidden'); // Add the 'hidden' class to trigger the fade-out
+    <style>
+      .wishlist-amount {
+        position: absolute !important;
+      
+        /* These two properties position the element at the bottom-right */
+        bottom: -0.05rem;
+        right: 0rem;
+      
+        /* Keep all your other styling */
+        width: 1rem;
+        height: 1rem;
+        border-radius: 100%;
+        background: var(--bs-beige);
+        color: #ffffff;
+        font-size: 0.625rem;
+        line-height: 1rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--bs-font-sans-serif);
+        font-weight: 400;
       }
-    });
-  </script>
-  <script>
-$(document).ready(function() {
-    // Initialize cart drawer toggle
-    function initCartDrawer() {
-        // Open cart drawer if flag is set
-        {% if open_cart_drawer %}
-            $('#cartDrawer').addClass('active');
-            $('body').addClass('aside-active');
-        {% endif %}
-        
-        // Close drawer button
-        $('.js-close-aside').on('click', function() {
-            $('#cartDrawer').removeClass('active');
-            $('body').removeClass('aside-active');
-        });
-    }
-});
-</script>
-</body>
+    </style>
 
+    <!-- CSS Block -->
+    {% block css %}
+
+    {% endblock %}
+  </head>
+
+  <body>
+    <!-- Preloader -->
+    <div id="preloader">
+      <div class="luxury-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-center"></div>
+      </div>
+    </div>
+
+    <!-- Integrating header -->
+    {% include 'header.html' %}
+
+    {% include 'alerts.html' %}
+
+    <!-- Page Content Block -->
+    {% block content %}
+
+    {% endblock %}
+
+    <!-- Integrating footer -->
+    {% include 'footer1.html' %}
+
+    <!-- Javascript -->
+    {% block script %}
+
+    {% endblock %}
+
+    <!-- Preloader Script -->
+    <script>
+      // Simulate loading time for demo (remove this in production)
+      setTimeout(() => {
+        window.dispatchEvent(new Event('load'))
+      }, 4000)
+      
+      window.addEventListener('load', function () {
+        const preloader = document.getElementById('preloader')
+        if (preloader) {
+          preloader.classList.add('hidden') // Add the 'hidden' class to trigger the fade-out
+        }
+      })
+    </script>
+  </body>
 </html>

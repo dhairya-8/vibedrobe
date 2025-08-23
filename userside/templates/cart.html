@@ -1,7 +1,7 @@
 {% extends 'base1.html' %}
 {% load static %}
 {% block title %}
-  Cart Page | VibeDrobe
+  Cart | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -10,228 +10,80 @@
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
 
-<style>
-
-.qty-control {
-    position: relative;
-    width: 120px;
-}
-
-.qty-control__number {
-    width: 100%;
-    height: 40px;
-    padding: 0 35px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-align: center;
-    -moz-appearance: textfield;
-}
-
-.qty-control__number::-webkit-outer-spin-button,
-.qty-control__number::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.qty-control__reduce,
-.qty-control__increase {
-    position: absolute;
-    top: 0;
-    width: 35px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    color: #666;
-    font-size: 16px;
-    background: transparent;
-    border: none;
-}
-
-.qty-control__reduce {
-    left: 0;
-}
-
-.qty-control__increase {
-    right: 0;
-}
-
-.qty-control__reduce:hover,
-.qty-control__increase:hover {
-    background-color: #f5f5f5;
-}
-
-/* Custom Dialog Styles */
-.custom-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.custom-dialog {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    max-width: 400px;
-    width: 90%;
-}
-
-.custom-dialog h4 {
-    margin-bottom: 20px;
-    font-weight: 500;
-}
-
-.dialog-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.dialog-buttons button {
-    width: 100%;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-danger {
-    background: #dc3545;
-    color: white;
-    border: none;
-}
-
-.btn-outline-secondary {
-    background: white;
-    border: 1px solid #6c757d;
-    color: #6c757d;
-}
-
-.btn-link {
-    background: transparent;
-    border: none;
-    color: #007bff;
-    text-decoration: underline;
-}
-/* Price Styling */
-.shopping-cart__product-price {
-    font-weight: 600;
-    font-size: 16px;
-    color: #222;
-    white-space: nowrap;
-    padding: 10px 0;
-    display: inline-block;
-}
-
-.shopping-cart__subtotal {
-    font-weight: 600;
-    font-size: 16px;
-    color: #222;
-    white-space: nowrap;
-    padding: 10px 15px;
-    display: inline-block;
-}
-
-  /* Cart Items Specific Styles */
-  .cart-item-row {
-    transition: background-color 0.2s ease;
-  }
-
-  .cart-item-row:hover {
-    background-color: #f9f9f9;
-  }
-
-  .cart-item-image {
-    border-radius: 4px;
-    transition: transform 0.3s ease;
-  }
-
-  .cart-item-image:hover {
-    transform: scale(1.05);
-  }
-
-  .cart-item-title {
-    font-weight: 500;
-    margin-bottom: 10px;
-    font-size: 16px;
-  }
-
-  .shopping-cart__product-item__options {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    font-size: 14px;
-  }
-
-  .shopping-cart__product-item__options li {
-    margin-bottom: 5px;
-    display: flex;
-    align-items: center;
-  }
-
-  .shopping-cart__product-item__options strong {
-    min-width: 50px;
-    display: inline-block;
-    color: #555;
-  }
-
-  .stock-warning {
-    color: #d32f2f;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 13px;
-  }
-
-  .stock-warning svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .remove-cart {
-    color: #999;
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  }
-
-  .remove-cart:hover {
-    color: #d32f2f;
-    background-color: #f9f9f9;
-  }
-
-  @media (max-width: 767px) {
-    .cart-item-title {
-      font-size: 15px;
+  <style>
+    /* Custom Dialog Styles */
+    .custom-dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
     }
     
-    .shopping-cart__product-item__options {
+    .custom-dialog {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .custom-dialog h4 {
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    
+    .dialog-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .dialog-buttons button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+      border: none;
+    }
+    
+    .btn-outline-secondary {
+      background: white;
+      border: 1px solid #6c757d;
+      color: #6c757d;
+    }
+    
+    .btn-link {
+      background: transparent;
+      border: none;
+      color: #007bff;
+      text-decoration: underline;
+    }
+    
+    .stock-warning {
+      color: #d32f2f;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
       font-size: 13px;
     }
     
-    .shopping-cart__product-price,
-    .shopping-cart__subtotal {
-      font-size: 15px;
+    .stock-warning svg {
+      width: 16px;
+      height: 16px;
     }
-    
-    .qty-control {
-      width: 100px;
-    }
-  }
-</style>
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -247,7 +99,7 @@
             <em>Manage Your Items List</em>
           </span>
         </a>
-        <a href="#" class="checkout-steps__item">
+        <a href="{% url 'checkout' %}" class="checkout-steps__item">
           <span class="checkout-steps__item-number">02</span>
           <span class="checkout-steps__item-title">
             <span>Shipping and Checkout</span>
@@ -262,124 +114,119 @@
           </span>
         </a>
       </div>
-      
       <div class="shopping-cart">
         {% if cart_items %}
-        <div class="cart-table__wrapper">
-          <table class="cart-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th></th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in cart_items %}
-              <tr class="cart-item-row">
-                <td>
-                  <div class="shopping-cart__product-item">
-                    <img loading="lazy" 
-                         src="{{ item.product_variant_id.product_id.base_image.url }}" 
-                         width="120" height="120" 
-                         alt="{{ item.product_variant_id.product_id.name }}" 
-                         class="cart-item-image">
-                  </div>
-                </td>
-                <td>
-                  <div class="shopping-cart__product-item__detail">
-                    <h4 class="cart-item-title">{{ item.product_variant_id.product_id.name }}</h4>
-                    <ul class="shopping-cart__product-item__options">
-                      <li>
-                        <strong>Color:</strong> 
-                        <span class="color-value">{{ item.product_variant_id.product_id.color }}</span>
-                      </li>
-                      <li>
-                        <strong>Size:</strong> 
-                        <span class="size-value">{{ item.product_variant_id.size_id.name }}</span>
-                      </li>
-                      {% if item.product_variant_id.stock_quantity <= 5 %}
-                      <li class="stock-warning">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <div class="cart-table__wrapper">
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th></th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in cart_items %}
+                  <tr>
+                    <td>
+                      <div class="shopping-cart__product-item">
+                        <img loading="lazy" src="{{ item.product_variant_id.product_id.base_image.url }}" width="120" height="120" alt="{{ item.product_variant_id.product_id.name }}" />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="shopping-cart__product-item__detail">
+                        <h4>{{ item.product_variant_id.product_id.name |truncatechars:46}}</h4>
+                        <ul class="shopping-cart__product-item__options">
+                          <li>Color: {{ item.product_variant_id.product_id.color }}</li>
+                          <li>Size: {{ item.product_variant_id.size_id.name }}</li>
+                          {% if item.product_variant_id.stock_quantity <= 5 %}
+                            <li class="stock-warning">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              </svg>Only {{ item.product_variant_id.stock_quantity }} left!
+                            </li>
+                          {% endif %}
+                        </ul>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="shopping-cart__product-price">₹{{ item.price_at_time }}</span>
+                    </td>
+                    <td>
+                      <form method="POST" action="{% url 'update_cart_item' %}" class="cart-item-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_item_id" value="{{ item.id }}" />
+                        <div class="qty-control position-relative">
+                          <input type="number" name="quantity" class="qty-control__number text-center" value="{{ item.quantity }}" min="1" max="{{ item.product_variant_id.stock_quantity }}" />
+                          <div class="qty-control__reduce">-</div>
+                          <div class="qty-control__increase">+</div>
+                        </div>
+                      </form>
+                    </td>
+                    <td>
+                      <span class="shopping-cart__subtotal">₹{{ item.total_price }}</span>
+                    </td>
+                    <td>
+                      <a href="{% url 'remove_cart_item' product_id=item.product_variant_id.product_id.id variant_id=item.product_variant_id.id %}" class="remove-cart">
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="#767676" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M0.259435 8.85506L9.11449 0L10 0.885506L1.14494 9.74056L0.259435 8.85506Z" />
+                          <path d="M0.885506 0.0889838L9.74057 8.94404L8.85506 9.82955L0 0.97449L0.885506 0.0889838Z" />
                         </svg>
-                        Only {{ item.product_variant_id.stock_quantity }} left!
-                      </li>
-                      {% endif %}
-                    </ul>
-                  </div>
-                </td>
-                <td>
-                  <span class="shopping-cart__product-price">₹{{ item.price_at_time }}</span>
-                </td>
-<td>
-<form method="POST" action="{% url 'update_cart_item' %}" class="cart-item-form">
-    {% csrf_token %}
-    <input type="hidden" name="cart_item_id" value="{{ item.id }}">
-    <div class="qty-control">
-        <input type="number" 
-               name="quantity"
-               class="qty-control__number"
-               value="{{ item.quantity }}"
-               min="1"
-               max="{{ item.product_variant_id.stock_quantity }}">
-        <button type="button" class="qty-control__reduce">-</button>
-        <button type="button" class="qty-control__increase">+</button>
-    </div>
-</form>
-</td>
-                <td>
-                  <span class="shopping-cart__subtotal">₹{{ item.total_price }}</span>
-                </td>
-                <td>
-                  <a href="{% url 'remove_cart_item' product_id=item.product_variant_id.product_id.id variant_id=item.product_variant_id.id %}" 
-                     class="remove-cart"
-                     title="Remove item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <div class="shopping-cart__totals-wrapper">
-          <div class="sticky-content">
-            <div class="shopping-cart__totals">
-              <h3>Cart Totals</h3>
-              <table class="cart-totals">
-                <tbody>
-                  <tr>
-                    <th>Subtotal</th>
-                    <td>₹{{ cart_total }}</td>
+                      </a>
+                    </td>
                   </tr>
-                  <tr>
-                    <th>Total</th>
-                    <td>₹{{ cart_total }}</td>
-                  </tr>
-                </tbody>
-              </table>
+                {% endfor %}
+              </tbody>
+            </table>
+            <div class="cart-table-footer">
+              <button class="btn btn-dark" id="empty-cart-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px">
+                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>EMPTY CART
+              </button>
             </div>
-            <div class="mobile_fixed-btn_wrapper">
-              <div class="button-wrapper container">
-                <a href="{% url 'checkout' %}">
-                  <button class="btn btn-primary btn-checkout">PROCEED TO CHECKOUT</button>
-                </a>
+          </div>
+          <div class="shopping-cart__totals-wrapper">
+            <div class="sticky-content">
+              <div class="shopping-cart__totals">
+                <h3>Cart Totals</h3>
+                <table class="cart-totals">
+                  <tbody>
+                    <tr>
+                      <th>Subtotal (Before GST)</th>
+                      <td>₹{{ base_price_total|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>GST</th>
+                      <td>₹{{ total_gst|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>Shipping</th>
+                      <td>₹{{ shipping_charge|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>Total</th>
+                      <td>₹{{ grand_total|floatformat:2 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="mobile_fixed-btn_wrapper">
+                <div class="button-wrapper container">
+                  <a href="{% url 'checkout' %}"><button class="btn btn-primary btn-checkout">PROCEED TO CHECKOUT</button></a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         {% else %}
-        <div class="empty-cart text-center py-5">
-          <h4 class="mb-3">Your cart is empty</h4>
-          <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
-          <a href="{% url 'shop' %}" class="btn btn-primary">Continue Shopping</a>
-        </div>
+          <div class="empty-cart text-center py-5">
+            <h4 class="mb-3">Your cart is empty</h4>
+            <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
+            <a href="{% url 'shop' %}" class="btn btn-primary">Continue Shopping</a>
+          </div>
         {% endif %}
       </div>
     </section>
@@ -387,138 +234,167 @@
 {% endblock %}
 
 {% block script %}
+  <!-- External JavaScripts -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
-  {% comment %} <script src="{% static 'user/assets/js/theme.js' %}"></script> {% endcomment %}
 
-<script>
-$(document).ready(function() {
-    // Custom confirmation dialog
-    function showConfirmationDialog(productName, callback) {
+  <script>
+    $(document).ready(function () {
+      // Custom confirmation dialog
+      function showConfirmationDialog(productName, callback) {
+        const dialog = `
+                                <div class="custom-dialog-overlay">
+                                    <div class="custom-dialog">
+                                        <h4>Are you sure you want to remove ${productName}?</h4>
+                                        <div class="dialog-buttons">
+                                            <button class="btn btn-danger confirm-remove">Yes, Remove</button>
+                                            <button class="btn btn-outline-secondary move-to-wishlist">Move to Wishlist</button>
+                                            <button class="btn btn-link cancel-dialog">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `
+        $('body').append(dialog)
+    
+        $('.confirm-remove').on('click', function () {
+          callback(true)
+          $('.custom-dialog-overlay').remove()
+        })
+    
+        $('.move-to-wishlist').on('click', function () {
+          callback(false, true)
+          $('.custom-dialog-overlay').remove()
+        })
+    
+        $('.cancel-dialog').on('click', function () {
+          $('.custom-dialog-overlay').remove()
+        })
+      }
+    
+      // Handle quantity buttons
+      $('.qty-control').on('click', '.qty-control__increase, .qty-control__reduce', function (e) {
+        e.preventDefault()
+        const $input = $(this).siblings('.qty-control__number')
+        let value = parseInt($input.val()) || 1
+        const min = parseInt($input.attr('min')) || 1
+        const max = parseInt($input.attr('max')) || 10
+    
+        if ($(this).hasClass('qty-control__increase')) {
+          // Increase button
+          if (value < max) {
+            $input.val(value + 1)
+          } else {
+            const productName = $(this).closest('tr').find('h4').text()
+            alert(`Maximum quantity (${max}) reached for ${productName}`)
+            return
+          }
+        } else {
+          // Decrease button
+          if (value > min) {
+            $input.val(value - 1)
+          } else {
+            const productName = $(this).closest('tr').find('h4').text()
+            const $removeLink = $(this).closest('tr').find('.remove-cart')
+            const removeUrl = $removeLink.attr('href')
+    
+            showConfirmationDialog(productName, function (remove, moveToWishlist) {
+              if (remove) {
+                window.location.href = removeUrl
+              } else if (moveToWishlist) {
+                const itemId = removeUrl.split('/').slice(-2, -1)[0]
+                window.location.href = `/move-to-wishlist/${itemId}/`
+              }
+            })
+            return
+          }
+        }
+    
+        // Submit the form after changing value
+        $input.closest('form').submit()
+      })
+    
+      // Handle manual input
+      $('.qty-control__number')
+        .on('change', function () {
+          let $input = $(this)
+          let value = parseInt($input.val()) || 1
+          const min = parseInt($input.attr('min')) || 1
+          const max = parseInt($input.attr('max')) || 10
+    
+          // Validate input
+          if (isNaN(value) || value < min) {
+            value = min
+            $input.val(value)
+          } else if (value > max) {
+            value = max
+            $input.val(value)
+            const productName = $input.closest('tr').find('h4').text()
+            alert(`Maximum quantity (${max}) reached for ${productName}`)
+            return
+          }
+    
+          // Only submit if value changed
+          if (value !== parseInt($input.data('prev-value'))) {
+            $input.data('prev-value', value)
+            $input.closest('form').submit()
+          }
+        })
+        .each(function () {
+          // Store initial value
+          $(this).data('prev-value', parseInt($(this).val()) || 1)
+        })
+    
+      // Handle remove button
+      $('.remove-cart').on('click', function (e) {
+        e.preventDefault()
+        const productName = $(this).closest('tr').find('h4').text()
+        const removeUrl = $(this).attr('href')
+    
+        showConfirmationDialog(productName, function (remove, moveToWishlist) {
+          if (remove) {
+            window.location.href = removeUrl
+          } else if (moveToWishlist) {
+            const itemId = removeUrl.split('/').slice(-2, -1)[0]
+            window.location.href = `/move-to-wishlist/${itemId}/`
+          }
+        })
+      })
+    
+      // Replace the empty cart button handler with this:
+      $('#empty-cart-btn').on('click', function (e) {
+        e.preventDefault()
+    
         const dialog = `
             <div class="custom-dialog-overlay">
                 <div class="custom-dialog">
-                    <h4>Are you sure you want to remove ${productName}?</h4>
+                    <h4>Are you sure you want to remove ALL items from your cart?</h4>
                     <div class="dialog-buttons">
-                        <button class="btn btn-danger confirm-remove">Yes, Remove</button>
-                        <button class="btn btn-outline-secondary move-to-wishlist">Move to Wishlist</button>
-                        <button class="btn btn-link cancel-dialog">Cancel</button>
+                        <button class="btn btn-danger confirm-remove-all">Yes, Remove All</button>
+                        <button class="btn btn-outline-secondary cancel-dialog">Cancel</button>
                     </div>
                 </div>
             </div>
-        `;
-        $('body').append(dialog);
-        
-        $('.confirm-remove').on('click', function() {
-            callback(true);
-            $('.custom-dialog-overlay').remove();
-        });
-        
-        $('.move-to-wishlist').on('click', function() {
-            callback(false, true);
-            $('.custom-dialog-overlay').remove();
-        });
-        
-        $('.cancel-dialog').on('click', function() {
-            $('.custom-dialog-overlay').remove();
-        });
-    }
-
-    // Handle quantity buttons
-    $('.qty-control').on('click', '.qty-control__increase, .qty-control__reduce', function(e) {
-        e.preventDefault();
-        const $input = $(this).siblings('.qty-control__number');
-        let value = parseInt($input.val()) || 1;
-        const min = parseInt($input.attr('min')) || 1;
-        const max = parseInt($input.attr('max')) || 10;
-        
-        if ($(this).hasClass('qty-control__increase')) {
-            // Increase button
-            if (value < max) {
-                $input.val(value + 1);
-            } else {
-                const productName = $(this).closest('tr').find('.cart-item-title').text();
-                alert(`Maximum quantity (${max}) reached for ${productName}`);
-                return;
-            }
-        } else {
-            // Decrease button
-            if (value > min) {
-                $input.val(value - 1);
-            } else {
-                const productName = $(this).closest('tr').find('.cart-item-title').text();
-                const $removeLink = $(this).closest('tr').find('.remove-cart');
-                const removeUrl = $removeLink.attr('href');
-                
-                showConfirmationDialog(productName, function(remove, moveToWishlist) {
-                    if (remove) {
-                        window.location.href = removeUrl;
-                    } else if (moveToWishlist) {
-                        const itemId = removeUrl.split('/').slice(-2, -1)[0];
-                        window.location.href = `/move-to-wishlist/${itemId}/`;
-                    }
-                });
-                return;
-            }
-        }
-        
-        // Submit the form after changing value
-        $input.closest('form').submit();
-    });
-
-    // Handle manual input
-    $('.qty-control__number').on('change', function() {
-        let $input = $(this);
-        let value = parseInt($input.val()) || 1;
-        const min = parseInt($input.attr('min')) || 1;
-        const max = parseInt($input.attr('max')) || 10;
-        
-        // Validate input
-        if (isNaN(value) || value < min) {
-            value = min;
-            $input.val(value);
-        } else if (value > max) {
-            value = max;
-            $input.val(value);
-            const productName = $input.closest('tr').find('.cart-item-title').text();
-            alert(`Maximum quantity (${max}) reached for ${productName}`);
-            return;
-        }
-        
-        // Only submit if value changed
-        if (value !== parseInt($input.data('prev-value'))) {
-            $input.data('prev-value', value);
-            $input.closest('form').submit();
-        }
-    }).each(function() {
-        // Store initial value
-        $(this).data('prev-value', parseInt($(this).val()) || 1);
-    });
-
-    // Handle remove button
-    $('.remove-cart').on('click', function(e) {
-        e.preventDefault();
-        const productName = $(this).closest('tr').find('.cart-item-title').text();
-        const removeUrl = $(this).attr('href');
-        
-        showConfirmationDialog(productName, function(remove, moveToWishlist) {
-            if (remove) {
-                window.location.href = removeUrl;
-            } else if (moveToWishlist) {
-                const itemId = removeUrl.split('/').slice(-2, -1)[0];
-                window.location.href = `/move-to-wishlist/${itemId}/`;
-            }
-        });
-    });
-
-    // Auto-close alerts after 5 seconds
-    setTimeout(function() {
-        $('.alert').alert('close');
-    }, 5000);
-});
-</script>
+        `
+    
+        $('body').append(dialog)
+    
+        $('.confirm-remove-all').on('click', function () {
+          window.location.href = "{% url 'empty_cart' %}"
+        })
+    
+        $('.cancel-dialog').on('click', function () {
+          $('.custom-dialog-overlay').remove()
+        })
+      })
+    
+      // Auto-close alerts after 5 seconds
+      setTimeout(function () {
+        $('.alert').alert('close')
+      }, 5000)
+    })
+  </script>
 {% endblock %}

@@ -1,135 +1,430 @@
 {% extends 'base1.html' %}
 {% load static %}
 {% block title %}
-  Product Detail Page | VibeDrobe
+  Order Confirm | VibeDrobe
 {% endblock %}
 
 {% block css %}
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css" />
-  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css" />
-  <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
-{% endblock %}
-{% block content %}
-<main>
-   <div class="mb-4 pb-4"></div>
-   <section class="shop-checkout container">
-     <h2 class="page-title">Order Received</h2>
-     <div class="checkout-steps">
-       <a href="cart" class="checkout-steps__item active">
-         <span class="checkout-steps__item-number">01</span>
-         <span class="checkout-steps__item-title">
-           <span>Shopping Bag</span>
-           <em>Manage Your Items List</em>
-         </span>
-       </a>
-       <a href="checkout" class="checkout-steps__item active">
-         <span class="checkout-steps__item-number">02</span>
-         <span class="checkout-steps__item-title">
-           <span>Shipping and Checkout</span>
-           <em>Checkout Your Items List</em>
-         </span>
-       </a>
-       <a href="orderconfirm" class="checkout-steps__item active">
-         <span class="checkout-steps__item-number">03</span>
-         <span class="checkout-steps__item-title">
-           <span>Confirmation</span>
-           <em>Review And Submit Your Order</em>
-         </span>
-       </a>
-     </div>
-     <div class="order-complete">
-       <div class="order-complete__message">
-         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-           <circle cx="40" cy="40" r="40" fill="#B9A16B"/>
-           <path d="M52.9743 35.7612C52.9743 35.3426 52.8069 34.9241 52.5056 34.6228L50.2288 32.346C49.9275 32.0446 49.5089 31.8772 49.0904 31.8772C48.6719 31.8772 48.2533 32.0446 47.952 32.346L36.9699 43.3449L32.048 38.4062C31.7467 38.1049 31.3281 37.9375 30.9096 37.9375C30.4911 37.9375 30.0725 38.1049 29.7712 38.4062L27.4944 40.683C27.1931 40.9844 27.0257 41.4029 27.0257 41.8214C27.0257 42.24 27.1931 42.6585 27.4944 42.9598L33.5547 49.0201L35.8315 51.2969C36.1328 51.5982 36.5513 51.7656 36.9699 51.7656C37.3884 51.7656 37.8069 51.5982 38.1083 51.2969L40.385 49.0201L52.5056 36.8996C52.8069 36.5982 52.9743 36.1797 52.9743 35.7612Z" fill="white"/>
-         </svg>
-         <h3>Your order is completed!</h3>
-         <p>Thank you. Your order has been received.</p>
-       </div>
-       <div class="order-info">
-         <div class="order-info__item">
-           <label>Order Number</label>
-           <span>13119</span>
-         </div>
-         <div class="order-info__item">
-           <label>Date</label>
-           <span>27/10/2023</span>
-         </div>
-         <div class="order-info__item">
-           <label>Total</label>
-           <span>$81.40</span>
-         </div>
-         <div class="order-info__item">
-           <label>Paymetn Method</label>
-           <span>Direct Bank Transfer</span>
-         </div>
-       </div>
-       <div class="checkout__totals-wrapper">
-         <div class="checkout__totals">
-           <h3>Order Details</h3>
-           <table class="checkout-cart-items">
-             <thead>
-               <tr>
-                 <th>PRODUCT</th>
-                 <th>SUBTOTAL</th>
-               </tr>
-             </thead>
-             <tbody>
-               <tr>
-                 <td>
-                   Zessi Dresses x 2
-                 </td>
-                 <td>
-                   $32.50
-                 </td>
-               </tr>
-               <tr>
-                 <td>
-                   Kirby T-Shirt
-                 </td>
-                 <td>
-                   $29.90
-                 </td>
-               </tr>
-             </tbody>
-           </table>
-           <table class="checkout-totals">
-             <tbody>
-               <tr>
-                 <th>SUBTOTAL</th>
-                 <td>$62.40</td>
-               </tr>
-               <tr>
-                 <th>SHIPPING</th>
-                 <td>Free shipping</td>
-               </tr>
-               <tr>
-                 <th>VAT</th>
-                 <td>$19</td>
-               </tr>
-               <tr>
-                 <th>TOTAL</th>
-                 <td>$81.40</td>
-               </tr>
-             </tbody>
-           </table>
-         </div>
-       </div>
-     </div>
-   </section>
- </main>
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css">
+  <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
 
+  <style>
+    .order-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .order-info__item {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .order-info__item label {
+      display: block;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .order-info__item span {
+      display: block;
+      color: #d4af37;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .order-complete__message {
+      text-align: center;
+      padding: 40px 0;
+    }
+    
+    .order-complete__message h3 {
+      color: #28a745;
+      margin: 20px 0 10px;
+      font-weight: 600;
+    }
+    
+    .order-complete__message p {
+      color: #6c757d;
+      font-size: 16px;
+    }
+    
+    .shipping-address {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 8px;
+      margin: 30px 0;
+    }
+    
+    .shipping-address h4 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .address-details p {
+      margin-bottom: 8px;
+      color: #495057;
+    }
+    
+    .btn-continue-shopping,
+    .btn-print-invoice {
+      background: linear-gradient(135deg, #d4af37, #f8e597);
+      border: none;
+      border-radius: 8px;
+      padding: 12px 25px;
+      font-weight: 600;
+      color: white;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      margin-right: 10px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-continue-shopping:hover,
+    .btn-print-invoice:hover {
+      background: linear-gradient(135deg, #c19b2e, #e6d285);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Print Styles */
+    @media print {
+      /* Hide everything initially */
+      * {
+        visibility: hidden;
+      }
+      
+      /* Show only the printable content */
+      .print-content,
+      .print-content * {
+        visibility: visible;
+      }
+      
+      .print-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+        padding: 20px;
+      }
+      
+      /* Hide non-printable elements */
+      .no-print {
+        display: none !important;
+      }
+      
+      /* Keep first page content together on page 1 */
+      .first-page-content {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      .order-complete__message,
+      .order-info {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Force second page content to start on page 2 */
+      .second-page-content {
+        page-break-before: always;
+      }
+      
+      .shipping-address {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Keep order details together but allow natural page breaks for long lists */
+      .checkout__totals-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Individual table rows can break if needed for long orders */
+      .checkout-cart-items tbody tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* But keep the totals table together */
+      .checkout-totals {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      
+      /* Ensure proper spacing for first page */
+      .order-complete__message {
+        margin-bottom: 30px;
+      }
+      
+      .order-info {
+        margin: 30px 0;
+        page-break-after: avoid;
+      }
+      
+      /* Spacing for second page content */
+      .shipping-address {
+        margin: 20px 0 30px 0;
+      }
+      
+      .checkout__totals-wrapper {
+        margin: 20px 0;
+      }
+      
+      /* Print header */
+      .print-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #d4af37;
+        padding-bottom: 15px;
+        page-break-after: avoid;
+      }
+      
+      .print-header h1 {
+        color: #2c3e50;
+        margin: 0;
+        font-size: 24px;
+      }
+      
+      .print-header p {
+        color: #666;
+        margin: 5px 0 0 0;
+      }
+
+      /* Adjust colors for print */
+      .order-info__item {
+        background: #f5f5f5 !important;
+        border: 1px solid #ddd;
+      }
+      
+      .shipping-address {
+        background: #f5f5f5 !important;
+        border: 1px solid #ddd;
+      }
+      
+      /* Ensure first page content flows naturally with header */
+      .first-page-content {
+        /* Remove page-break-after: always to let content flow on same page as header */
+      }
+      
+      /* Start second page content */
+      .second-page-content {
+        page-break-before: always;
+      }
+    }
+  </style>
 {% endblock %}
+
+{% block content %}
+  <main>
+    <div class="mb-4 pb-4"></div>
+    <section class="shop-checkout container">
+      <h2 class="page-title">Order Received</h2>
+      <div class="checkout-steps no-print">
+        <a href="#" class="checkout-steps__item active">
+          <span class="checkout-steps__item-number">01</span>
+          <span class="checkout-steps__item-title">
+            <span>Shopping Bag</span>
+            <em>Manage Your Items List</em>
+          </span>
+        </a>
+        <a href="#" class="checkout-steps__item active">
+          <span class="checkout-steps__item-number">02</span>
+          <span class="checkout-steps__item-title">
+            <span>Shipping and Checkout</span>
+            <em>Checkout Your Items List</em>
+          </span>
+        </a>
+        <a href="#" class="checkout-steps__item active">
+          <span class="checkout-steps__item-number">03</span>
+          <span class="checkout-steps__item-title">
+            <span>Confirmation</span>
+            <em>Review And Submit Your Order</em>
+          </span>
+        </a>
+      </div>
+      
+      <div class="order-complete">
+        <!-- Start of printable content -->
+        <div class="print-content">
+          <!-- Print Header (only visible when printing) -->
+          <div class="print-header" style="display: none;">
+            <h1>VibeDrobe</h1>
+            <p>Order Invoice</p>
+          </div>
+
+          <!-- First Page Content -->
+          <div class="first-page-content">
+            <div class="order-complete__message">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="40" cy="40" r="40" fill="#28a745"/>
+                <path d="M52.9743 35.7612C52.9743 35.3426 52.8069 34.9241 52.5056 34.6228L50.2288 32.346C49.9275 32.0446 49.5089 31.8772 49.0904 31.8772C48.6719 31.8772 48.2533 32.0446 47.952 32.346L36.9699 43.3449L32.048 38.4062C31.7467 38.1049 31.3281 37.9375 30.9096 37.9375C30.4911 37.9375 30.0725 38.1049 29.7712 38.4062L27.4944 40.683C27.1931 40.9844 27.0257 41.4029 27.0257 41.8214C27.0257 42.24 27.1931 42.6585 27.4944 42.9598L33.5547 49.0201L35.8315 51.2969C36.1328 51.5982 36.5513 51.7656 36.9699 51.7656C37.3884 51.7656 37.8069 51.5982 38.1083 51.2969L40.385 49.0201L52.5056 36.8996C52.8069 36.5982 52.9743 36.1797 52.9743 35.7612Z" fill="white"/>
+              </svg>
+              <h3>Your order is completed!</h3>
+              <p>Thank you. Your order has been received. We've sent a confirmation email to your registered email address.</p>
+            </div>
+            
+            <div class="order-info">
+              <div class="order-info__item">
+                <label>Order Number</label>
+                <span>{{ order.order_number }}</span>
+              </div>
+              <div class="order-info__item">
+                <label>Date</label>
+                <span>{{ order.order_date|date:"d/m/Y" }}</span>
+              </div>
+              <div class="order-info__item">
+                <label>Total Amount</label>
+                <span>₹{{ order.total_amount|floatformat:2 }}</span>
+              </div>
+              <div class="order-info__item">
+                <label>Payment Method</label>
+                <span>
+                  {% if order.mode_of_payment == 'cod' %}
+                    Cash on Delivery
+                  {% elif order.mode_of_payment == 'online' %}
+                    Online Payment
+                  {% elif order.mode_of_payment == 'upi' %}
+                    UPI Payment
+                  {% else %}
+                    {{ order.mode_of_payment|title }}
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Second Page Content -->
+          <div class="second-page-content">
+            <!-- Shipping Address -->
+            {% if order_address %}
+            <div class="shipping-address">
+              <h4>Shipping Address</h4>
+              <div class="address-details">
+                <p><strong>{{ order_address.full_name }}</strong></p>
+                <p>{{ order_address.address_line_1 }}</p>
+                {% if order_address.address_line_2 %}
+                  <p>{{ order_address.address_line_2 }}</p>
+                {% endif %}
+                <p>{{ order_address.city }}, {{ order_address.state }} - {{ order_address.pincode }}</p>
+                <p>📞 {{ order_address.phone }}</p>
+              </div>
+            </div>
+            {% endif %}
+            
+            <!-- Order Details -->
+            <div class="checkout__totals-wrapper">
+              <div class="checkout__totals">
+                <h3>Order Details</h3>
+                <table class="checkout-cart-items">
+                  <thead>
+                    <tr>
+                      <th>PRODUCT</th>
+                      <th>SUBTOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order_details %}
+                    <tr>
+                      <td>
+                        {{ item.product_name }} x {{ item.quantity }}
+                        <br>
+                        <small>SKU: {{ item.product_sku }}</small>
+                      </td>
+                      <td>
+                        ₹{{ item.total_price|floatformat:2 }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                <table class="checkout-totals">
+                  <tbody>
+                    <tr>
+                      <th>SUBTOTAL</th>
+                      <td>₹{{ order.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>GST</th>
+                      <td>₹{{ order.tax_amount|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>SHIPPING</th>
+                      <td>₹{{ order.shipping_charge|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                      <th>TOTAL</th>
+                      <td>₹{{ order.total_amount|floatformat:2 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End of printable content -->
+        
+        <div class="text-center mt-4 no-print">
+          <div class="action-buttons">
+            <button onclick="printInvoice()" class="btn-print-invoice">
+              <i class="fas fa-print me-2"></i>Print Invoice
+            </button>
+            <a href="{% url 'shop' %}" class="btn-continue-shopping">
+              <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+{% endblock %}
+
 {% block script %}
+  <!-- External JavaScripts -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
-
+  
   <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
 
   <!-- Footer Scripts -->
   <script src="{% static 'user/assets/js/theme.js' %}"></script>
+
+  <!-- Print Invoice Script -->
+  <script>
+    function printInvoice() {
+      // Show print header only when printing
+      document.querySelector('.print-header').style.display = 'block';
+      
+      // Trigger print
+      window.print();
+      
+      // Hide print header after printing
+      setTimeout(() => {
+        document.querySelector('.print-header').style.display = 'none';
+      }, 100);
+    }
+  </script>
 {% endblock %}

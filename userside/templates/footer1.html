@@ -125,93 +125,95 @@
    </div><!-- /.row -->
  </footer><!-- /.footer-mobile container position-fixed d-md-none bottom-0 -->
 
- <!-- Cart Drawer -->
- <div class="aside aside_right overflow-hidden cart-drawer" id="cartDrawer">
-   <div class="aside-header d-flex align-items-center">
-     <h3 class="text-uppercase fs-6 mb-0">SHOPPING BAG ( <span class="cart-amount js-cart-items-count">1</span> ) </h3>
-     <button class="btn-close-lg js-close-aside btn-close-aside ms-auto"></button>
-   </div><!-- /.aside-header -->
+<!-- Cart Drawer -->
+<div class="aside aside_right overflow-hidden cart-drawer" id="cartDrawer">
 
-   <div class="aside-content cart-drawer-items-list">
-     <div class="cart-drawer-item d-flex position-relative">
-       <div class="position-relative">
-         <img loading="lazy" class="cart-drawer-item__img" src="{% static 'user/assets/images/cart-item-1.jpg' %}" alt="">
-       </div>
-       <div class="cart-drawer-item__info flex-grow-1">
-         <h6 class="cart-drawer-item__title fw-normal">Zessi Dresses</h6>
-         <p class="cart-drawer-item__option text-secondary">Color: Yellow</p>
-         <p class="cart-drawer-item__option text-secondary">Size: L</p>
-         <div class="d-flex align-items-center justify-content-between mt-1">
-           <div class="qty-control position-relative">
-             <input type="number" name="quantity" value="1" min="1" class="qty-control__number border-0 text-center">
-             <div class="qty-control__reduce text-start">-</div>
-             <div class="qty-control__increase text-end">+</div>
-           </div><!-- .qty-control -->
-           <span class="cart-drawer-item__price money price">$99</span>
-         </div>
-       </div>
+    <!-- Header -->
+    <div class="aside-header d-flex align-items-center">
+        <h3 class="text-uppercase fs-6 mb-0">
+            SHOPPING BAG (
+            <span class="cart-amount js-cart-items-count">
+                {{ cart_drawer_data.cart_items_count }}
+            </span>
+            )
+        </h3>
+        <button class="btn-close-lg js-close-aside btn-close-aside ms-auto"></button>
+    </div>
+    <!-- /.aside-header -->
 
-       <button class="btn-close-xs position-absolute top-0 end-0 js-cart-item-remove"></button>
-     </div><!-- /.cart-drawer-item d-flex -->
+    <!-- Cart Items -->
+    <div class="aside-content cart-drawer-items-list">
+        {% for item in cart_drawer_data.cart_items %}
+        <div class="cart-drawer-item d-flex position-relative">
+            
+            <!-- Product Image -->
+            <div class="position-relative">
+                <img loading="lazy" class="cart-drawer-item__img"
+                     src="{{ item.image }}" alt="{{ item.name|truncatechars:44 }}"
+                     style="width:70px; height:100px; object-fit:cover;">
+            </div>
 
-     <hr class="cart-drawer-divider">
+            <!-- Product Info -->
+            <div class="cart-drawer-item__info flex-grow-1">
+                <h6 class="cart-drawer-item__title fw-normal">{{ item.name|truncatechars:44 }}</h6>
+                <p class="cart-drawer-item__option text-secondary">
+                    Color: {{ item.color }}
+                </p>
+                <p class="cart-drawer-item__option text-secondary">
+                    Size: {{ item.size }}
+                </p>
 
-     <div class="cart-drawer-item d-flex position-relative">
-       <div class="position-relative">
-         <img loading="lazy" class="cart-drawer-item__img" src="{% static 'user/assets/images/cart-item-2.jpg' %}" alt="">
-       </div>
-       <div class="cart-drawer-item__info flex-grow-1">
-         <h6 class="cart-drawer-item__title fw-normal">Kirby T-Shirt</h6>
-         <p class="cart-drawer-item__option text-secondary">Color: Black</p>
-         <p class="cart-drawer-item__option text-secondary">Size: XS</p>
-         <div class="d-flex align-items-center justify-content-between mt-1">
-           <div class="qty-control position-relative">
-             <input type="number" name="quantity" value="4" min="1" class="qty-control__number border-0 text-center">
-             <div class="qty-control__reduce text-start">-</div>
-             <div class="qty-control__increase text-end">+</div>
-           </div><!-- .qty-control -->
-           <span class="cart-drawer-item__price money price">$89</span>
-         </div>
-       </div>
+                <!-- Quantity & Price -->
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <form method="POST" action="{% url 'update_cart_item' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_item_id" value="{{ item.id }}">
 
-       <button class="btn-close-xs position-absolute top-0 end-0 js-cart-item-remove"></button>
-     </div><!-- /.cart-drawer-item d-flex -->
+                        <div class="qty-control position-relative">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                   class="qty-control__number border-0 text-center">
+                            <div class="qty-control__reduce">-</div>
+                            <div class="qty-control__increase">+</div>
+                        </div>
+                    </form>
 
-     <hr class="cart-drawer-divider">
+                    <span class="cart-drawer-item__price money price">
+                        ₹{{ item.price }}
+                    </span>
+                </div>
+            </div>
 
-     <div class="cart-drawer-item d-flex position-relative">
-       <div class="position-relative">
-         <img loading="lazy" class="cart-drawer-item__img" src="{% static 'user/assets/images/cart-item-3.jpg' %}" alt="">
-       </div>
-       <div class="cart-drawer-item__info flex-grow-1">
-         <h6 class="cart-drawer-item__title fw-normal">Cableknit Shawl</h6>
-         <p class="cart-drawer-item__option text-secondary">Color: Green</p>
-         <p class="cart-drawer-item__option text-secondary">Size: L</p>
-         <div class="d-flex align-items-center justify-content-between mt-1">
-           <div class="qty-control position-relative">
-             <input type="number" name="quantity" value="3" min="1" class="qty-control__number border-0 text-center">
-             <div class="qty-control__reduce text-start">-</div>
-             <div class="qty-control__increase text-end">+</div>
-           </div><!-- .qty-control -->
-           <span class="cart-drawer-item__price money price">$129</span>
-         </div>
-       </div>
+            <!-- Remove Item -->
+            <a href="{{ item.remove_url }}"
+               class="btn-close-xs position-absolute top-0 end-0"></a>
+        </div>
 
-       <button class="btn-close-xs position-absolute top-0 end-0 js-cart-item-remove"></button>
-     </div><!-- /.cart-drawer-item d-flex -->
+        {% if not forloop.last %}
+            <hr class="cart-drawer-divider">
+        {% endif %}
+        {% endfor %}
+    </div>
+    <!-- /.aside-content -->
 
-   </div><!-- /.aside-content -->
+    <!-- Cart Actions -->
+    <div class="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
+        <hr class="cart-drawer-divider">
 
-   <div class="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
-     <hr class="cart-drawer-divider">
-     <div class="d-flex justify-content-between">
-       <h6 class="fs-base fw-medium">SUBTOTAL:</h6>
-       <span class="cart-subtotal fw-medium">$176.00</span>
-     </div><!-- /.d-flex justify-content-between -->
-     <a href="cart" class="btn btn-light mt-3 d-block">View Cart</a>
-     <a href="checkout" class="btn btn-primary mt-3 d-block">Checkout</a>
-   </div><!-- /.aside-content -->
- </div><!-- /.aside -->
+        <div class="d-flex justify-content-between">
+            <h6 class="fs-base fw-medium">SUBTOTAL:</h6>
+            <span class="cart-subtotal fw-medium">
+                ₹{{ cart_drawer_data.cart_subtotal|floatformat:2 }}
+            </span>
+        </div>
+
+        <a href="{% url 'cart' %}" class="btn btn-light mt-3 d-block">View Cart</a>
+        <a href="{% url 'checkout' %}" class="btn btn-primary mt-3 d-block">Checkout</a>
+    </div>
+    <!-- /.cart-drawer-actions -->
+
+</div>
+<!-- /.aside -->
+
 
  <!-- Quick View -->
  <div class="modal fade" id="quickView" tabindex="-1">
