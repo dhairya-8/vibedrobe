@@ -1,4 +1,12 @@
+# Byte-compiled / optimized / DLL files / cache files
 pycache/
 __pycache__/
 *.pyc
 *.pyo
+
+# Local settings
+local_settings.py
+*/local_settings.py
+
+# IDE
+.vscode/

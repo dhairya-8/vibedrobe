@@ -1384,8 +1384,8 @@ def order_details_content(request, order_id):
     
     context = {
         'order': order,
-        'shipping_address': order.order_address_set.filter(address_type='Shipping').first(),
-        'billing_address': order.order_address_set.filter(address_type='Billing').first(),
+        'shipping_address': order.order_address_set.first(),
+        'billing_address': order.order_address_set.first(),
         'items': order.order_details_set.all()
     }
     return render(request, 'order_details_content.html', context)

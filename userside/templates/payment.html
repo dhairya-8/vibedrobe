@@ -1,0 +1,230 @@
+{% extends 'base1.html' %}
+{% load static %}
+{% block title %}
+  Payment | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css" />
+  <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css" />
+  <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
+
+  <style>
+    /* Payment Container Styles */
+    .payment-container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+    }
+    
+    .payment-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .payment-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: #d4af37;
+      margin: 15px 0;
+    }
+    
+    .payment-instructions {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #3498db;
+    }
+    
+    .test-mode-info {
+      background: #fffaf0;
+      border: 1px solid #f8e597;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .test-mode-info h4 {
+      color: #d4af37;
+      margin-bottom: 10px;
+    }
+    
+    .test-mode-info ul {
+      padding-left: 20px;
+      margin-bottom: 0;
+    }
+    
+    .test-mode-info li {
+      margin-bottom: 5px;
+    }
+    
+    .btn-pay {
+      background: linear-gradient(135deg, #d4af37, #f8e597);
+      border: none;
+      border-radius: 8px;
+      padding: 15px 30px;
+      font-weight: 600;
+      font-size: 16px;
+      color: white;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    
+    .btn-pay:hover {
+      background: linear-gradient(135deg, #c19b2e, #e6d285);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
+    }
+    
+    .btn-back {
+      background: linear-gradient(135deg, #6c757d, #a0aec0);
+      border: none;
+      border-radius: 8px;
+      padding: 12px 25px;
+      font-weight: 600;
+      font-size: 16px;
+      color: white;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      margin-top: 15px;
+    }
+    
+    .btn-back:hover {
+      background: linear-gradient(135deg, #5a6268, #8a9aac);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .payment-status {
+      display: none;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .payment-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .payment-failure {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .razorpay-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+  <div class="payment-header">
+    <h2>Complete Your Payment</h2>
+    <p>Order #{{ order.order_number }}</p>
+    <div class="payment-amount">₹{{ order.total_amount|floatformat:2 }}</div>
+  </div>
+  
+  <div class="payment-instructions">
+    <p>You will be redirected to Razorpay's secure payment gateway to complete your transaction.</p>
+  </div>
+  
+  {% if not razorpay_key_id or razorpay_key_id == "rzp_test_YOUR_TEST_KEY" %}
+  <div class="test-mode-info">
+    <h4>⚠️ Test Mode Instructions</h4>
+    <p>Your Razorpay integration is in test mode. Please use these test credentials:</p>
+    <ul>
+      <li>For successful payment: Use UPI ID <strong>success@razorpay</strong></li>
+      <li>For failed payment: Use UPI ID <strong>failure@razorpay</strong></li>
+      <li>No real money will be deducted</li>
+    </ul>
+    <p class="mt-2"><small>Make sure you've set your Razorpay test API keys in settings.</small></p>
+  </div>
+  {% endif %}
+  
+  <div class="razorpay-container">
+    <form action="{% url 'payment_handler' %}" method="POST" id="payment-form">
+      {% csrf_token %}
+      <script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        data-key="{{ razorpay_key_id }}"
+        data-amount="{{ razorpay_amount }}"
+        data-currency="{{ razorpay_currency }}"
+        data-order_id="{{ razorpay_order_id }}"
+        data-buttontext="Pay Now - ₹{{ order.total_amount|floatformat:2 }}"
+        data-name="VibeDrobe"
+        data-description="Order #{{ order.order_number }}"
+        data-image="{% static 'img/logo.png' %}"
+        data-prefill.name="{{ request.user.get_full_name|default:request.user.username }}"
+        data-prefill.email="{{ request.user.email }}"
+        data-prefill.contact=""
+        data-theme.color="#F37254"
+      ></script>
+    </form>
+  </div>
+  
+  <div class="text-center">
+    <a href="{% url 'checkout' %}" class="btn-back">
+      <i class="fas fa-chevron-left me-2"></i>BACK TO CHECKOUT
+    </a>
+  </div>
+  
+  <div id="payment-success" class="payment-status payment-success">
+    <i class="fas fa-check-circle me-2"></i> Payment successful! Redirecting...
+  </div>
+  
+  <div id="payment-failure" class="payment-status payment-failure">
+    <i class="fas fa-times-circle me-2"></i> Payment failed! Please try again.
+  </div>
+  
+  <p class="text-center mt-4" style="color: #6c757d; font-size: 14px;">
+    Your payment is secure and encrypted. We do not store your card details.
+  </p>
+</div>
+{% endblock %}
+
+{% block script %}
+  <!-- JavaScript Files -->
+  <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
+  <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  
+  <script>
+    $(document).ready(function() {
+      // Check if we have a payment status in URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment_status');
+      
+      if (paymentStatus === 'success') {
+        $('#payment-success').show();
+        setTimeout(function() {
+          window.location.href = "{% url 'orderconfirm' order.id %}";
+        }, 2000);
+      } else if (paymentStatus === 'failed') {
+        $('#payment-failure').show();
+      }
+      
+      // Enhance Razorpay button styling
+      setTimeout(function() {
+        $('.razorpay-payment-button').addClass('btn-pay');
+        $('.razorpay-payment-button').removeAttr('style');
+      }, 500);
+    });
+  </script>
+{% endblock %}

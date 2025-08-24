@@ -249,11 +249,11 @@ class Order_Master(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     
     STATUS_CHOICES = [
-        ('processing', 'Processing'),
-        ('confirmed', 'Confirmed'),
-        ('shipped', 'Shipped'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
+        ('processing', 'Processing'), # grey
+        ('confirmed', 'Confirmed'), # yellow
+        ('shipped', 'Shipped'), # blue
+        ('delivered', 'Delivered'), # green
+        ('cancelled', 'Cancelled'), # red
     ]
     
     status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')

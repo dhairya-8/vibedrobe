@@ -117,6 +117,102 @@
   </div> <!-- /.row -->
 </footer>
 
+
+<!-- Cart Drawer -->
+<div class="aside aside_right overflow-hidden cart-drawer" id="cartDrawer" data-item-count="{{ cart_drawer_data.cart_items_count }}">
+    
+    <!-- Header -->
+    <div class="aside-header d-flex align-items-center">
+        <h3 class="text-uppercase fs-6 mb-0">
+            SHOPPING BAG (
+            <span class="cart-amount js-cart-items-count">
+                {{ cart_drawer_data.cart_items_count }}
+            </span>
+            )
+        </h3>
+        <button class="btn-close-lg js-close-aside btn-close-aside ms-auto"></button>
+    </div>
+    <!-- /.aside-header -->
+
+    <!-- Cart Items -->
+    <div class="aside-content cart-drawer-items-list">
+        {% for item in cart_drawer_data.cart_items %}
+        <div class="cart-drawer-item d-flex position-relative">
+            
+            <!-- Product Image -->
+            <div class="position-relative">
+                <img loading="lazy" class="cart-drawer-item__img"
+                     src="{{ item.image }}" alt="{{ item.name|truncatechars:44 }}"
+                     style="width:70px; height:100px; object-fit:cover;">
+            </div>
+
+            <!-- Product Info -->
+            <div class="cart-drawer-item__info flex-grow-1">
+                <h6 class="cart-drawer-item__title fw-normal">{{ item.name|truncatechars:44 }}</h6>
+                <p class="cart-drawer-item__option text-secondary">
+                    Color: {{ item.color }}
+                </p>
+                <p class="cart-drawer-item__option text-secondary">
+                    Size: {{ item.size }}
+                </p>
+
+                <!-- Quantity & Price -->
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <form method="POST" action="{% url 'update_cart_item' %}" class="update-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_item_id" value="{{ item.id }}">
+
+                        <div class="qty-control position-relative">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                   class="qty-control__number border-0 text-center">
+                            <div class="qty-control__reduce">-</div>
+                            <div class="qty-control__increase">+</div>
+                        </div>
+                    </form>
+
+                    <span class="cart-drawer-item__price money price">
+                        ₹{{ item.price }}
+                    </span>
+                </div>
+                <div class="update-error text-danger small mt-1" style="display:none;"></div>
+            </div>
+
+            <!-- Remove Item -->
+            <a href="{{ item.remove_url }}" class="btn-close-xs position-absolute top-0 end-0 js-remove-item"></a>
+        </div>
+
+        {% if not forloop.last %}
+            <hr class="cart-drawer-divider">
+        {% endif %}
+        {% empty %}
+        <div class="text-center py-4">
+            <p>Your cart is empty</p>
+            <a href="{% url 'shop' %}" class="btn btn-primary">Continue Shopping</a>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- /.aside-content -->
+
+    {% if cart_drawer_data.cart_items %}
+    <!-- Cart Actions -->
+    <div class="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
+        <hr class="cart-drawer-divider">
+
+        <div class="d-flex justify-content-between">
+            <h6 class="fs-base fw-medium">SUBTOTAL:</h6>
+            <span class="cart-subtotal fw-medium">
+                ₹{{ cart_drawer_data.cart_subtotal|floatformat:2 }}
+            </span>
+        </div>
+
+        <a href="{% url 'cart' %}" class="btn btn-light mt-3 d-block">View Cart</a>
+        <a href="{% url 'checkout' %}" class="btn btn-primary mt-3 d-block">Checkout</a>
+    </div>
+    <!-- /.cart-drawer-actions -->
+    {% endif %}
+</div>
+
+
 <!-- Quick View Modal -->
 <div class="modal fade" id="quickView" tabindex="-1">
   <div class="modal-dialog quick-view modal-dialog-centered">

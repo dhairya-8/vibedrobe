@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--d^gr08g7xy2em9c5*dl7pcpsoi+4wp^a756+!qyx(9+)7s1kq'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -151,3 +151,14 @@ EMAIL_HOST_USER = 'info.vibedrobe@gmail.com'
 EMAIL_HOST_PASSWORD = 'gscr umrv eqjd fbxk'
 DEFAULT_FROM_EMAIL = 'VibeDrobe Fashion <noreply@vibedrobe.com>'
 CONTACT_EMAIL = 'info.vibedrobe@gmail.com'  # Where contact form submissions should go
+
+# Import local settings if they exist (for development)
+try:
+    from .local_settings import *
+except ImportError:
+    # If local_settings doesn't exist, use environment variables or empty values
+    import os
+    RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
+    RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+    # Add a warning that we're running without local settings
+    print("Warning: local_settings.py not found. Using environment variables or empty values for sensitive settings.")

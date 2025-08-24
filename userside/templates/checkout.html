@@ -358,41 +358,39 @@
                </div>
              </div>
              
-             <div class="payment-method-card" data-method="online">
-               <div class="payment-method-header">
-                 <div class="payment-method-icon">
-                   <i class="fas fa-credit-card"></i>
-                 </div>
-                 <div class="form-check" style="flex-grow: 1; margin: 0;">
-                   <input class="form-check-input form-check-input_fill" type="radio" name="payment_method" id="checkout_payment_method_1" value="online" disabled>
-                   <label class="form-check-label payment-method-title" for="checkout_payment_method_1">
-                     Online Payment (Card)
-                     <span class="coming-soon">Coming soon</span>
-                   </label>
-                 </div>
-               </div>
-               <div class="payment-method-description">
-                 Pay securely using Credit/Debit card. Please use your Order ID as the payment reference.
-               </div>
-             </div>
-             
-             <div class="payment-method-card" data-method="upi">
-               <div class="payment-method-header">
-                 <div class="payment-method-icon">
-                   <i class="fas fa-mobile-alt"></i>
-                 </div>
-                 <div class="form-check" style="flex-grow: 1; margin: 0;">
-                   <input class="form-check-input form-check-input_fill" type="radio" name="payment_method" id="checkout_payment_method_2" value="upi" disabled>
-                   <label class="form-check-label payment-method-title" for="checkout_payment_method_2">
-                     UPI Payment
-                     <span class="coming-soon">Coming soon</span>
-                   </label>
-                 </div>
-               </div>
-               <div class="payment-method-description">
-                 Pay instantly using any UPI app. Please use your Order ID as the payment reference.
-               </div>
-             </div>
+<div class="payment-method-card" data-method="online">
+  <div class="payment-method-header">
+    <div class="payment-method-icon">
+      <i class="fas fa-credit-card"></i>
+    </div>
+    <div class="form-check" style="flex-grow: 1; margin: 0;">
+      <input class="form-check-input form-check-input_fill" type="radio" name="payment_method" id="checkout_payment_method_1" value="online">
+      <label class="form-check-label payment-method-title" for="checkout_payment_method_1">
+        Online Payment (Card)
+      </label>
+    </div>
+  </div>
+  <div class="payment-method-description">
+    Pay securely using Credit/Debit card. Please use your Order ID as the payment reference.
+  </div>
+</div>
+
+<div class="payment-method-card" data-method="upi">
+  <div class="payment-method-header">
+    <div class="payment-method-icon">
+      <i class="fas fa-mobile-alt"></i>
+    </div>
+    <div class="form-check" style="flex-grow: 1; margin: 0;">
+      <input class="form-check-input form-check-input_fill" type="radio" name="payment_method" id="checkout_payment_method_2" value="upi">
+      <label class="form-check-label payment-method-title" for="checkout_payment_method_2">
+        UPI Payment
+      </label>
+    </div>
+  </div>
+  <div class="payment-method-description">
+    Pay instantly using any UPI app. Please use your Order ID as the payment reference.
+  </div>
+</div>
            </div>
            
            <div class="policy-text mt-4" style="color: #95a5a6; font-size: 13px;">
@@ -400,7 +398,7 @@
            </div>
          </div>
          
-         <!-- Order Summary Section (Unchanged as requested) -->
+         <!-- Order Summary Section -->
          <div class="checkout__totals-wrapper">
            <div class="sticky-content">
              <div class="checkout__totals">
@@ -477,15 +475,17 @@
         $(this).find('input[type="radio"]').prop('checked', true);
       });
       
-      // Payment method selection
-      $('.payment-method-card').on('click', function() {
-        const method = $(this).data('method');
-        if (method === 'cod') { // Only allow COD for now
-          $('.payment-method-card').removeClass('selected');
-          $(this).addClass('selected');
-          $(this).find('input[type="radio"]').prop('checked', true);
-        }
-      });
+// Payment method selection
+$('.payment-method-card').on('click', function() {
+    // Remove the 'selected' class from all payment method cards
+    $('.payment-method-card').removeClass('selected');
+
+    // Add the 'selected' class to the one that was just clicked
+    $(this).addClass('selected');
+
+    // Find the radio button inside the clicked card and check it
+    $(this).find('input[type="radio"]').prop('checked', true);
+});
       
       // Form validation
       $('#checkoutForm').on('submit', function(e) {

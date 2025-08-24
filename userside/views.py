@@ -13,10 +13,12 @@ from django.urls import reverse
 from .utils import *
 from decimal import Decimal
 from django.db import transaction
-import random, string
+import random, string, razorpay
 from django.core.mail import send_mail, BadHeaderError, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
+client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
 
 
 def homepage(request):
@@ -178,7 +180,6 @@ def account_dashboard(request):
 def account_orders(request):
     try:
         user_id_session = request.session.get('user_id')
-        info(f'User ID: {user_id_session}')
         
         if not user_id_session:
             error('No session found')
@@ -186,7 +187,6 @@ def account_orders(request):
             return redirect('login')
             
         orders = Order_Master.objects.filter(user_id=user_id_session).order_by('-order_date')
-        success(f'Found {orders.count()} orders')
         
         order_list = []
         for order in orders:
@@ -206,7 +206,6 @@ def account_orders(request):
 def order_detail(request, order_id):
     try:
         user_id_session = request.session.get('user_id')
-        info(f'Loading order {order_id} for user {user_id_session}')
         
         if not user_id_session:
             error('Session expired during modal load')
@@ -214,15 +213,12 @@ def order_detail(request, order_id):
             return redirect('account_orders')
             
         order = Order_Master.objects.get(id=order_id, user_id=user_id_session)
-        success(f"""Order #{order.order_number}
-            Status: {order.status}
-            Total: ₹{order.total_amount}
-            Items: {order.order_details_set.count()}""", detailed=True)
+        order_address = Order_Address.objects.filter(order_id=order)
         
         context = {
             'order': order,
             'order_items': order.order_details_set.all(),
-            'shipping_address': order.order_address_set.filter(address_type='shipping').first(),
+            'shipping_address': order_address.first(),
             'payment': order.payment_set.first(),
             'shipping': order.shipping_set.first(),
         }
@@ -772,8 +768,6 @@ def add_to_cart(request, product_id):
         messages.error(request, 'Selected size not available')
     except Exception as e:
         messages.error(request, 'An error occurred. Please try again.')
-        logger.exception("Error in add_to_cart")
-
     return redirect('product_detail', product_id=product_id)
 
 @user_login_required
@@ -1196,12 +1190,7 @@ def checkout(request):
         if request.method == 'POST':
             # Process the checkout form
             address_id = request.POST.get('address_id')
-            payment_method = request.POST.get('payment_method', 'cod')  # Default to COD
-            
-            # Validate payment method (for now only COD is implemented)
-            if payment_method != 'cod':
-                messages.error(request, "Only Cash on Delivery is available at the moment.")
-                return redirect('checkout')
+            payment_method = request.POST.get('payment_method', 'cod')
             
             # Get or create address
             selected_address = None
@@ -1212,48 +1201,6 @@ def checkout(request):
                 except User_Address.DoesNotExist:
                     messages.error(request, "Selected address not found.")
                     return redirect('checkout')
-            else:
-                # Create new address from form data
-                full_name = request.POST.get('full_name')
-                phone = request.POST.get('phone')
-                address_line_1 = request.POST.get('address_line_1')
-                address_line_2 = request.POST.get('address_line_2', '')
-                city = request.POST.get('city')
-                state = request.POST.get('state')
-                pincode = request.POST.get('pincode')
-                address_type = request.POST.get('address_type', 'home')
-                address_name = request.POST.get('address_name', 'Home')
-                
-                # Validate required fields
-                required_fields = {
-                    'full_name': full_name,
-                    'phone': phone,
-                    'address_line_1': address_line_1,
-                    'city': city,
-                    'state': state,
-                    'pincode': pincode
-                }
-                
-                missing_fields = [field for field, value in required_fields.items() if not value]
-                if missing_fields:
-                    messages.error(request, f"Please fill all required fields: {', '.join(missing_fields)}")
-                    return redirect('checkout')
-                
-                # Create new address
-                selected_address = User_Address(
-                    user_id=user,
-                    address_type=address_type,
-                    address_name=address_name,
-                    full_name=full_name,
-                    phone=phone,
-                    address_line_1=address_line_1,
-                    address_line_2=address_line_2,
-                    city=city,
-                    state=state,
-                    pincode=pincode,
-                    is_default=not user_addresses.exists()  # Set as default if no addresses exist
-                )
-                selected_address.save()
             
             # Create order using transaction to ensure data consistency
             try:
@@ -1265,7 +1212,7 @@ def checkout(request):
                         tax_amount=cart_data['total_gst'],
                         shipping_charge=cart_data['shipping_charge'],
                         total_amount=cart_data['grand_total'],
-                        status='confirmed',  # For COD, we can confirm immediately
+                        status='processing',  # Set to processing for online payments
                         mode_of_payment=payment_method
                     )
                     order.save()
@@ -1298,35 +1245,80 @@ def checkout(request):
                         )
                         order_details_list.append(order_detail)
                     
-                    # Create payment record for COD
-                    Payment.objects.create(
-                        payment_id=f"PAY-{int(time.time())}-{order.id}",
-                        order_id=order,
-                        user_id=user,
-                        amount=cart_data['grand_total'],
-                        payment_method='COD',
-                        payment_gateway='N/A',
-                        status='pending'  # Will be completed when order is delivered
-                    )
+                    # Handle different payment methods
+                    if payment_method == 'cod':
+                        # Create payment record for COD
+                        Payment.objects.create(
+                            payment_id=f"PAY-{int(time.time())}-{order.id}",
+                            order_id=order,
+                            user_id=user,
+                            amount=cart_data['grand_total'],
+                            payment_method='COD',
+                            payment_gateway='N/A',
+                            status='pending'
+                        )
+                        order.status = 'confirmed'  # For COD, we can confirm immediately
+                        order.save()
+                        
+                        # Clear the cart
+                        cart_items.delete()
+                        
+                        # Send confirmation email
+                        try:
+                            send_order_confirmation_email(order, order_details_list, order_address)
+                            info(f"Order confirmation email sent for order {order.order_number} to {user.email}")
+                        except Exception as email_error:
+                            error(f"Failed to send order confirmation email: {str(email_error)}")
+                        
+                        messages.success(request, 'Your order has been placed successfully!')
+                        return redirect('orderconfirm', order_id=order.id)
                     
-                    # Clear the cart
-                    cart_items.delete()
-                    
-                    # Send confirmation email
-                    try:
-                        send_order_confirmation_email(order, order_details_list, order_address)
-                    except Exception as email_error:
-                        # Don't fail the order if email fails
-                        pass
-                    
-                    # Store success message for orderconfirm page
-                    messages.success(request, 'Your order has been placed successfully!')
-                    
-                    # Redirect to order success page
-                    return redirect('orderconfirm', order_id=order.id)
+                    elif payment_method in ['online', 'upi']:
+                        # Create a pending payment record for online payments
+                        payment = Payment.objects.create(
+                            payment_id=f"PAY-{int(time.time())}-{order.id}",
+                            order_id=order,
+                            user_id=user,
+                            amount=cart_data['grand_total'],
+                            payment_method='ONLINE' if payment_method == 'online' else 'UPI',
+                            payment_gateway='Razorpay',
+                            status='pending'
+                        )
+                        
+                        # Create Razorpay order
+                        razorpay_order = client.order.create({
+                            'amount': int(cart_data['grand_total'] * 100),  # Amount in paise
+                            'currency': 'INR',
+                            'receipt': order.order_number,
+                            'notes': {
+                                'order_id': order.id,
+                                'payment_id': payment.payment_id,
+                                'user_id': user.id
+                            }
+                        })
+                        
+                        # Update payment with gateway order ID
+                        payment.gateway_order_id = razorpay_order['id']
+                        payment.save()
+                        
+                        # Store order details in session for payment verification
+                        request.session['razorpay_order_id'] = razorpay_order['id']
+                        request.session['order_id'] = order.id
+                        
+                        # Render payment page with Razorpay details
+                        context = {
+                            'order': order,
+                            'razorpay_order_id': razorpay_order['id'],
+                            'razorpay_amount': int(cart_data['grand_total'] * 100),
+                            'razorpay_currency': 'INR',
+                            'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+                            'callback_url': request.build_absolute_uri(reverse('payment_handler')),
+                        }
+                        return render(request, 'payment.html', context)
                     
             except Exception as e:
                 messages.error(request, "An error occurred while processing your order. Please try again.")
+                error(f"Order creation failed for user {user.username}: {str(e)}")
                 return redirect('checkout')
         
         context = {
@@ -1344,8 +1336,9 @@ def checkout(request):
         
     except Exception as e:
         messages.error(request, "An error occurred while loading checkout.")
+        error(f"Checkout error for user {request.session.get('user_id')}: {str(e)}")
         return redirect('cart')
-    
+        
 # Helper function to calculate cart totals
 def get_cart_totals(cart_items):
     cart_total = Decimal('0')
@@ -1499,7 +1492,80 @@ def orderconfirm(request, order_id):
     except Exception as e:
         messages.error(request, "Order not found or you don't have permission to view this order.")
         return redirect('homepage')
+
+# =====================RAZOR PAY INTEGRATION=====================
+def payment_handler(request):
+    if request.method == "POST":
+        try:
+            # Get the payment details from the request
+            payment_id = request.POST.get('razorpay_payment_id', '')
+            razorpay_order_id = request.POST.get('razorpay_order_id', '')
+            signature = request.POST.get('razorpay_signature', '')
+            
+            # Verify payment signature
+            params_dict = {
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': payment_id,
+                'razorpay_signature': signature
+            }
+            
+            # Verify the payment signature
+            try:
+                client.utility.verify_payment_signature(params_dict)
+                
+                # Signature verification successful
+                payment = Payment.objects.get(gateway_order_id=razorpay_order_id)
+                order = payment.order_id
+                
+                # Update payment details
+                payment.gateway_payment_id = payment_id
+                payment.gateway_signature = signature
+                payment.status = 'completed'
+                payment.save()
+                
+                # Update order status
+                order.status = 'confirmed'
+                order.save()
+                
+                # Clear the cart
+                user_id = request.session.get('user_id')
+                try:
+                    cart_obj = Cart.objects.get(user_id_id=user_id)
+                    Cart_Items.objects.filter(cart_id=cart_obj).delete()
+                except Cart.DoesNotExist:
+                    pass
+                
+                # Send confirmation email
+                order_details = Order_Details.objects.filter(order_id=order)
+                order_address = Order_Address.objects.filter(order_id=order).first()
+                
+                try:
+                    send_order_confirmation_email(order, order_details, order_address)
+                except Exception as email_error:
+                    error(f"Failed to send order confirmation email: {str(email_error)}")
+                
+                # Redirect to success page
+                return redirect(reverse('orderconfirm', kwargs={'order_id': order.id}) + '?payment_status=success')
+                
+            except razorpay.errors.SignatureVerificationError:
+                # Signature verification failed
+                payment = Payment.objects.get(gateway_order_id=razorpay_order_id)
+                payment.status = 'failed'
+                payment.failure_reason = 'Signature verification failed'
+                payment.save()
+                
+                messages.error(request, 'Payment verification failed. Please try again.')
+                return redirect(reverse('checkout') + '?payment_status=failed')
+                
+        except Payment.DoesNotExist:
+            messages.error(request, 'Invalid payment request.')
+            return redirect(reverse('checkout') + '?payment_status=failed')
+        except Exception as e:
+            error(f"Payment processing error: {str(e)}")
+            messages.error(request, 'An error occurred during payment processing.')
+            return redirect(reverse('checkout') + '?payment_status=failed')
     
+    return redirect('checkout')
 # ========================= Static Pages =========================
 
 def contactus(request):

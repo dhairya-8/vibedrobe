@@ -23,6 +23,8 @@ urlpatterns = [
     path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
     path('remove-cart-item-drawer/<int:product_id>/<int:variant_id>/', remove_cart_item_drawer, name='remove_cart_item_drawer'),
     path('checkout/', checkout, name='checkout'),
+    path('checkout/payment-handler/', payment_handler, name='payment_handler'),
+
     path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
   
     # ==================== Quick Add to Cart/Wishlist (Shop) URLs ====================
