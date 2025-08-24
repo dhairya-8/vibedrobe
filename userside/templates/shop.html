@@ -40,6 +40,28 @@
                 margin-top: 10px;
             }
         }
+        
+        /* Quick view modal specific styles */
+        .quick-view .swatch {
+            cursor: pointer;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        
+        .quick-view .swatch.active {
+            background-color: #000;
+            color: white;
+            border-color: #000;
+        }
+        
+        .quick-view .swatch.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 {% endblock %}
 
@@ -551,22 +573,22 @@
                                 
                                 <!-- Product Actions -->
                                 <div class="anim_appear-bottom position-absolute w-100 text-center">
-                                    <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-add-cart js-open-aside" 
-                                            onclick="window.location.href='{% url 'quick_add_to_cart' product.id %}'" 
-                                            title="Add To Cart">
+                                    <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-add-cart" 
+        onclick="window.location.href='{% url 'quick_add_to_cart' product.id %}'" 
+        title="Add To Cart">
                                         <svg class="d-inline-block" width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <use href="#icon_cart" />
                                         </svg>
                                     </button>
 
                                     <button class="btn btn-round btn-hover-red border-0 text-uppercase me-2 js-quick-view" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#quickView" 
-                                            title="Quick view">
-                                        <svg class="d-inline-block" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                                            <use href="#icon_view" />
-                                        </svg>
-                                    </button>
+        data-bs-toggle="modal" 
+        data-bs-target="#quickView{{ product.id }}"
+        title="Quick view">
+    <svg class="d-inline-block" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <use href="#icon_view" />
+    </svg>
+</button>
 
                                     <button class="btn btn-round btn-hover-red border-0 text-uppercase js-add-wishlist" 
                                             onclick="window.location.href='{% url 'quick_add_to_wishlist' product.id %}'" 
@@ -656,6 +678,140 @@
         </div><!-- /.shop-list -->
         
     </section>
+
+<!-- Quick View -->
+    {% for product in products %}
+    <div class="modal fade" id="quickView{{product.id}}" tabindex="-1">
+    <div class="modal-dialog quick-view modal-dialog-centered">
+      <div class="modal-content">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="product-single">
+          <div class="product-single__media m-0">
+            <div class="product-single__image position-relative w-100">
+              <div class="swiper-container js-swiper-slider"
+                data-settings='{
+                  "slidesPerView": 1,
+                  "slidesPerGroup": 1,
+                  "effect": "none",
+                  "loop": false,
+                  "navigation": {
+                    "nextEl": ".modal-dialog.quick-view .product-single__media .swiper-button-next",
+                    "prevEl": ".modal-dialog.quick-view .product-single__media .swiper-button-prev"
+                  }
+                }'>
+                  <div class="swiper-wrapper">
+                    <div class="swiper-slide product-single__image-item">
+                      <img loading="lazy" src="{{ product.base_image.url }}" alt="{{ product.name }}">
+                    </div>
+                    <!-- Gallery Images -->
+                    {% for gallery_image in product.ordered_gallery_images %}
+                      {% if gallery_image.image_path.url != product.base_image.url %}
+                      <div class="swiper-slide product-single__image-item">
+                        <img loading="lazy" src="{{ gallery_image.image_path.url }}" alt="{{ product.name }}">
+                      </div>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  {% if product.ordered_gallery_images|length > 0 %}
+                  <div class="swiper-button-prev"><svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_sm"/></svg></div>
+                  <div class="swiper-button-next"><svg width="7" height="11" viewBox="0 0 7 11" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_sm"/></svg></div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="product-single__detail">
+              <h1 class="product-single__name">{{ product.name }}</h1>
+              <div class="product-single__price">
+                <span class="current-price">₹{{ product.price }}</span>
+              </div>
+              <div class="product-single__short-desc">
+                <p>{{ product.description|truncatewords:30 }}</p>
+              </div>
+              <form class="add-to-cart-form" name="addtocart-form" method="post" action="{% url 'add_to_cart_quick_view' product.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="variant_id" class="selected-variant" value="" required>
+                <input type="hidden" name="keep_cart_open" value="1">
+                <div class="product-single__swatches">
+                  <div class="product-swatch text-swatches">
+                    <label>Sizes</label>
+                    <div class="swatch-list">
+                      {% for variant in product.variants_list %}
+                      <input type="radio" name="size" id="swatch-{{ product.id }}-{{ variant.id }}">
+                      <label class="swatch js-swatch {% if variant.stock_quantity <= 0 %}disabled{% endif %}"
+                             data-variant-id="{{ variant.id }}"
+                             data-price="{{ product.price|add:variant.additional_price }}" 
+                             data-sku="{{ variant.sku }}"                                        
+                             data-stock="{{ variant.stock_quantity }}"
+                             for="swatch-{{ product.id }}-{{ variant.id }}" 
+                             aria-label="Size {{ variant.size_id.name }}{% if variant.stock_quantity <= 0 %} - out of stock{% endif %}" 
+                             data-bs-toggle="tooltip" 
+                             data-bs-placement="top" 
+                             title="{{ variant.size_id.name }}">
+                          {{ variant.size_id.name }}{% if variant.stock_quantity <= 0 %}<span class="size-out">(X)</span>{% endif %}
+                      </label>
+                      {% empty %}
+                      <p class="text-muted">No sizes available</p>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="product-swatch color-swatches">
+                    <label>Color</label>
+                    <div class="swatch-list">
+                      <h6 class="mb-1">{{ product.color }}</h6>
+                    </div>
+                  </div>
+                </div>
+                <div class="product-single__addtocart">
+                  <div class="qty-control position-relative">
+                    <input type="number" name="quantity" value="1" min="1" class="qty-control__number text-center">
+                    <div class="qty-control__reduce">-</div>
+                    <div class="qty-control__increase">+</div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-addtocart" {% if not product.in_stock %}disabled{% endif %}>
+                    {% if product.in_stock %}Add to Cart{% else %}Out of Stock{% endif %}
+                  </button>
+                </div>
+              </form>
+              <div class="product-single__addtolinks">
+                <form method="post" action="{% url 'add_to_wishlist_quick_view' product.id %}" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="menu-link menu-link_us-s add-to-wishlist border-0 bg-transparent p-0">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <use href="#icon_heart" {% if product.in_wishlist %}fill="black"{% endif %}/>
+        </svg>
+        <span>{% if product.in_wishlist %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}</span>
+    </button>
+</form>
+              </div>
+              <div class="product-single__meta-info mb-0">
+                <div class="meta-item">
+                  <label>SKU:</label>
+                  <span class="sku-display">{{ product.productvariant_set.first.sku }}</span>
+                </div>
+                <div class="meta-item">
+                  <label>Categories:</label>
+                  <span><a href="{% url 'shop' %}?subcategory={{ product.subcategory_id.id }}">
+                    {{ product.subcategory_id.name }}
+                  </a></span>
+                </div>
+                <div class="meta-item">
+                  <label>Tags:</label>
+                  <span>
+                    {% for tag in product.tags.all %}
+                      <a href="{% url 'shop' %}?tag={{ tag.id }}" class="text-decoration-underline">
+                        {{ tag.tag }}{% if not forloop.last %}, {% endif %}
+                      </a>
+                    {% endfor %}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.quickview position-fixed -->
+{% endfor %}
 </main>
 {% endblock %}
 
@@ -667,8 +823,144 @@
 <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
 <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
 <script src="{% static 'user/assets/js/theme.js' %}"></script>
-
 <script>
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Initialize each quick view modal
+    $('.quick-view').each(function() {
+        const modal = $(this);
+        
+        // Auto-select the first available size when modal is shown
+        modal.on('shown.bs.modal', function() {
+            autoSelectFirstSize(modal);
+        });
+        
+        // Size selection functionality for this modal
+        modal.find('.js-swatch').on('click', function(e) {
+            e.preventDefault();
+            
+            // Skip if disabled (out of stock)
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
+            
+            // Remove active class from all swatches in this modal
+            modal.find('.js-swatch').removeClass('active');
+            
+            // Add active class to clicked swatch
+            $(this).addClass('active');
+            
+            // Get variant data
+            const variantId = $(this).data('variant-id');
+            const price = $(this).data('price');
+            const sku = $(this).data('sku');
+            const stock = $(this).data('stock');
+            
+            // Update hidden input with selected variant for this modal
+            modal.find('.selected-variant').val(variantId);
+            
+            // Update price display for this modal
+            modal.find('.product-single__price .current-price').text('₹' + price);
+            
+            // Update SKU display for this modal
+            modal.find('.sku-display').text(sku);
+            
+            // Reset quantity to 1 when changing size
+            modal.find('input[name="quantity"]').val(1);
+            
+            // Enable/disable add to cart button based on stock
+            const addToCartBtn = modal.find('.btn-addtocart');
+            if (stock > 0) {
+                addToCartBtn.prop('disabled', false).text('Add to Cart');
+            } else {
+                addToCartBtn.prop('disabled', true).text('Out of Stock');
+            }
+        });
+        
+        // Add to cart form submission for this modal
+        modal.find('.add-to-cart-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Check if a size is selected
+            if (!modal.find('.selected-variant').val()) {
+                alert('Please select a size');
+                return false;
+            }
+            
+            // Validate quantity
+            const quantity = parseInt(modal.find('input[name="quantity"]').val());
+            if (isNaN(quantity) || quantity < 1) {
+                alert('Please enter a valid quantity');
+                return false;
+            }
+            
+            // Validate quantity against stock
+            const selectedVariant = modal.find('.js-swatch.active');
+            const maxStock = selectedVariant.data('stock');
+            
+            if (quantity > maxStock) {
+                alert('Cannot add more than available stock (' + maxStock + ' items available)');
+                return false;
+            }
+            
+            // Submit the form via standard POST (no AJAX as requested)
+            this.submit();
+        });
+    });
+    
+    // Auto-select the first available size in a modal
+    function autoSelectFirstSize(modal) {
+        // Find all available sizes (not disabled)
+        const availableSizes = modal.find('.js-swatch:not(.disabled)');
+        
+        if (availableSizes.length > 0) {
+            // Remove active class from all swatches first
+            modal.find('.js-swatch').removeClass('active');
+            
+            // Add active class to first available swatch
+            const firstAvailableSize = availableSizes.first();
+            firstAvailableSize.addClass('active');
+            
+            // Trigger the selection logic
+            const variantId = firstAvailableSize.data('variant-id');
+            const price = firstAvailableSize.data('price');
+            const sku = firstAvailableSize.data('sku');
+            const stock = firstAvailableSize.data('stock');
+            
+            // Update hidden input with selected variant
+            modal.find('.selected-variant').val(variantId);
+            
+            // Update price display
+            modal.find('.product-single__price .current-price').text('₹' + price);
+            
+            // Update SKU display
+            modal.find('.sku-display').text(sku);
+            
+            // Enable/disable add to cart button based on stock
+            const addToCartBtn = modal.find('.btn-addtocart');
+            if (stock > 0) {
+                addToCartBtn.prop('disabled', false).text('Add to Cart');
+            } else {
+                addToCartBtn.prop('disabled', true).text('Out of Stock');
+            }
+            
+            console.log('Auto-selected size:', firstAvailableSize.text().trim(), 'with variant ID:', variantId);
+        } else {
+            // If no sizes available, disable the add to cart button
+            modal.find('.btn-addtocart').prop('disabled', true).text('Out of Stock');
+            console.log('No available sizes found for this product');
+        }
+    }
+    
+    // Also auto-select sizes when page loads for any modals that might be pre-rendered
+    $('.quick-view').each(function() {
+        autoSelectFirstSize($(this));
+    });
+});
+
+// The rest of your existing script remains the same...
 // Utility function to update URL with parameters
 function updateUrlParams(params) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -933,5 +1225,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Function to open cart drawer
+function openCartDrawer() {
+    $('#cartDrawer').addClass('aside_visible');
+    $('.page-overlay').addClass('page-overlay_visible');
+    $('body').addClass('overflow-hidden');
+}
+
+// Check if cart drawer should be opened on page load
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('open_cart_drawer') === 'true') {
+    // Open the cart drawer
+    openCartDrawer();
+    
+    // Clean up URL (remove the parameter but keep other filters)
+    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.search.replace('open_cart_drawer=true', '').replace(/&$/, '').replace(/\?$/, '');
+    window.history.replaceState({}, document.title, cleanUrl);
+}
 </script>
 {% endblock %}
