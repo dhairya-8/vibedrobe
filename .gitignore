@@ -10,6 +10,3 @@ local_settings.py
 
 # IDE
 .vscode/
-
-# product media
-media/products/
