@@ -20,7 +20,6 @@ from django.conf import settings
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 
-
 def homepage(request):
    return render(request, 'homepage.html')
 
@@ -414,18 +413,25 @@ def shop(request):
     sort = request.GET.get('sort', 'default')
     gender = request.GET.get('gender', None)
 
-    # Base queryset
+    # Base queryset - ADD VARIANT PREFETCH HERE
     products = Product.objects.filter(is_active=True).prefetch_related(
         Prefetch(
             'product_gallery_set',
             queryset=Product_Gallery.objects.order_by('image_order'),
-            to_attr='ordered_gallery_images')
+            to_attr='ordered_gallery_images'
+        ),
+        Prefetch(  # ADD THIS PREFETCH FOR VARIANTS
+            'variants',
+            queryset=Product_Variants.objects.select_related('size_id'),
+            to_attr='variants_list'
+        )
     ).select_related(
         'subcategory_id',
         'brand_id'
     )
     
-     #gender
+    # Rest of your view remains the same...
+    # gender
     if gender:
         products = products.filter(gender=gender)
         
@@ -530,6 +536,107 @@ def shop(request):
         'current_gender': gender,
     }
     return render(request, 'shop.html', context)
+
+@user_login_required
+@require_POST
+def add_to_cart_quick_view(request, product_id):
+    try:
+        # Check user session
+        if 'user_id' not in request.session:
+            messages.error(request, 'Please login to add items to cart')
+            return redirect('shop')  # Redirect to shop page without product_id
+
+        # Get product and validate
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        variant_id = request.POST.get('variant_id')
+        quantity = int(request.POST.get('quantity', 1))
+        keep_cart_open = request.POST.get('keep_cart_open') == '1'
+
+        if not variant_id:
+            messages.error(request, 'Please select a size')
+            return redirect('shop')  # Redirect to shop page
+
+        with transaction.atomic():
+            # Get and lock variant
+            variant = Product_Variants.objects.select_for_update().get(
+                id=variant_id,
+                product_id=product_id,
+                is_active=True
+            )
+
+            # Check stock
+            if variant.stock_quantity < quantity:
+                messages.warning(request, f'Only {variant.stock_quantity} available in stock')
+                return redirect('shop')  # Redirect to shop page
+
+            # Get or create cart
+            cart, created = Cart.objects.get_or_create(user_id_id=request.session['user_id'])
+            
+            # Calculate price
+            price = float(product.price) + float(variant.additional_price or 0)
+
+            # Add or update cart item
+            cart_item, created = Cart_Items.objects.get_or_create(
+                cart_id=cart,
+                product_variant_id=variant,
+                defaults={
+                    'quantity': quantity,
+                    'price_at_time': price
+                }
+            )
+
+            if not created:
+                new_quantity = cart_item.quantity + quantity
+                if new_quantity > variant.stock_quantity:
+                    messages.warning(request, f'Cannot add more than {variant.stock_quantity} items')
+                    return redirect('shop')  # Redirect to shop page
+                cart_item.quantity = new_quantity
+                cart_item.save()
+
+            messages.success(request, f'Added {product.name} to your cart')
+            
+            # Always redirect to shop page and open cart drawer
+            return redirect(f"{reverse('shop')}?open_cart_drawer=true&added_product={product_id}")
+
+    except Product_Variants.DoesNotExist:
+        messages.error(request, 'Selected size not available')
+    except Exception:
+        messages.error(request, 'An error occurred. Please try again.')
+
+    return redirect('shop')  # Redirect to shop page
+
+@user_login_required
+def add_to_wishlist_quick_view(request, product_id):
+    """Add or remove item from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            is_active=True
+        )
+        
+        # Check if already in wishlist
+        wishlist_item = Wishlist.objects.filter(
+            user_id=user_id,
+            product_id=product
+        ).first()
+        
+        if wishlist_item:
+            wishlist_item.delete()
+            messages.success(request, "Removed from wishlist!")
+        else:
+            Wishlist.objects.create(
+                user_id_id=user_id,
+                product_id=product
+            )
+            messages.success(request, "Added to wishlist!")
+            
+        return redirect('wishlist')
+        
+    except Exception as e:
+        messages.error(request, "Error updating wishlist")
+        return redirect('shop')
 
 def new_arrivals(request):
     # Get new arrivals (products added in the last 30 days)
@@ -836,6 +943,46 @@ def cart(request):
         return redirect('homepage')    
 
 @user_login_required
+def update_cart_item_drawer(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        referer = request.META.get('HTTP_REFERER', 'home')
+        try:
+            cart_item_id = request.POST.get('cart_item_id')
+            quantity = int(request.POST.get('quantity'))
+            keep_drawer_open = request.POST.get('keep_drawer_open') == 'true'
+            
+            if quantity < 1:
+                messages.error(request, 'Quantity must be at least 1')
+                if keep_drawer_open:
+                    return redirect(referer + '?open_cart_drawer=true')
+                return redirect(referer)
+            
+            cart_item = Cart_Items.objects.get(
+                id=cart_item_id,
+                cart_id__user_id=request.user.id
+            )
+            
+            # Update only the quantity
+            cart_item.quantity = quantity
+            cart_item.save()  # total_price should update automatically if it's a property
+            
+            messages.success(request, 'Cart updated successfully')
+            
+        except Cart_Items.DoesNotExist:
+            messages.error(request, 'Item not found in your cart')
+        except ValueError:
+            messages.error(request, 'Invalid quantity')
+        except Exception as e:
+            messages.error(request, 'An error occurred while updating the cart')
+    
+    # Check if we need to keep drawer open
+    keep_drawer_open = request.POST.get('keep_drawer_open') == 'true'
+    if keep_drawer_open:
+        return redirect(referer + '?open_cart_drawer=true')
+    
+    return redirect(referer)
+
+@user_login_required
 def remove_cart_item_drawer(request, product_id, variant_id):
     if request.user.is_authenticated:
         try:
@@ -850,7 +997,14 @@ def remove_cart_item_drawer(request, product_id, variant_id):
             messages.success(request, f"'{product_name[:20]}...' removed from cart")
         except (Cart.DoesNotExist, Cart_Items.DoesNotExist):
             messages.error(request, "Item not found in your cart")
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
+    
+    referer = request.META.get('HTTP_REFERER', 'home')
+    
+    # Check if we need to keep drawer open
+    if request.GET.get('open_cart_drawer') == 'true':
+        return redirect(referer + '?open_cart_drawer=true')
+        
+    return redirect(referer)
 
 @user_login_required
 def empty_cart(request):
@@ -1140,7 +1294,9 @@ def quick_add_to_cart(request, product_id):
         messages.error(request, "Couldn't add item to cart. Please try again.")
         # Log the error here in production
     
-    return redirect('shop')
+    # Redirect back to shop with parameter to open cart drawer
+    shop_url = reverse('shop')
+    return redirect(f"{shop_url}?open_cart_drawer=true")
 
 @user_login_required
 def quick_add_to_wishlist(request, product_id):

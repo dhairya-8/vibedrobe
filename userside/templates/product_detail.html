@@ -86,7 +86,7 @@
     <input type="hidden" name="variant_id" id="selected-variant" value="" required>
     <input type="hidden" name="keep_cart_open" value="1">
     <div class="product-single__swatches">
-                <div class="product-swatch text-swatches">
+    <div class="product-swatch text-swatches">
     <label>Sizes</label>
     <div class="swatch-list">
         {% for variant in variants %}
@@ -673,108 +673,149 @@
 
 <script>
 $(document).ready(function() {
-    // 1. Remove all existing event handlers to prevent duplicates
-    $('.qty-control__increase, .qty-control__reduce').off();
-    $('#add-to-cart-form').off('submit');
-
-    // 2. Initialize with quantity 1
-    $('.qty-control__number').val(1);
-
-    // 3. Proper quantity increment (only +1)
-    $('.qty-control').on('click', '.qty-control__increase', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        
-        const input = $(this).siblings('.qty-control__number');
-        const currentVal = parseInt(input.val()) || 1;
-        const maxStock = $('.js-swatch.active').data('stock') || 999;
-        
-        if (currentVal < maxStock) {
-            input.val(currentVal + 1);
-        } else {
-            alert(`Maximum ${maxStock} available`);
-        }
-    });
-
-    // 4. Proper quantity decrement
-    $('.qty-control').on('click', '.qty-control__reduce', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        
-        const input = $(this).siblings('.qty-control__number');
-        const currentVal = parseInt(input.val()) || 1;
-        
-        if (currentVal > 1) {
-            input.val(currentVal - 1);
-        }
-    });
-
-    // 5. Variant selection handler
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Auto-select the first available size on page load
+    function autoSelectFirstSize() {
+        // Wait a bit to ensure all elements are rendered
+        setTimeout(function() {
+            const firstAvailableSize = $('.js-swatch:not(.disabled)').first();
+            console.log('Found available sizes:', $('.js-swatch:not(.disabled)').length);
+            console.log('First available size:', firstAvailableSize);
+            
+            if (firstAvailableSize.length > 0) {
+                // Remove active class from all swatches first
+                $('.js-swatch').removeClass('active');
+                
+                // Add active class to first available swatch
+                firstAvailableSize.addClass('active');
+                
+                // Trigger the selection logic
+                const variantId = firstAvailableSize.data('variant-id');
+                const price = firstAvailableSize.data('price');
+                const sku = firstAvailableSize.data('sku');
+                const stock = firstAvailableSize.data('stock');
+                
+                // Update hidden input with selected variant
+                $('#selected-variant').val(variantId);
+                
+                // Update price display
+                $('.product-single__price .current-price').text('₹' + price);
+                
+                // Update SKU display
+                $('.sku-display').text(sku);
+                
+                // Enable/disable add to cart button based on stock
+                const addToCartBtn = $('.btn-addtocart');
+                if (stock > 0) {
+                    addToCartBtn.prop('disabled', false).text('Add to Cart');
+                } else {
+                    addToCartBtn.prop('disabled', true).text('Out of Stock');
+                }
+                
+                console.log('Auto-selected size:', firstAvailableSize.text().trim(), 'with variant ID:', variantId);
+            } else {
+                console.log('No available sizes found');
+                // If no sizes available, disable the add to cart button
+                $('.btn-addtocart').prop('disabled', true).text('Out of Stock');
+            }
+        }, 100);
+    }
+    
+    // Call the function to auto-select first size
+    autoSelectFirstSize();
+    
+    // Size selection functionality
     $('.js-swatch').on('click', function(e) {
+        e.preventDefault();
+        
+        // Skip if disabled (out of stock)
         if ($(this).hasClass('disabled')) {
-            e.preventDefault();
             return;
         }
-
-        const variant = $(this);
-        const variantId = variant.data('variant-id');
-        const price = variant.data('price');
-        const sku = variant.data('sku');
-        const stock = variant.data('stock');
-
-        // Update all elements
-        $('#selected-variant').val(variantId);
-        $('.current-price').text('₹' + price);
-        $('.sku-display').text('SKU: ' + sku);
         
-        // Update button state
-        const btn = $('.btn-addtocart');
-        btn.prop('disabled', stock <= 0);
-        btn.text(stock <= 0 ? 'Out of Stock' : 'Add to Cart');
-        
-        // Update active state
+        // Remove active class from all swatches
         $('.js-swatch').removeClass('active');
-        variant.addClass('active');
         
-        // Keep current quantity - don't reset
+        // Add active class to clicked swatch
+        $(this).addClass('active');
+        
+        // Get variant data
+        const variantId = $(this).data('variant-id');
+        const price = $(this).data('price');
+        const sku = $(this).data('sku');
+        const stock = $(this).data('stock');
+        
+        // Update hidden input with selected variant
+        $('#selected-variant').val(variantId);
+        
+        // Update price display
+        $('.product-single__price .current-price').text('₹' + price);
+        
+        // Update SKU display
+        $('.sku-display').text(sku);
+        
+        // Reset quantity to 1 when changing size
+        $('input[name="quantity"]').val(1);
+        
+        // Enable/disable add to cart button based on stock
+        const addToCartBtn = $('.btn-addtocart');
+        if (stock > 0) {
+            addToCartBtn.prop('disabled', false).text('Add to Cart');
+        } else {
+            addToCartBtn.prop('disabled', true).text('Out of Stock');
+        }
     });
-
-    // 6. Form submission with quantity verification
+    
+    // Add to cart form submission
     $('#add-to-cart-form').on('submit', function(e) {
-        // Verify variant is selected
+        e.preventDefault();
+        
+        // Check if a size is selected
         if (!$('#selected-variant').val()) {
-            e.preventDefault();
-            $('#form-error-message').text('Please select a size').show();
+            alert('Please select a size');
             return false;
         }
         
-        // Verify quantity
-        const quantityInput = $('.qty-control__number');
-        let quantity = parseInt(quantityInput.val()) || 1;
-        
-        // Ensure quantity is within stock limits
-        const maxStock = $('.js-swatch.active').data('stock') || 999;
-        if (quantity > maxStock) {
-            quantity = maxStock;
-            quantityInput.val(maxStock);
-            alert(`Quantity reduced to maximum available (${maxStock})`);
+        // Validate quantity
+        const quantity = parseInt($('input[name="quantity"]').val());
+        if (isNaN(quantity) || quantity < 1) {
+            alert('Please enter a valid quantity');
+            return false;
         }
         
-        // For debugging
-        console.log('Adding to cart with:', {
-            variant: $('#selected-variant').val(),
-            quantity: quantity
-        });
+        // Validate quantity against stock
+        const selectedVariant = $('.js-swatch.active');
+        const maxStock = selectedVariant.data('stock');
         
-        return true;
+        if (quantity > maxStock) {
+            alert('Cannot add more than available stock (' + maxStock + ' items available)');
+            return false;
+        }
+        
+        // Submit the form via standard POST (no AJAX as requested)
+        this.submit();
     });
-
-    // 7. Initialize first available variant
-    const firstAvailable = $('.js-swatch:not(.disabled)').first();
-    if (firstAvailable.length) {
-        firstAvailable.trigger('click');
-    } else {
-        $('.btn-addtocart').prop('disabled', true).text('Out of Stock');
+    
+    // Wishlist functionality
+    $('.add-to-wishlist').on('click', function(e) {
+        e.preventDefault();
+        
+        // Redirect to the wishlist URL (standard form submission)
+        window.location.href = $(this).attr('href');
+    });
+    
+    // Check if we need to open the cart drawer after page load
+    // This handles the case where we're redirected back after adding to cart
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show_cart') === '1') {
+        // Open the cart drawer
+        $('.js-open-aside[data-aside="cartDrawer"]').trigger('click');
+        
+        // Clean up the URL
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
     }
 });
 </script>
