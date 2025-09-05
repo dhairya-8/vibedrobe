@@ -261,7 +261,7 @@ class Order_Master(models.Model):
     status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
     mode_of_payment = models.CharField(max_length=30, null=False, blank=False, choices=[
         ('cod', 'Cash on Delivery'),
-        ('online', 'Online Payment'),
+        ('card', 'Card Payment'),
         ('upi', 'UPI Payment'),
     ], default='cod')
     subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
@@ -329,7 +329,7 @@ class Payment(models.Model):
     failure_reason = models.TextField(max_length=300, null=True)
     refund_amount = models.DecimalField(decimal_places=2,max_digits=10, default=0)
     refund_reason = models.TextField(max_length=300, null=True)
-    transaction_date = models.DateField(auto_now_add=True)
+    transaction_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
