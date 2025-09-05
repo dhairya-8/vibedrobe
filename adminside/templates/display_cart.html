@@ -77,7 +77,7 @@
                         </small>
                       </div>
                       <span class="badge bg-primary rounded-pill">
-                        {{ data.item_count }} items | ${{ data.subtotal }}
+                        {{ data.item_count }} items | ₹{{ data.subtotal }}
                       </span>
                     </div>
                   </div>
@@ -119,9 +119,9 @@
                             <td>
                               <span class="badge bg-light text-dark">Size: {{ item.product_variant_id.size_id.name }}</span>
                             </td>
-                            <td>${{ item.price_at_time }}</td>
+                            <td>₹{{ item.price_at_time }}</td>
                             <td>{{ item.quantity }}</td>
-                            <td><strong>${{ item.total_price }}</strong></td>
+                            <td><strong>₹{{ item.total_price }}</strong></td>
                             <td>{{ item.added_at|date:"M d, Y H:i" }}</td>
                           </tr>
                           {% endfor %}

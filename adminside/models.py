@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.hashers import make_password, check_password
+import random
+import string
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -349,6 +351,14 @@ class Shipping(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.tracking_number:
+            # Generate a unique tracking number
+            date_str = timezone.now().strftime('%Y%m%d')
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            self.tracking_number = f"TRK-{date_str}-{random_str}"
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"Ship#{self.tracking_number or 'NA'}: {self.shipping_status}"
     

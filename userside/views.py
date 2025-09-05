@@ -105,7 +105,7 @@ def login_register_view(request):
                 
                 messages.success(request, 'Registration successful! Please complete your profile.')
                 success(f"Welcome {user.first_name}!", detailed=True)
-                return redirect('profile')
+                return redirect('account_details')
                 
             except Exception as e:
                 messages.error(request, f'Registration failed: {str(e)}')

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-  Display Payment | VibeDrobe
+  Payment Management | VibeDrobe
 {% endblock %}
 
 {% block css %}
@@ -14,6 +14,29 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    .modal-lg {
+      max-width: 90%;
+    }
+    .payment-details-table th {
+      background-color: #f8f9fa;
+    }
+    .payment-details-table td,
+    .payment-details-table th {
+      padding: 0.75rem;
+      vertical-align: middle;
+    }
+    .status-filter {
+      margin-bottom: 20px;
+    }
+    .payment-badge {
+      font-size: 0.85em;
+      padding: 0.35em 0.65em;
+    }
+    .search-box {
+      max-width: 300px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -21,47 +44,93 @@
     <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
+        {% include 'custom_alerts.html' with position='inline' %}
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <div class="row align-items-center">
-                  <div class="col-auto">
-                    <h4 class="card-title">View Payment List</h4>
+                  <div class="col">
+                    <h4 class="card-title">Payment Management</h4>
                   </div>
-                  <!-- end col -->
-                 
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
+                <!-- Filters and Search -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <!-- Status Filter -->
+                  <div class="status-filter">
+                    <div class="btn-group" role="group">
+                      <a href="?status=all{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">All</a>
+                      <a href="?status=success{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'success' %}active{% endif %}">Success</a>
+                      <a href="?status=failed{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'failed' %}active{% endif %}">Failed</a>
+                      <a href="?status=pending{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+                      <a href="?status=refunded{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'refunded' %}active{% endif %}">Refunded</a>
+                    </div>
+                  </div>
+                  
+                  <!-- Search Box -->
+                  <div class="search-box">
+                    <form method="get" class="d-flex">
+                      <input type="text" name="search" class="form-control me-2" placeholder="Search payments..." value="{{ search_query }}">
+                      <button type="submit" class="btn btn-primary">Search</button>
+                      {% if search_query %}
+                        <a href="{% url 'payment_management' %}{% if status_filter != 'all' %}?status={{ status_filter }}{% endif %}" class="btn btn-secondary ms-2">Clear</a>
+                      {% endif %}
+                    </form>
+                  </div>
+                </div>
+                
                 <div class="table-responsive">
-                  <table class="table">
+                  <table class="table" id="paymentsTable">
                     <thead class="table-light">
                       <tr>
-                        <th>ID</th>
-                        <th>Order ID</th>
-                        <th>User Name</th>
+                        <th>Payment ID</th>
+                        <th>Order #</th>
+                        <th>Customer</th>
                         <th>Amount</th>
                         <th>Payment Method</th>
                         <th>Status</th>
                         <th>Transaction Date</th>
-                        
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>1</td>
-                        <td>1</td>
-                        <td>Zaid</td>
-                        <td>800/-</td>
-                        <td>Razor Pay</td>
-                        <td>Success</td>
-                        <td>2025-02-04</td>
-                        
-                      </tr>
-       
+                      {% for payment in payments %}
+                        <tr>
+                          <td>{{ payment.payment_id }}</td>
+                          <td>{{ payment.order_id.order_number }}</td>
+                          <td>{{ payment.user_id.get_full_name|default:payment.user_id.username }}</td>
+                          <td>₹{{ payment.amount }}</td>
+                          <td>{{ payment.payment_method }}</td>
+                          <td>
+                            <span class="badge payment-badge 
+                            {% if payment.status == 'success' %}
+                                bg-success
+                            {% elif payment.status == 'failed' %}
+                                bg-danger
+                            {% elif payment.status == 'refunded' %}
+                                bg-warning
+                            {% else %}
+                                bg-info
+                            {% endif %}">
+                              {{ payment.status|title }}
+                            </span>
+                          </td>
+                          <td>{{ payment.transaction_date|date:'Y-m-d' }}</td>
+                          <td>
+                            <button class="btn btn-sm btn-primary view-payment-details" data-payment-id="{{ payment.id }}" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                              <i class="las la-eye"></i> Details
+                            </button>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="8" class="text-center">No payments found</td>
+                        </tr>
+                      {% endfor %}
                     </tbody>
                   </table>
                 </div>
@@ -74,29 +143,95 @@
         <!-- end row -->
       </div>
       <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
-
+      <!-- Footer -->
       {% include 'footer.html' %}
-      <!-- end footer -->
     </div>
     <!-- end page content -->
   </div>
   <!-- end page-wrapper -->
-{% endblock %}
 
-<!-- Javascript -->
+  <!-- Payment Details Modal -->
+  <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="paymentModalLabel">Payment Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="paymentContent">
+          <!-- Content will be loaded via AJAX -->
+          <div class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
 
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+  <script>
+    // Initialize datatable
+    document.addEventListener('DOMContentLoaded', function () {
+      new DataTable('#paymentsTable', {
+        responsive: true,
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        pageLength: 10
+      })
+    
+      // Auto-dismiss alerts
+      setTimeout(function () {
+        let alerts = document.querySelectorAll('.alert-auto-dismiss')
+        alerts.forEach((alert) => {
+          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3'
+          alert.style.opacity = '0'
+          setTimeout(() => alert.remove(), 300)
+        })
+      }, 3000)
+    
+      // Payment details modal
+      document.querySelectorAll('.view-payment-details').forEach((button) => {
+        button.addEventListener('click', function () {
+          const paymentId = this.getAttribute('data-payment-id')
+          const modalContent = document.getElementById('paymentContent')
+    
+          // Show loading spinner
+          modalContent.innerHTML = `
+                    <div class="text-center">
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  `
+    
+          // Fetch payment details via AJAX
+          fetch(`/adminside/payment_details_content/${paymentId}/`)
+            .then((response) => response.text())
+            .then((html) => {
+              modalContent.innerHTML = html
+            })
+            .catch((error) => {
+              modalContent.innerHTML = `
+            <div class="alert alert-danger">
+                Error loading details: ${error.message}
+                <br>Please check console for details.
+            </div>
+        `
+              console.error('Error:', error)
+            })
+        })
+      })
+    })
+  </script>
 {% endblock %}
-<!-- end body -->

@@ -70,13 +70,23 @@ urlpatterns = [
     path('display_orders/',display_orders,name='display_orders'),
     path('order_details_content/<int:order_id>/details/', order_details_content, name='order_details_content'),
 
+    # Shipping URLs
+    path('shipping_management/', shipping_management, name='shipping_management'),
+    path('shipping_details_content/<int:order_id>/', shipping_details_content, name='shipping_details_content'),
+    path('update_shipping_status/<int:order_id>/', update_shipping_status, name='update_shipping_status'),
+    
+    # Cart URLs
     path('display_cart/', display_cart, name='display_cart'),
     path('display_cart/user/<int:user_id>/', display_cart, name='admin_user_cart'),
     
+    # Wishlist URLs
     path('display_wishlist/', display_wishlist, name='display_wishlist'),
     path('display_wishlist/user/<int:user_id>/', display_wishlist, name='admin_user_wishlist'),
     
-    path('display_payment/',display_payment,name='display_payment'),
+    # Payment URLs
+    path('payment_management/', payment_management, name='display_payment'),
+    path('payment_details_content/<int:payment_id>/', payment_details_content, name='payment_details_content'),
+    path('update_payment_status/<int:payment_id>/', update_payment_status, name='update_payment_status'),
     
     # Report URLs
     path('report_FBT/',report_FBT,name='report_FBT'),

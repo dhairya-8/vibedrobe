@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Shipping Management | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <!-- App favicon -->
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
+  <!-- App css -->
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    .modal-lg {
+      max-width: 90%;
+    }
+    .shipping-details-table th {
+      background-color: #f8f9fa;
+    }
+    .shipping-details-table td,
+    .shipping-details-table th {
+      padding: 0.75rem;
+      vertical-align: middle;
+    }
+    .status-filter {
+      margin-bottom: 20px;
+    }
+    .shipping-badge {
+      font-size: 0.85em;
+      padding: 0.35em 0.65em;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-wrapper">
+    <!-- Page Content -->
+    <div class="page-content">
+      <div class="container-xxl">
+        {% include 'custom_alerts.html' with position='inline' %}
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Shipping Management</h4>
+                  </div>
+                  <!-- end col -->
+                </div> <!-- end row -->
+              </div>
+              <!-- end card-header -->
+              <div class="card-body pt-0">
+                <!-- Status Filter -->
+                <div class="status-filter mb-3">
+                  <div class="btn-group" role="group">
+                    <a href="?status=all" class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">All</a>
+                    <a href="?status=confirm" class="btn btn-outline-primary {% if status_filter == 'confirm' %}active{% endif %}">To Confirm</a>
+                    <a href="?status=shipped" class="btn btn-outline-primary {% if status_filter == 'shipped' %}active{% endif %}">Shipped</a>
+                    <a href="?status=delivered" class="btn btn-outline-primary {% if status_filter == 'delivered' %}active{% endif %}">Delivered</a>
+                  </div>
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table" id="shippingTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Order Date</th>
+                        <th>Shipping Status</th>
+                        <th>Tracking #</th>
+                        <th>Expected Delivery</th>
+                        <th>Shipping Address</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in orders %}
+                        {% with order.shipping_set.first as shipping %}
+                        <tr>
+                          <td>{{ order.order_number }}</td>
+                          <td>{{ order.user_id.get_full_name|default:order.user_id.username }}</td>
+                          <td>{{ order.order_date|date:'Y-m-d H:i' }}</td>
+                          <td>
+                            <span class="badge shipping-badge 
+                            {% if shipping.shipping_status == 'delivered' %}
+                                bg-success
+                            {% elif shipping.shipping_status == 'shipped' %}
+                                bg-info
+                            {% else %}
+                                bg-warning
+                            {% endif %}">
+                              {{ shipping.get_shipping_status_display }}
+                            </span>
+                          </td>
+                          <td>{{ shipping.tracking_number|default:"Not assigned" }}</td>
+                          <td>{{ shipping.excepted_delivery|date:'Y-m-d'|default:"Not set" }}</td>
+                          <td>
+                            {% with order.order_address_set.first as address %}
+                              {{ address.city }}, {{ address.state }}
+                            {% endwith %}
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-primary manage-shipping" data-order-id="{{ order.id }}" data-bs-toggle="modal" data-bs-target="#shippingModal">
+                              <i class="las la-shipping-fast"></i> Manage
+                            </button>
+                          </td>
+                        </tr>
+                        {% endwith %}
+                      {% empty %}
+                        <tr>
+                          <td colspan="8" class="text-center">No orders found</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- end card-body -->
+            </div>
+            <!-- end card -->
+          </div> <!-- end col -->
+        </div>
+        <!-- end row -->
+      </div>
+      <!-- container -->
+      <!-- Footer -->
+      {% include 'footer.html' %}
+    </div>
+    <!-- end page content -->
+  </div>
+  <!-- end page-wrapper -->
+
+  <!-- Shipping Management Modal -->
+  <div class="modal fade" id="shippingModal" tabindex="-1" aria-labelledby="shippingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="shippingModalLabel">Shipping Management</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="shippingContent">
+          <!-- Content will be loaded via AJAX -->
+          <div class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize datatable
+    new DataTable('#shippingTable', {
+      responsive: true,
+      dom: '<"top"f>rt<"bottom"lip><"clear">',
+      pageLength: 10
+    })
+  
+    // Auto-dismiss alerts
+    setTimeout(function () {
+      let alerts = document.querySelectorAll('.alert-auto-dismiss')
+      alerts.forEach((alert) => {
+        alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3'
+        alert.style.opacity = '0'
+        setTimeout(() => alert.remove(), 300)
+      })
+    }, 3000)
+  
+    // Shipping management modal
+    document.querySelectorAll('.manage-shipping').forEach((button) => {
+      button.addEventListener('click', function () {
+        const orderId = this.getAttribute('data-order-id')
+        const modalContent = document.getElementById('shippingContent')
+  
+        // Show loading spinner
+        modalContent.innerHTML = `
+                  <div class="text-center">
+                    <div class="spinner-border" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                `
+  
+        // Fetch shipping details via AJAX
+        fetch(`/adminside/shipping_details_content/${orderId}/`)
+          .then((response) => response.text())
+          .then((html) => {
+            modalContent.innerHTML = html
+            
+            // Add form submission handler
+            const shippingForm = document.getElementById('shippingForm')
+            if (shippingForm) {
+              shippingForm.addEventListener('submit', function(e) {
+                // No need for custom handling - let the form submit normally
+                // The view will redirect back to shipping management with a message
+              })
+            }
+          })
+          .catch((error) => {
+            modalContent.innerHTML = `
+          <div class="alert alert-danger">
+              Error loading details: ${error.message}
+              <br>Please check console for details.
+          </div>
+      `
+            console.error('Error:', error)
+          })
+      })
+    })
+  })
+</script>
+{% endblock %}

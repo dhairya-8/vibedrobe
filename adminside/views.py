@@ -1356,13 +1356,41 @@ def display_user(request):
     users = User.objects.all().order_by('-created_at')
     return render(request, 'display_user.html', {'users': users})
 
-@admin_login_required
+@transaction.atomic
 def delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
-    username = user.username
-    user.delete()
-    messages.success(request, f'User {username} has been deleted.')
-    return redirect('display_user')
+
+    try:
+        # Delete dependent data first (child → parent order)
+        Review.objects.filter(user_id=user).delete()
+        RecentlyViewed.objects.filter(user_id=user).delete()
+        Wishlist.objects.filter(user_id=user).delete()
+
+        # Carts
+        carts = Cart.objects.filter(user_id=user)
+        Cart_Items.objects.filter(cart_id__in=carts).delete()
+        carts.delete()
+
+        # Orders
+        orders = Order_Master.objects.filter(user_id=user)
+        Order_Details.objects.filter(order_id__in=orders).delete()
+        Order_Address.objects.filter(order_id__in=orders).delete()
+        Shipping.objects.filter(order_id__in=orders).delete()
+        Payment.objects.filter(order_id__in=orders).delete()
+        orders.delete()
+
+        # Addresses
+        User_Address.objects.filter(user_id=user).delete()
+
+        # Finally delete the user
+        user.delete()
+
+        messages.success(request, f"User {user.username} and all related data have been deleted successfully.")
+
+    except Exception as e:
+        messages.error(request, f"Error deleting user {user.username}: {str(e)}")
+
+    return redirect('display_user')  # adjust to your users list page
 
 @admin_login_required
 def toggle_user_status(request, user_id):
@@ -1373,6 +1401,7 @@ def toggle_user_status(request, user_id):
     messages.success(request, f'User {user.username} has been {status}.')
     return redirect('display_user')
 
+# ============================= Order and Shipping Views =============================
 @admin_login_required
 def display_orders(request):
     orders = Order_Master.objects.all().order_by('-order_date')
@@ -1390,7 +1419,85 @@ def order_details_content(request, order_id):
     }
     return render(request, 'order_details_content.html', context)
 
+@admin_login_required
+def shipping_management(request):
+    # Get filter parameter if exists
+    status_filter = request.GET.get('status', 'all')
+    
+    # Get all orders with shipping information
+    orders = Order_Master.objects.all().prefetch_related('shipping_set')
+    
+    # Apply filter if needed
+    if status_filter != 'all':
+        orders = orders.filter(shipping__shipping_status=status_filter)
+    
+    context = {
+        'orders': orders,
+        'status_filter': status_filter,
+    }
+    return render(request, 'display_shipping.html', context)
 
+@admin_login_required
+def shipping_details_content(request, order_id):
+    order = get_object_or_404(Order_Master, id=order_id)
+    
+    # Get or create shipping record
+    shipping, created = Shipping.objects.get_or_create(order_id=order)
+    
+    context = {
+        'order': order,
+        'shipping': shipping,
+    }
+    return render(request, 'partials/shipping_details_content.html', context)
+
+@admin_login_required
+def update_shipping_status(request, order_id):
+    if request.method == 'POST':
+        order = get_object_or_404(Order_Master, id=order_id)
+        shipping = get_object_or_404(Shipping, order_id=order)
+        
+        new_status = request.POST.get('shipping_status')
+        tracking_number = request.POST.get('tracking_number', '')
+        excepted_delivery = request.POST.get('excepted_delivery', '')
+        delivery_notes = request.POST.get('delivery_notes', '')
+        
+        # Update shipping status
+        shipping.shipping_status = new_status
+        
+        # Set dates based on status changes
+        if new_status == 'shipped' and shipping.shipping_status != 'shipped':
+            shipping.shipped_date = timezone.now()
+        elif new_status == 'delivered' and shipping.shipping_status != 'delivered':
+            shipping.delivered_date = timezone.now()
+        
+        # Update other fields if provided
+        if tracking_number:
+            shipping.tracking_number = tracking_number
+        
+        if excepted_delivery:
+            shipping.excepted_delivery = excepted_delivery
+            
+        if delivery_notes:
+            shipping.delivery_notes = delivery_notes
+        
+        shipping.save()
+        
+        # Also update the main order status if needed
+        if new_status == 'delivered':
+            order.status = 'delivered'
+            order.save()
+        elif new_status == 'shipped':
+            if order.status != 'delivered':  # Only update if not already delivered
+                order.status = 'shipped'
+                order.save()
+        
+        messages.success(request, f'Shipping status for order #{order.order_number} updated successfully!')
+        return redirect('shipping_management')
+    
+    messages.error(request, 'Invalid request method.')
+    return redirect('shipping_management')
+
+# ============================= Cart and Wishlist Views =============================
 @admin_login_required
 def display_cart(request, user_id=None):
     # If specific user_id is provided, show their cart
@@ -1454,10 +1561,79 @@ def display_wishlist(request, user_id=None):
     
     return render(request, 'display_wishlist.html', context)
 
-# Miscellaneous Views, PENDING
+# ============================ Payment and Reports Views =============================
 
-def display_payment(request):
-    return render(request, 'display_payment.html')
+def payment_management(request):
+    # Get filter parameters
+    status_filter = request.GET.get('status', 'all')
+    search_query = request.GET.get('search', '')
+    
+    # Get all payments with related data
+    payments = Payment.objects.all().select_related('order_id', 'user_id')
+    
+    # Apply status filter if needed
+    if status_filter != 'all':
+        payments = payments.filter(status=status_filter)
+    
+    # Apply search filter if needed
+    if search_query:
+        payments = payments.filter(
+            Q(payment_id__icontains=search_query) |
+            Q(order_id__order_number__icontains=search_query) |
+            Q(user_id__email__icontains=search_query) |
+            Q(user_id__first_name__icontains=search_query) |
+            Q(user_id__last_name__icontains=search_query)
+        )
+    
+    context = {
+        'payments': payments,
+        'status_filter': status_filter,
+        'search_query': search_query,
+    }
+    return render(request, 'display_payment.html', context)
+
+def payment_details_content(request, payment_id):
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    context = {
+        'payment': payment,
+    }
+    return render(request, 'partials/payment_details_content.html', context)
+
+def update_payment_status(request, payment_id):
+    if request.method == 'POST':
+        payment = get_object_or_404(Payment, id=payment_id)
+        
+        new_status = request.POST.get('payment_status')
+        refund_amount = request.POST.get('refund_amount', '')
+        refund_reason = request.POST.get('refund_reason', '')
+        failure_reason = request.POST.get('failure_reason', '')
+        
+        # Update payment status
+        payment.status = new_status
+        
+        # Handle refund if applicable
+        if new_status == 'refunded' and refund_amount:
+            payment.refund_amount = refund_amount
+            if refund_reason:
+                payment.refund_reason = refund_reason
+        
+        # Handle failure reason
+        if new_status == 'failed' and failure_reason:
+            payment.failure_reason = failure_reason
+        
+        payment.save()
+        
+        # Also update the main order status if needed
+        if new_status in ['failed', 'refunded']:
+            payment.order_id.status = 'cancelled'
+            payment.order_id.save()
+        
+        messages.success(request, f'Payment status for #{payment.payment_id} updated successfully!')
+        return redirect('payment_management')
+    
+    messages.error(request, 'Invalid request method.')
+    return redirect('payment_management')
 
 def report_FBT(request):
     return render(request, 'report_FBT.html')

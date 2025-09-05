@@ -1,0 +1,104 @@
+<div class="shipping-details">
+  <h4>Order #{{ order.order_number }}</h4>
+  
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <h5>Customer Information</h5>
+      <p>
+        <strong>Name:</strong> {{ order.user_id.get_full_name|default:order.user_id.username }}<br>
+        <strong>Email:</strong> {{ order.user_id.email }}<br>
+        <strong>Phone:</strong> 
+        {% with order.order_address_set.first as address %}
+          {{ address.phone }}
+        {% endwith %}
+      </p>
+    </div>
+    <div class="col-md-6">
+      <h5>Shipping Address</h5>
+      <p>
+        {% with order.order_address_set.first as address %}
+          <strong>{{ address.full_name }}</strong><br>
+          {{ address.address_line_1 }}<br>
+          {% if address.address_line_2 %}{{ address.address_line_2 }}<br>{% endif %}
+          {{ address.city }}, {{ address.state }} {{ address.pincode }}
+        {% endwith %}
+      </p>
+    </div>
+  </div>
+  
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5>Order Items</h5>
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Quantity</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.order_details_set.all %}
+            <tr>
+              <td>{{ item.product_name }}</td>
+              <td>{{ item.product_sku }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>₹{{ item.unit_price }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <h5>Shipping Information</h5>
+      <form id="shippingForm" method="post" action="{% url 'update_shipping_status' order.id %}">
+        {% csrf_token %}
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="shipping_status" class="form-label">Shipping Status</label>
+            <select class="form-select" id="shipping_status" name="shipping_status">
+              <option value="confirm" {% if shipping.shipping_status == 'confirm' %}selected{% endif %}>Confirm</option>
+              <option value="shipped" {% if shipping.shipping_status == 'shipped' %}selected{% endif %}>Shipped</option>
+              <option value="delivered" {% if shipping.shipping_status == 'delivered' %}selected{% endif %}>Delivered</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="tracking_number" class="form-label">Tracking Number</label>
+            <input type="text" class="form-control" id="tracking_number" name="tracking_number" 
+                   value="{{ shipping.tracking_number|default:'' }}" placeholder="Enter tracking number">
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="excepted_delivery" class="form-label">Expected Delivery Date</label>
+            <input type="date" class="form-control" id="excepted_delivery" name="excepted_delivery" 
+                   value="{{ shipping.excepted_delivery|date:'Y-m-d'|default:'' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Dates</label>
+            <div>
+              {% if shipping.shipped_date %}
+                <small class="text-muted">Shipped on: {{ shipping.shipped_date|date:'Y-m-d H:i' }}</small><br>
+              {% endif %}
+              {% if shipping.delivered_date %}
+                <small class="text-muted">Delivered on: {{ shipping.delivered_date|date:'Y-m-d H:i' }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="delivery_notes" class="form-label">Delivery Notes</label>
+          <textarea class="form-control" id="delivery_notes" name="delivery_notes" rows="3">{{ shipping.delivery_notes|default:'' }}</textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Update Shipping</button>
+      </form>
+    </div>
+  </div>
+</div>

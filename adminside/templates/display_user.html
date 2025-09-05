@@ -14,6 +14,26 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+  <style>
+    .profile-pic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;       /* makes it circular */
+  overflow: hidden;         /* hides extra parts */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f4f4;      /* optional, looks clean if img has transparent parts */
+}
+
+.profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;        /* 👈 KEY: crops instead of stretching */
+}
+
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -62,13 +82,16 @@
                       {% for user in users %}
                       <tr>
                         <td>{{ user.id }}</td>
-                        <td>
-                          {% if user.profile_image %}
-                            <img src="{{ user.profile_image.url }}" alt="profile" class="rounded-circle avatar-sm" height="50" width="50">
-                          {% else %}
-                            <img src="{% static 'admin/assets/images/users/avatar-1.jpg' %}" alt="profile" class="rounded-circle avatar-sm" width="50">
-                          {% endif %}
-                        </td>
+<td>
+  <div class="profile-pic">
+    {% if user.profile_image %}
+      <img src="{{ user.profile_image.url }}" alt="profile">
+    {% else %}
+      <img src="{% static 'admin/assets/images/users/default_pic.png' %}" alt="profile">
+    {% endif %}
+  </div>
+</td>
+
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.first_name }} {{ user.last_name }}</td>
@@ -82,11 +105,21 @@
                           {% endif %}
                         </td>
                         <td>{{ user.created_at|date:"Y-m-d" }}</td>
-                        <td>
-                           <a href="{% url 'toggle_user_status' user.id %}" class="me-2" title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
-                            <i class="las la-power-off text-{% if user.is_active %}warning{% else %}success{% endif %} fs-18"></i>
-                          </a> 
-                        </td>
+<td>
+  <a href="{% url 'toggle_user_status' user.id %}" class="me-2" title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}">
+    <i class="las la-power-off text-{% if user.is_active %}warning{% else %}success{% endif %} fs-18"></i>
+  </a> 
+
+  <!-- Delete Button -->
+  <a href="#" 
+     class="text-danger delete-btn" 
+     data-bs-toggle="modal" 
+     data-bs-target="#deleteUserModal"
+     data-user-id="{{ user.id }}" 
+     data-username="{{ user.username }}">
+     <i class="las la-trash fs-18"></i>
+  </a>
+</td>
                       </tr>
                       {% empty %}
                       <tr>
@@ -95,6 +128,33 @@
                       {% endfor %}
                     </tbody>
                   </table>
+
+                  <!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteUserModalLabel">Confirm Permanent Deletion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">
+          Are you sure you want to permanently delete <strong id="modal-username"></strong>? <br>
+          <span class="text-danger fw-bold">This will delete all records associated with this user and cannot be undone.</span>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <form id="deleteUserForm" method="POST" action="">
+          {% csrf_token %}
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
                 </div>
               </div>
               <!-- end card-body -->
@@ -121,23 +181,41 @@
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
   
   <script>
-    // Initialize datatable
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+      // Initialize datatable
       new DataTable('#usersTable', {
         responsive: true,
         dom: '<"top"f>rt<"bottom"lip><"clear">',
         pageLength: 10
       });
-      
-      // Alternative JavaScript approach to hide messages
+
+      // Auto dismiss alerts
       setTimeout(function() {
         let alerts = document.querySelectorAll('.alert-auto-dismiss');
         alerts.forEach(alert => {
           alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3';
           alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 300); // Remove after fade out
+          setTimeout(() => alert.remove(), 300);
         });
-      }, 3000); // 5 seconds
+      }, 3000);
+
+      // Handle delete confirmation modal
+      const deleteButtons = document.querySelectorAll('.delete-btn');
+      const modalUsername = document.getElementById('modal-username');
+      const deleteForm = document.getElementById('deleteUserForm');
+
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+          const userId = this.getAttribute('data-user-id');
+          const username = this.getAttribute('data-username');
+
+          // Show username inside modal text
+          modalUsername.textContent = username;
+
+          // Dynamically set form action (using Django reverse)
+          deleteForm.action = "{% url 'delete_user' 0 %}".replace("0", userId);
+        });
+      });
     });
   </script>
 {% endblock %}

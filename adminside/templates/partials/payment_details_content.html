@@ -1,0 +1,142 @@
+<div class="payment-details">
+  <h4>Payment #{{ payment.payment_id }}</h4>
+  
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <h5>Payment Information</h5>
+      <p>
+        <strong>Payment ID:</strong> {{ payment.payment_id }}<br>
+        <strong>Amount:</strong> ₹{{ payment.amount }}<br>
+        <strong>Status:</strong> 
+        <span class="badge 
+          {% if payment.status == 'success' %}bg-success
+          {% elif payment.status == 'failed' %}bg-danger
+          {% elif payment.status == 'refunded' %}bg-warning
+          {% else %}bg-info{% endif %}">
+          {{ payment.status|title }}
+        </span><br>
+        <strong>Payment Method:</strong> {{ payment.get_payment_method_display }}<br>
+        <strong>Payment Gateway:</strong> {{ payment.payment_gateway|title }}<br>
+        <strong>Transaction Date:</strong> {{ payment.transaction_date|date:'Y-m-d H:i' }}<br>
+        {% if payment.refund_amount > 0 %}
+          <strong>Refund Amount:</strong> ₹{{ payment.refund_amount }}<br>
+          {% if payment.refund_reason %}
+            <strong>Refund Reason:</strong> {{ payment.refund_reason }}<br>
+          {% endif %}
+        {% endif %}
+        {% if payment.failure_reason %}
+          <strong>Failure Reason:</strong> {{ payment.failure_reason }}<br>
+        {% endif %}
+      </p>
+    </div>
+    <div class="col-md-6">
+      <h5>Order Information</h5>
+      <p>
+        <strong>Order Number:</strong> {{ payment.order_id.order_number }}<br>
+        <strong>Order Status:</strong> 
+        <span class="badge 
+          {% if payment.order_id.status == 'delivered' %}bg-success
+          {% elif payment.order_id.status == 'cancelled' %}bg-danger
+          {% elif payment.order_id.status == 'shipped' %}bg-info
+          {% else %}bg-warning{% endif %}">
+          {{ payment.order_id.status|title }}
+        </span><br>
+        <strong>Order Date:</strong> {{ payment.order_id.order_date|date:'Y-m-d H:i' }}<br>
+        <strong>Order Total:</strong> ₹{{ payment.order_id.total_amount }}<br>
+      </p>
+      
+      <h5>Customer Information</h5>
+      <p>
+        <strong>Name:</strong> {{ payment.user_id.get_full_name|default:payment.user_id.username }}<br>
+        <strong>Email:</strong> {{ payment.user_id.email }}<br>
+        <strong>Contact:</strong> {{ payment.user_id.contact|default:"Not provided" }}<br>
+      </p>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <h5>Gateway Information</h5>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <strong>Gateway Order ID:</strong> {{ payment.gateway_order_id|default:"Not available" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Gateway Payment ID:</strong> {{ payment.gateway_payment_id|default:"Not available" }}
+        </div>
+        <div class="col-md-4">
+          <strong>Gateway Signature:</strong> {{ payment.gateway_signature|default:"Not available"|truncatechars:20 }}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% if payment.status != 'refunded' and payment.status != 'failed' %}
+  <div class="row mt-4">
+    <div class="col-12">
+      <h5>Update Payment Status</h5>
+      <form id="paymentForm" method="post" action="{% url 'update_payment_status' payment.id %}">
+        {% csrf_token %}
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="payment_status" class="form-label">Payment Status</label>
+            <select class="form-select" id="payment_status" name="payment_status">
+              <option value="success" {% if payment.status == 'success' %}selected{% endif %}>Success</option>
+              <option value="failed" {% if payment.status == 'failed' %}selected{% endif %}>Failed</option>
+              <option value="refunded" {% if payment.status == 'refunded' %}selected{% endif %}>Refunded</option>
+            </select>
+          </div>
+        </div>
+        
+        <div id="refundFields" class="row mb-3" style="display: none;">
+          <div class="col-md-6">
+            <label for="refund_amount" class="form-label">Refund Amount</label>
+            <input type="number" class="form-control" id="refund_amount" name="refund_amount" 
+                   step="0.01" min="0" max="{{ payment.amount }}" value="{{ payment.amount }}">
+          </div>
+          <div class="col-md-6">
+            <label for="refund_reason" class="form-label">Refund Reason</label>
+            <textarea class="form-control" id="refund_reason" name="refund_reason" rows="2" placeholder="Reason for refund"></textarea>
+          </div>
+        </div>
+        
+        <div id="failureFields" class="row mb-3" style="display: none;">
+          <div class="col-12">
+            <label for="failure_reason" class="form-label">Failure Reason</label>
+            <textarea class="form-control" id="failure_reason" name="failure_reason" rows="2" placeholder="Reason for failure"></textarea>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Update Payment Status</button>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusSelect = document.getElementById('payment_status');
+      const refundFields = document.getElementById('refundFields');
+      const failureFields = document.getElementById('failureFields');
+      
+      function toggleFields() {
+        if (statusSelect.value === 'refunded') {
+          refundFields.style.display = 'flex';
+          failureFields.style.display = 'none';
+        } else if (statusSelect.value === 'failed') {
+          refundFields.style.display = 'none';
+          failureFields.style.display = 'block';
+        } else {
+          refundFields.style.display = 'none';
+          failureFields.style.display = 'none';
+        }
+      }
+      
+      // Initial toggle
+      toggleFields();
+      
+      // Add event listener
+      statusSelect.addEventListener('change', toggleFields);
+    });
+  </script>
+  {% endif %}
+</div>
