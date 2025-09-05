@@ -8,10 +8,10 @@ from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.conf import settings
 import random, string, os, json
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F, Prefetch
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models.functions import TruncDay
+from django.db.models.functions import TruncDay, Coalesce 
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_GET
 from datetime import datetime
@@ -26,53 +26,69 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
 
+from django.db.models import Sum, Count, F, Q, Avg
+from django.db.models.functions import TruncDay, Coalesce
+from django.utils import timezone
+from datetime import timedelta
+
 @admin_login_required
 def index(request):
     today = timezone.now().date()
     last_week = today - timedelta(days=7)
     last_month = today - timedelta(days=30)
     
-    # Order Statistics
+    # Order Statistics - Only count completed orders for revenue
     orders_today = Order_Master.objects.filter(order_date__date=today).count()
     orders_week = Order_Master.objects.filter(order_date__date__gte=last_week).count()
+    
+    # Only count confirmed, shipped, and delivered orders for revenue
     revenue_today = Order_Master.objects.filter(
-        order_date__date=today
+        order_date__date=today,
+        status__in=['confirmed', 'shipped', 'delivered']
     ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
     revenue_week = Order_Master.objects.filter(
-        order_date__date__gte=last_week
+        order_date__date__gte=last_week,
+        status__in=['confirmed', 'shipped', 'delivered']
     ).aggregate(total=Sum('total_amount'))['total'] or 0
 
+    # Calculate average order value
+    avg_order_value_week = Order_Master.objects.filter(
+        order_date__date__gte=last_week,
+        status__in=['confirmed', 'shipped', 'delivered']
+    ).aggregate(avg=Avg('total_amount'))['avg'] or 0
+
     # Inventory Alerts
-    low_stock = Product_Variants.objects.filter(stock_quantity__lt=10).count()
+    low_stock = Product_Variants.objects.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
     out_of_stock = Product_Variants.objects.filter(stock_quantity=0).count()
 
     # Recent Activity
     recent_orders = Order_Master.objects.select_related('user_id').order_by('-order_date')[:5]
-    recent_users = User.objects.order_by('-created_at')[:5]
+    recent_users = User.objects.filter(created_at__date__gte=last_week)
     
-    # Product Performance
+    # Product Performance - Use Coalesce to handle None values
     top_products = Product.objects.annotate(
-        total_sold=Sum('variants__order_details__quantity')
+        total_sold=Coalesce(Sum('variants__order_details__quantity'), 0)
     ).order_by('-total_sold')[:5]
 
-    # Sales Trend Data (Last 7 days)
-    sales_data = list(
-        Order_Master.objects.filter(
-            order_date__date__gte=last_week
-        ).annotate(
-            day=TruncDay('order_date')
-        ).values('day').annotate(
-            total=Sum('total_amount')
-        ).order_by('day')
-    )
+    # Sales Trend Data (Last 7 days) - Only completed orders
+    sales_data = []
+    orders_count_data = []
+    week_days = []
     
-    # Fill in missing days with 0 values
-    sales_trend = []
     for i in range(7):
         date = last_week + timedelta(days=i)
-        day_data = next((item for item in sales_data 
-                        if item['day'].date() == date), {'day': date, 'total': 0})
-        sales_trend.append(float(day_data['total']))
+        day_data = Order_Master.objects.filter(
+            order_date__date=date,
+            status__in=['confirmed', 'shipped', 'delivered']
+        ).aggregate(
+            revenue=Sum('total_amount'),
+            orders=Count('id')
+        )
+        
+        sales_data.append(float(day_data['revenue'] or 0))
+        orders_count_data.append(day_data['orders'] or 0)
+        week_days.append(date.strftime('%a'))  # Get abbreviated day name
 
     # Order Status Distribution
     status_distribution = Order_Master.objects.values(
@@ -84,11 +100,62 @@ def index(request):
     status_labels = [item['status'].title() for item in status_distribution]
     status_values = [item['count'] for item in status_distribution]
 
+    # Revenue by Category (Last 30 days)
+    category_revenue = Order_Details.objects.filter(
+        order_id__order_date__gte=last_month,
+        order_id__status__in=['confirmed', 'shipped', 'delivered']
+    ).values(
+        'product_variant_id__product_id__subcategory_id__category_id__name'
+    ).annotate(
+        total_revenue=Sum(F('quantity') * F('unit_price'))
+    ).order_by('-total_revenue')[:5]
+    
+    category_labels = [item['product_variant_id__product_id__subcategory_id__category_id__name'] for item in category_revenue]
+    category_values = [float(item['total_revenue'] or 0) for item in category_revenue]
+
+    # Customer Registration Trend (Last 7 days)
+    user_trend = []
+    user_days = []
+    
+    for i in range(7):
+        date = last_week + timedelta(days=i)
+        day_users = User.objects.filter(created_at__date=date).count()
+        user_trend.append(day_users)
+        user_days.append(date.strftime('%a'))
+
+    # Top Brands by Revenue
+    top_brands = Order_Details.objects.filter(
+        order_id__order_date__gte=last_month,
+        order_id__status__in=['confirmed', 'shipped', 'delivered']
+    ).values(
+        'product_variant_id__product_id__brand_id__name'
+    ).annotate(
+        total_revenue=Sum(F('quantity') * F('unit_price')),
+        total_units=Sum('quantity')
+    ).order_by('-total_revenue')[:5]
+    
+    brand_labels = [item['product_variant_id__product_id__brand_id__name'] for item in top_brands]
+    brand_revenue = [float(item['total_revenue'] or 0) for item in top_brands]
+    brand_units = [item['total_units'] for item in top_brands]
+
+    # Payment Method Distribution
+    payment_methods = Order_Master.objects.values(
+        'mode_of_payment'
+    ).annotate(
+        count=Count('id'),
+        revenue=Sum('total_amount')
+    ).order_by('-revenue')
+    
+    payment_labels = [item['mode_of_payment'].upper() for item in payment_methods]
+    payment_counts = [item['count'] for item in payment_methods]
+    payment_revenue = [float(item['revenue'] or 0) for item in payment_methods]
+
     context = {
         'orders_today': orders_today,
         'orders_week': orders_week,
         'revenue_today': revenue_today,
         'revenue_week': revenue_week,
+        'avg_order_value_week': avg_order_value_week,
         'low_stock': low_stock,
         'out_of_stock': out_of_stock,
         'recent_orders': recent_orders,
@@ -96,10 +163,21 @@ def index(request):
         'top_products': top_products,
         'today': today,
         'last_week': last_week,
-        'sales_trend': sales_trend,
+        'sales_trend': sales_data,
+        'orders_count_trend': orders_count_data,
         'status_labels': status_labels,
         'status_values': status_values,
-        'week_days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        'week_days': week_days,
+        'category_labels': category_labels,
+        'category_values': category_values,
+        'user_trend': user_trend,
+        'user_days': user_days,
+        'brand_labels': brand_labels,
+        'brand_revenue': brand_revenue,
+        'brand_units': brand_units,
+        'payment_labels': payment_labels,
+        'payment_counts': payment_counts,
+        'payment_revenue': payment_revenue,
     }
     return render(request, 'index.html', context)
 
@@ -1532,31 +1610,57 @@ def display_cart(request, user_id=None):
     
     return render(request, 'display_cart.html', context)
 
-@user_passes_test(lambda u: u.is_staff)
-def display_wishlist(request, user_id=None):
-    # If specific user_id is provided, show their wishlist
-    if user_id:
-        user = get_object_or_404(User, id=user_id)
-        wishlists = Wishlist.objects.filter(user_id=user)
-    else:
-        # Show all wishlists if no user specified
-        wishlists = Wishlist.objects.all()
+
+@admin_login_required
+def display_wishlist(request):
+    # Get all users with wishlists and their items
+    users_with_wishlists = User.objects.filter(
+        wishlist__isnull=False
+    ).distinct().prefetch_related(
+        Prefetch(
+            'wishlist_set',
+            queryset=Wishlist.objects.select_related('product_id').order_by('-added_at'),
+            to_attr='wishlist_items'
+        )
+    ).annotate(wishlist_count=Count('wishlist'))
     
-    # Group by user
-    wishlist_data = {}
-    for wish in wishlists.select_related('user_id', 'product_id'):
-        if wish.user_id not in wishlist_data:
-            wishlist_data[wish.user_id] = {
-                'user': wish.user_id,
-                'items': [],
-                'count': 0
-            }
-        wishlist_data[wish.user_id]['items'].append(wish)
-        wishlist_data[wish.user_id]['count'] += 1
+    # Prepare data for template
+    wishlist_data = []
+    for user in users_with_wishlists:
+        wishlist_data.append({
+            'user': user,
+            'items': user.wishlist_items,
+            'count': user.wishlist_count,
+            
+           
+        })
     
     context = {
-        'wishlist_data': wishlist_data.values(),
-        'show_all': user_id is None
+        'wishlist_data': wishlist_data,
+        'show_all': True
+    }
+    
+    return render(request, 'display_wishlist.html', context)
+
+@admin_login_required
+def display_user_wishlist(request, user_id):
+    # Get specific user's wishlist
+    user = get_object_or_404(User, id=user_id)
+    wishlist_items = Wishlist.objects.filter(
+        user=user
+    ).select_related('product_id').order_by('-added_at')
+    
+    wishlist_data = [{
+        'user': user,
+        'items': wishlist_items,
+        'count': wishlist_items.count(),
+        'added_at' : wishlist_items.added_at      
+        
+    }]
+    
+    context = {
+        'wishlist_data': wishlist_data,
+        'show_all': False
     }
     
     return render(request, 'display_wishlist.html', context)

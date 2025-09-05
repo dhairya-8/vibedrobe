@@ -3,7 +3,6 @@ from .views import *
 
 urlpatterns = [
 
-    
     path('',index,name='index'),    
     path('index/',index,name='index'),
     path('login/',login,name='login'),
@@ -81,7 +80,7 @@ urlpatterns = [
     
     # Wishlist URLs
     path('display_wishlist/', display_wishlist, name='display_wishlist'),
-    path('display_wishlist/user/<int:user_id>/', display_wishlist, name='admin_user_wishlist'),
+    path('display_wishlist/user/<int:user_id>/', display_user_wishlist, name='display_user_wishlist'),
     
     # Payment URLs
     path('payment_management/', payment_management, name='display_payment'),

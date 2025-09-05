@@ -22,6 +22,8 @@ urlpatterns = [
     path('cart/items/update/', update_cart_item, name='update_cart_item'),
     path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
     path('remove-cart-item-drawer/<int:product_id>/<int:variant_id>/', remove_cart_item_drawer, name='remove_cart_item_drawer'),
+
+    
     path('checkout/', checkout, name='checkout'),
     path('checkout/payment-handler/', payment_handler, name='payment_handler'),
     path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
@@ -45,6 +47,10 @@ urlpatterns = [
     path('wishlist/add/<int:product_id>/', add_to_wishlist, name='add_to_wishlist'),
     path('wishlist/remove/<int:item_id>/', remove_from_wishlist, name='remove_from_wishlist'),
     path('wishlist/move-to-cart/<int:item_id>/', move_to_cart, name='move_to_cart'),
+    path('wishlist/empty/', empty_wishlist, name='empty_wishlist'),
+    
+    # ==================== Move to Wishlist URL ====================
+    path('move-to-wishlist/<int:item_id>/', move_to_wishlist, name='move_to_wishlist'),
 
     # ==================== Account Management URLs ====================
     path('account_dashboard/', account_dashboard, name='account_dashboard'), 

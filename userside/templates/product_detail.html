@@ -58,10 +58,42 @@
                 <span class="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
                 <a href="{% url 'shop' %}?brand={{ product.brand_id.id }}" class="menu-link menu-link_us-s text-uppercase fw-medium">{{ product.brand_id.name }}</a>
               </div><!-- /.breadcrumb -->  
-              <div class="product-single__prev-next d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                <a href="#" class="text-uppercase fw-medium"><svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_md" /></svg><span class="menu-link menu-link_us-s">Prev</span></a>
-                <a href="#" class="text-uppercase fw-medium"><span class="menu-link menu-link_us-s">Next</span><svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_md" /></svg></a>
-              </div><!-- /.shop-acs -->
+
+              <!-- Replace the existing prev/next links with this code -->
+<div class="product-single__prev-next d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
+    {% if prev_product %}
+    <a href="{% url 'product_detail' prev_product.id %}" class="text-uppercase fw-medium">
+        <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+            <use href="#icon_prev_md" />
+        </svg>
+        <span class="menu-link menu-link_us-s">Prev</span>
+    </a>
+    {% else %}
+    <span class="text-uppercase fw-medium text-muted">
+        <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+            <use href="#icon_prev_md" />
+        </svg>
+        <span class="menu-link menu-link_us-s">Prev</span>
+    </span>
+    {% endif %}
+    
+    {% if next_product %}
+    <a href="{% url 'product_detail' next_product.id %}" class="text-uppercase fw-medium">
+        <span class="menu-link menu-link_us-s">Next</span>
+        <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+            <use href="#icon_next_md" />
+        </svg>
+    </a>
+    {% else %}
+    <span class="text-uppercase fw-medium text-muted">
+        <span class="menu-link menu-link_us-s">Next</span>
+        <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+            <use href="#icon_next_md" />
+        </svg>
+    </span>
+    {% endif %}
+</div><!-- /.shop-acs -->
+
             </div>
             <h1 class="product-single__name">{{ product.name }}</h1>
             <div class="product-single__rating">
@@ -345,166 +377,166 @@
     </section>
 
     {% if recently_viewed_products %}
-    <section class="products-carousel container">
-      <h2 class="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">Recently Viewed</h2>
+<section class="products-carousel container">
+  <h2 class="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">Recently Viewed</h2>
 
-      <div id="product_carousel" class="position-relative">
-        <div class="swiper-container js-swiper-slider"
-          data-settings='{
-            "autoplay": {
-              "delay": 5000
-            },
+  <div id="product_carousel" class="position-relative">
+    <div class="swiper-container js-swiper-slider"
+      data-settings='{
+        "autoplay": {
+          "delay": 5000
+        },
+        "slidesPerView": 4,
+        "slidesPerGroup": 4,
+        "effect": "none",
+        "loop": true,
+        "pagination": {
+          "el": "#product_carousel .products-pagination",
+          "type": "bullets",
+          "clickable": true
+        },
+        "navigation": {
+          "nextEl": "#product_carousel .products-carousel__next",
+          "prevEl": "#product_carousel .products-carousel__prev"
+        },
+        "breakpoints": {
+          "320": {
+            "slidesPerView": 2,
+            "slidesPerGroup": 2,
+            "spaceBetween": 14
+          },
+          "768": {
+            "slidesPerView": 3,
+            "slidesPerGroup": 3,
+            "spaceBetween": 24
+          },
+          "992": {
+            "slidesPerView": 4,
+            "slidesPerGroup": 1,
+            "spaceBetween": 30
+          }
+        }
+      }'>
+      <div class="swiper-wrapper">
+         {% for product in recently_viewed_products %}
+        <div class="swiper-slide product-card">
+          <div class="pc__img-wrapper" style="height: 400px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <a href="{% url 'product_detail' product.id %}">
+              <img loading="lazy" src="{{ product.base_image.url }}" width="330" height="400" alt="Cropped Faux leather Jacket" class="pc__img" style="width: 100%; height: 100%; object-fit: cover;">
+            </a>
+            <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
+          </div>
+
+          <div class="pc__info position-relative">
+            <p class="pc__category">{{ product.brand_id.name }}</p>
+            <h6 class="pc__title"><a href="{% url 'product_detail' product.id %}">{{ product.name|truncatechars:39 }}</a></h6>
+            <div class="product-card__price d-flex">
+              <span class="money price">₹{{ product.price }}</span>
+            </div>
+
+            <button class="pc__btn-wl position-absolute top-0 end-0 bg-transparent border-0 js-add-wishlist" title="Add To Wishlist">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+      </div><!-- /.swiper-wrapper -->
+    </div><!-- /.swiper-container js-swiper-slider -->
+
+    <div class="products-carousel__prev position-absolute top-50 d-flex align-items-center justify-content-center">
+      <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_md" /></svg>
+    </div><!-- /.products-carousel__prev -->
+    <div class="products-carousel__next position-absolute top-50 d-flex align-items-center justify-content-center">
+      <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_md" /></svg>
+    </div><!-- /.products-carousel__next -->
+
+    <div class="products-pagination mt-4 mb-5 d-flex align-items-center justify-content-center"></div>
+    <!-- /.products-pagination -->
+  </div><!-- /.position-relative -->
+
+</section>
+{% endif %}
+
+{% if related_products %}
+<section class="products-carousel container">
+  <h2 class="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">Related <strong>Products</strong></h2>
+
+  <div id="related_products" class="position-relative">
+    <div class="swiper-container js-swiper-slider"
+      data-settings='{
+        "autoplay": false,
+        "slidesPerView": 4,
+        "slidesPerGroup": 4,
+        "effect": "none",
+        "loop": true,
+        "pagination": {
+          "el": "#related_products .products-pagination",
+          "type": "bullets",
+          "clickable": true
+        },
+        "navigation": {
+          "nextEl": "#related_products .products-carousel__next",
+          "prevEl": "#related_products .products-carousel__prev"
+        },
+        "breakpoints": {
+          "320": {
+            "slidesPerView": 2,
+            "slidesPerGroup": 2,
+            "spaceBetween": 14
+          },
+          "768": {
+            "slidesPerView": 3,
+            "slidesPerGroup": 3,
+            "spaceBetween": 24
+          },
+          "992": {
             "slidesPerView": 4,
             "slidesPerGroup": 4,
-            "effect": "none",
-            "loop": true,
-            "pagination": {
-              "el": "#product_carousel .products-pagination",
-              "type": "bullets",
-              "clickable": true
-            },
-            "navigation": {
-              "nextEl": "#product_carousel .products-carousel__next",
-              "prevEl": "#product_carousel .products-carousel__prev"
-            },
-            "breakpoints": {
-              "320": {
-                "slidesPerView": 2,
-                "slidesPerGroup": 2,
-                "spaceBetween": 14
-              },
-              "768": {
-                "slidesPerView": 3,
-                "slidesPerGroup": 3,
-                "spaceBetween": 24
-              },
-              "992": {
-                "slidesPerView": 4,
-                "slidesPerGroup": 1,
-                "spaceBetween": 30
-              }
-            }
-          }'>
-          <div class="swiper-wrapper">
-             {% for product in recently_viewed_products %}
-            <div class="swiper-slide product-card">
-              <div class="pc__img-wrapper">
-                <a href="{% url 'product_detail' product.id %}">
-                  <img loading="lazy" src="{{ product.base_image.url }}" width="330" height="400" alt="Cropped Faux leather Jacket" class="pc__img">
-                </a>
-                <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
-              </div>
+            "spaceBetween": 30
+          }
+        }
+      }'>
+      <div class="swiper-wrapper">
+         {% for related_product in related_products %}
+        <div class="swiper-slide product-card">
+          <div class="pc__img-wrapper" style="height: 330px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <a href="{% url 'product_detail' related_product.id %}">
+              <img loading="lazy" src="{{ related_product.base_image.url }}" width="330" height="330" alt="{{ related_product.name }}" class="pc__img" style="width: 100%; height: 100%; object-fit: cover;">
+            </a>
+            <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
+          </div>
 
-              <div class="pc__info position-relative">
-                <p class="pc__category">{{ product.brand_id.name }}</p>
-                <h6 class="pc__title"><a href="{% url 'product_detail' product.id %}">{{ product.name|truncatechars:44 }}</a></h6>
-                <div class="product-card__price d-flex">
-                  <span class="money price">₹{{ product.price }}</span>
-                </div>
-
-                <button class="pc__btn-wl position-absolute top-0 end-0 bg-transparent border-0 js-add-wishlist" title="Add To Wishlist">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
-                </button>
-              </div>
+          <div class="pc__info position-relative">
+            <p class="pc__category">{{ related_product.brand_id.name }}</p>
+            <h6 class="pc__title"><a href="{% url 'product_detail' related_product.id %}">{{ related_product.name|truncatechars:39 }}</a></h6>
+            <div class="product-card__price d-flex">
+              <span class="money price">₹{{ related_product.price }}</span>
             </div>
-            {% endfor %}
 
-          </div><!-- /.swiper-wrapper -->
-        </div><!-- /.swiper-container js-swiper-slider -->
+            <button class="pc__btn-wl position-absolute top-0 end-0 bg-transparent border-0 js-add-wishlist" title="Add To Wishlist">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+        
+      </div><!-- /.swiper-wrapper -->
+    </div><!-- /.swiper-container js-swiper-slider -->
 
-        <div class="products-carousel__prev position-absolute top-50 d-flex align-items-center justify-content-center">
-          <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_md" /></svg>
-        </div><!-- /.products-carousel__prev -->
-        <div class="products-carousel__next position-absolute top-50 d-flex align-items-center justify-content-center">
-          <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_md" /></svg>
-        </div><!-- /.products-carousel__next -->
+    <div class="products-carousel__prev position-absolute top-50 d-flex align-items-center justify-content-center">
+      <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_md" /></svg>
+    </div><!-- /.products-carousel__prev -->
+    <div class="products-carousel__next position-absolute top-50 d-flex align-items-center justify-content-center">
+      <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_md" /></svg>
+    </div><!-- /.products-carousel__next -->
 
-        <div class="products-pagination mt-4 mb-5 d-flex align-items-center justify-content-center"></div>
-        <!-- /.products-pagination -->
-      </div><!-- /.position-relative -->
+    <div class="products-pagination mt-4 mb-5 d-flex align-items-center justify-content-center"></div>
+    <!-- /.products-pagination -->
+  </div><!-- /.position-relative -->
 
-    </section>
-    {% endif %}
-
-     {% if related_products %}
-    <section class="products-carousel container">
-      <h2 class="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">Related <strong>Products</strong></h2>
-
-      <div id="related_products" class="position-relative">
-        <div class="swiper-container js-swiper-slider"
-          data-settings='{
-            "autoplay": false,
-            "slidesPerView": 4,
-            "slidesPerGroup": 4,
-            "effect": "none",
-            "loop": true,
-            "pagination": {
-              "el": "#related_products .products-pagination",
-              "type": "bullets",
-              "clickable": true
-            },
-            "navigation": {
-              "nextEl": "#related_products .products-carousel__next",
-              "prevEl": "#related_products .products-carousel__prev"
-            },
-            "breakpoints": {
-              "320": {
-                "slidesPerView": 2,
-                "slidesPerGroup": 2,
-                "spaceBetween": 14
-              },
-              "768": {
-                "slidesPerView": 3,
-                "slidesPerGroup": 3,
-                "spaceBetween": 24
-              },
-              "992": {
-                "slidesPerView": 4,
-                "slidesPerGroup": 4,
-                "spaceBetween": 30
-              }
-            }
-          }'>
-          <div class="swiper-wrapper">
-             {% for related_product in related_products %}
-            <div class="swiper-slide product-card">
-              <div class="pc__img-wrapper">
-                <a href="{% url 'product_detail' related_product.id %}">
-                  <img loading="lazy" src="{{ related_product.base_image.url }}" width="330" height="330" alt="{{ related_product.name }}" class="pc__img">
-                </a>
-                <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
-              </div>
-
-              <div class="pc__info position-relative">
-                <p class="pc__category">{{ related_product.brand_id.name }}</p>
-                <h6 class="pc__title"><a href="{% url 'product_detail' related_product.id %}">{{ related_product.name|truncatechars:49 }}</a></h6>
-                <div class="product-card__price d-flex">
-                  <span class="money price">₹{{ related_product.price }}</span>
-                </div>
-
-                <button class="pc__btn-wl position-absolute top-0 end-0 bg-transparent border-0 js-add-wishlist" title="Add To Wishlist">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_heart" /></svg>
-                </button>
-              </div>
-            </div>
-            {% endfor %}
-            
-          </div><!-- /.swiper-wrapper -->
-        </div><!-- /.swiper-container js-swiper-slider -->
-
-        <div class="products-carousel__prev position-absolute top-50 d-flex align-items-center justify-content-center">
-          <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_prev_md" /></svg>
-        </div><!-- /.products-carousel__prev -->
-        <div class="products-carousel__next position-absolute top-50 d-flex align-items-center justify-content-center">
-          <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg"><use href="#icon_next_md" /></svg>
-        </div><!-- /.products-carousel__next -->
-
-        <div class="products-pagination mt-4 mb-5 d-flex align-items-center justify-content-center"></div>
-        <!-- /.products-pagination -->
-      </div><!-- /.position-relative -->
-
-    </section><!-- /.products-carousel container -->
-    {% endif %}
+</section><!-- /.products-carousel container -->
+{% endif %}
 </main>
 
   <div class="mb-5 pb-xl-5"></div>

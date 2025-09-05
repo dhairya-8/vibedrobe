@@ -116,6 +116,69 @@
     </div>
   </div> <!-- /.row -->
 </footer>
+
+<style>
+  /* Custom Dialog Styles for Cart Drawer */
+.custom-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100; /* Higher than cart drawer z-index */
+}
+
+.custom-dialog {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    z-index: 1101;
+}
+
+.custom-dialog h4 {
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.dialog-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dialog-buttons button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+}
+
+.btn-outline-secondary {
+    background: white;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-link {
+    background: transparent;
+    border: none;
+    color: #007bff;
+    text-decoration: underline;
+}
+</style>
+
 <!-- Cart Drawer -->
 <div class="aside aside_right overflow-hidden cart-drawer" id="cartDrawer" data-item-count="{{ cart_drawer_data.cart_items_count }}">
     
@@ -162,7 +225,7 @@
 
         <div class="qty-control position-relative">
             <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
-                   class="qty-control__number border-0 text-center">
+                   class="qty-control__number border-0 text-center" data-item-id="{{ item.id }}">
             <div class="qty-control__reduce">-</div>
             <div class="qty-control__increase">+</div>
         </div>
@@ -176,7 +239,7 @@
             </div>
 
             <!-- Remove Item -->
-            <a href="{{ item.remove_url }}" class="btn-close-xs position-absolute top-0 end-0 js-remove-item"></a>
+            <a href="{{ item.remove_url }}" class="btn-close-xs position-absolute top-0 end-0 js-remove-item" data-item-id="{{ item.id }}" data-product-name="{{ item.name|truncatechars:30 }}"></a>
         </div>
 
         {% if not forloop.last %}
@@ -210,8 +273,6 @@
     {% endif %}
 </div>
 
-
-
 <!-- Scroll To Top -->
 <div id="scrollTop" class="visually-hidden end-0"></div>
 
@@ -242,22 +303,61 @@
         $('body').addClass('overflow-hidden');
     }
     
-    // Handle remove item - modify the URL to keep drawer open
+    // Custom confirmation dialog function
+    function showConfirmationDialog(productName, callback) {
+        const dialog = `
+            <div class="custom-dialog-overlay">
+                <div class="custom-dialog">
+                    <h4>Are you sure you want to remove ${productName}?</h4>
+                    <div class="dialog-buttons">
+                        <button class="btn btn-danger confirm-remove">Yes, Remove</button>
+                        <button class="btn btn-outline-secondary move-to-wishlist">Move to Wishlist</button>
+                        <button class="btn btn-link cancel-dialog">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('body').append(dialog);
+    
+        $('.confirm-remove').on('click', function() {
+            callback(true);
+            $('.custom-dialog-overlay').remove();
+        });
+    
+        $('.move-to-wishlist').on('click', function() {
+            callback(false, true);
+            $('.custom-dialog-overlay').remove();
+        });
+    
+        $('.cancel-dialog').on('click', function() {
+            $('.custom-dialog-overlay').remove();
+        });
+    }
+    
+    // Handle remove item - show confirmation dialog
     $(document).on('click', '.js-remove-item', function(e) {
         e.preventDefault();
         
-        if (confirm('Are you sure you want to remove this item from your cart?')) {
-            let removeUrl = $(this).attr('href');
-            
-            // Add parameter to keep drawer open
-            if (removeUrl.includes('?')) {
-                removeUrl += '&open_cart_drawer=true';
-            } else {
-                removeUrl += '?open_cart_drawer=true';
+        const productName = $(this).data('product-name');
+        const removeUrl = $(this).attr('href');
+        const itemId = $(this).data('item-id');
+        
+        showConfirmationDialog(productName, function(remove, moveToWishlist) {
+            if (remove) {
+                // Add parameter to keep drawer open
+                let finalRemoveUrl = removeUrl;
+                if (finalRemoveUrl.includes('?')) {
+                    finalRemoveUrl += '&open_cart_drawer=true';
+                } else {
+                    finalRemoveUrl += '?open_cart_drawer=true';
+                }
+                
+                window.location.href = finalRemoveUrl;
+            } else if (moveToWishlist) {
+                // Redirect to move to wishlist URL
+                window.location.href = `/move-to-wishlist/${itemId}/?open_cart_drawer=true`;
             }
-            
-            window.location.href = removeUrl;
-        }
+        });
     });
     
     // Replace theme's quantity controls with our own
@@ -271,7 +371,7 @@
             const newControl = `
                 <div class="qty-control position-relative" style="display: inline-block;">
                     <input type="number" name="quantity" value="${currentValue}" min="1" 
-                           class="qty-control__number border-0 text-center" style="width: 50px;">
+                           class="qty-control__number border-0 text-center" style="width: 50px;" data-item-id="${$input.data('item-id')}">
                     <div class="qty-control__reduce" style="position: absolute; left: 0; top: 0; cursor: pointer; width: 20px; text-align: center;">-</div>
                     <div class="qty-control__increase" style="position: absolute; right: 0; top: 0; cursor: pointer; width: 20px; text-align: center;">+</div>
                 </div>
@@ -289,28 +389,66 @@
             const $form = $(this).closest('form');
             const $input = $form.find('input[name="quantity"]');
             let currentQty = parseInt($input.val()) || 1;
+            const itemId = $input.data('item-id');
+            const productName = $(this).closest('.cart-drawer-item').find('.cart-drawer-item__title').text();
             
             if ($(this).hasClass('qty-control__increase')) {
                 currentQty += 1;
-            } else if ($(this).hasClass('qty-control__reduce') && currentQty > 1) {
-                currentQty -= 1;
+                // Update the input value
+                $input.val(currentQty);
+                
+                // Store which item is being updated
+                activeItemId = $form.find('input[name="cart_item_id"]').val();
+                
+                // Store scroll position
+                cartScrollPosition = $('.cart-drawer-items-list').scrollTop();
+                
+                // Add hidden input to keep drawer open
+                $form.find('input[name="keep_drawer_open"]').remove();
+                $form.append('<input type="hidden" name="keep_drawer_open" value="true">');
+                
+                // Submit the form
+                $form.submit();
+            } else if ($(this).hasClass('qty-control__reduce')) {
+                if (currentQty > 1) {
+                    currentQty -= 1;
+                    // Update the input value
+                    $input.val(currentQty);
+                    
+                    // Store which item is being updated
+                    activeItemId = $form.find('input[name="cart_item_id"]').val();
+                    
+                    // Store scroll position
+                    cartScrollPosition = $('.cart-drawer-items-list').scrollTop();
+                    
+                    // Add hidden input to keep drawer open
+                    $form.find('input[name="keep_drawer_open"]').remove();
+                    $form.append('<input type="hidden" name="keep_drawer_open" value="true">');
+                    
+                    // Submit the form
+                    $form.submit();
+                } else {
+                    // Quantity is 1, show confirmation dialog
+                    const removeUrl = $(this).closest('.cart-drawer-item').find('.js-remove-item').attr('href');
+                    
+                    showConfirmationDialog(productName, function(remove, moveToWishlist) {
+                        if (remove) {
+                            // Add parameter to keep drawer open
+                            let finalRemoveUrl = removeUrl;
+                            if (finalRemoveUrl.includes('?')) {
+                                finalRemoveUrl += '&open_cart_drawer=true';
+                            } else {
+                                finalRemoveUrl += '?open_cart_drawer=true';
+                            }
+                            
+                            window.location.href = finalRemoveUrl;
+                        } else if (moveToWishlist) {
+                            // Redirect to move to wishlist URL
+                            window.location.href = `/move-to-wishlist/${itemId}/?open_cart_drawer=true`;
+                        }
+                    });
+                }
             }
-            
-            // Update the input value
-            $input.val(currentQty);
-            
-            // Store which item is being updated
-            activeItemId = $form.find('input[name="cart_item_id"]').val();
-            
-            // Store scroll position
-            cartScrollPosition = $('.cart-drawer-items-list').scrollTop();
-            
-            // Add hidden input to keep drawer open
-            $form.find('input[name="keep_drawer_open"]').remove();
-            $form.append('<input type="hidden" name="keep_drawer_open" value="true">');
-            
-            // Submit the form
-            $form.submit();
         });
         
         // Handle direct input changes

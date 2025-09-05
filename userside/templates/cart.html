@@ -160,7 +160,10 @@
                         {% csrf_token %}
                         <input type="hidden" name="cart_item_id" value="{{ item.id }}" />
                         <div class="qty-control position-relative">
-                          <input type="number" name="quantity" class="qty-control__number text-center" value="{{ item.quantity }}" min="1" max="{{ item.product_variant_id.stock_quantity }}" />
+                          <input type="number" name="quantity" class="qty-control__number text-center"
+                           value="{{ item.quantity }}" min="1"
+                            max="{{ item.product_variant_id.stock_quantity }}" 
+                            data-item-id="{{ item.id }}" />
                           <div class="qty-control__reduce">-</div>
                           <div class="qty-control__increase">+</div>
                         </div>
@@ -170,8 +173,10 @@
                       <span class="shopping-cart__subtotal">₹{{ item.total_price }}</span>
                     </td>
                     <td>
-                      <a href="{% url 'remove_cart_item' product_id=item.product_variant_id.product_id.id variant_id=item.product_variant_id.id %}" class="remove-cart">
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="#767676" xmlns="http://www.w3.org/2000/svg">
+<a href="{% url 'remove_cart_item' product_id=item.product_variant_id.product_id.id variant_id=item.product_variant_id.id %}" 
+   class="remove-cart" 
+   data-item-id="{{ item.id }}">
+                           <svg width="10" height="10" viewBox="0 0 10 10" fill="#767676" xmlns="http://www.w3.org/2000/svg">
                           <path d="M0.259435 8.85506L9.11449 0L10 0.885506L1.14494 9.74056L0.259435 8.85506Z" />
                           <path d="M0.885506 0.0889838L9.74057 8.94404L8.85506 9.82955L0 0.97449L0.885506 0.0889838Z" />
                         </svg>
@@ -276,46 +281,47 @@
       }
     
       // Handle quantity buttons
-      $('.qty-control').on('click', '.qty-control__increase, .qty-control__reduce', function (e) {
-        e.preventDefault()
-        const $input = $(this).siblings('.qty-control__number')
-        let value = parseInt($input.val()) || 1
-        const min = parseInt($input.attr('min')) || 1
-        const max = parseInt($input.attr('max')) || 10
-    
-        if ($(this).hasClass('qty-control__increase')) {
-          // Increase button
-          if (value < max) {
-            $input.val(value + 1)
-          } else {
-            const productName = $(this).closest('tr').find('h4').text()
-            alert(`Maximum quantity (${max}) reached for ${productName}`)
-            return
-          }
-        } else {
-          // Decrease button
-          if (value > min) {
-            $input.val(value - 1)
-          } else {
-            const productName = $(this).closest('tr').find('h4').text()
-            const $removeLink = $(this).closest('tr').find('.remove-cart')
-            const removeUrl = $removeLink.attr('href')
-    
-            showConfirmationDialog(productName, function (remove, moveToWishlist) {
-              if (remove) {
-                window.location.href = removeUrl
-              } else if (moveToWishlist) {
-                const itemId = removeUrl.split('/').slice(-2, -1)[0]
-                window.location.href = `/move-to-wishlist/${itemId}/`
-              }
-            })
-            return
-          }
+$('.qty-control').on('click', '.qty-control__increase, .qty-control__reduce', function (e) {
+  e.preventDefault()
+  const $input = $(this).siblings('.qty-control__number')
+  let value = parseInt($input.val()) || 1
+  const min = parseInt($input.attr('min')) || 1
+  const max = parseInt($input.attr('max')) || 10
+  const itemId = $input.data('item-id') // Get the cart item ID from data attribute
+
+  if ($(this).hasClass('qty-control__increase')) {
+    // Increase button
+    if (value < max) {
+      $input.val(value + 1)
+    } else {
+      const productName = $(this).closest('tr').find('h4').text()
+      alert(`Maximum quantity (${max}) reached for ${productName}`)
+      return
+    }
+  } else {
+    // Decrease button
+    if (value > min) {
+      $input.val(value - 1)
+    } else {
+      const productName = $(this).closest('tr').find('h4').text()
+      const $removeLink = $(this).closest('tr').find('.remove-cart')
+      const removeUrl = $removeLink.attr('href')
+
+      showConfirmationDialog(productName, function (remove, moveToWishlist) {
+        if (remove) {
+          window.location.href = removeUrl
+        } else if (moveToWishlist) {
+          // Use the itemId from data attribute instead of trying to parse from URL
+          window.location.href = `/move-to-wishlist/${itemId}/`
         }
-    
-        // Submit the form after changing value
-        $input.closest('form').submit()
       })
+      return
+    }
+  }
+
+  // Submit the form after changing value
+  $input.closest('form').submit()
+})
     
       // Handle manual input
       $('.qty-control__number')
@@ -350,19 +356,20 @@
     
       // Handle remove button
       $('.remove-cart').on('click', function (e) {
-        e.preventDefault()
-        const productName = $(this).closest('tr').find('h4').text()
-        const removeUrl = $(this).attr('href')
-    
-        showConfirmationDialog(productName, function (remove, moveToWishlist) {
-          if (remove) {
-            window.location.href = removeUrl
-          } else if (moveToWishlist) {
-            const itemId = removeUrl.split('/').slice(-2, -1)[0]
-            window.location.href = `/move-to-wishlist/${itemId}/`
-          }
-        })
-      })
+  e.preventDefault()
+  const productName = $(this).closest('tr').find('h4').text()
+  const removeUrl = $(this).attr('href')
+  const itemId = $(this).data('item-id') // Get the item ID from data attribute
+  
+  showConfirmationDialog(productName, function (remove, moveToWishlist) {
+    if (remove) {
+      window.location.href = removeUrl
+    } else if (moveToWishlist) {
+      // Use the correct URL pattern with the item ID
+      window.location.href = `/move-to-wishlist/${itemId}/`
+    }
+  })
+})
     
       // Replace the empty cart button handler with this:
       $('#empty-cart-btn').on('click', function (e) {

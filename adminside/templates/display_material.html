@@ -14,6 +14,16 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+  <style>
+  /* Prevent description from expanding horizontally */
+  td:nth-child(2) {
+    max-width: 100px; /* adjust as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
