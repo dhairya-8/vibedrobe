@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.hashers import make_password, check_password
+import random
+import string
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -259,7 +261,7 @@ class Order_Master(models.Model):
     status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
     mode_of_payment = models.CharField(max_length=30, null=False, blank=False, choices=[
         ('cod', 'Cash on Delivery'),
-        ('online', 'Online Payment'),
+        ('card', 'Card Payment'),
         ('upi', 'UPI Payment'),
     ], default='cod')
     subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
@@ -327,7 +329,7 @@ class Payment(models.Model):
     failure_reason = models.TextField(max_length=300, null=True)
     refund_amount = models.DecimalField(decimal_places=2,max_digits=10, default=0)
     refund_reason = models.TextField(max_length=300, null=True)
-    transaction_date = models.DateField(auto_now_add=True)
+    transaction_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -349,6 +351,14 @@ class Shipping(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.tracking_number:
+            # Generate a unique tracking number
+            date_str = timezone.now().strftime('%Y%m%d')
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            self.tracking_number = f"TRK-{date_str}-{random_str}"
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"Ship#{self.tracking_number or 'NA'}: {self.shipping_status}"
     

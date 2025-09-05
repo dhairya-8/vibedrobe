@@ -1,0 +1,247 @@
+<div class="shipping-details">
+  <h4 class="border-bottom pb-2 mb-4">Shipping Details: Order #{{ order.order_number }}</h4>
+  
+  <div class="row">
+    <!-- Order Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Number:</strong></div>
+            <div class="col-7">{{ order.order_number }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Status:</strong></div>
+            <div class="col-7">
+              <span class="badge 
+                {% if order.status == 'delivered' %}bg-success
+                {% elif order.status == 'cancelled' %}bg-danger
+                {% elif order.status == 'shipped' %}bg-info
+                {% else %}bg-warning{% endif %}">
+                {{ order.status|title }}
+              </span>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Date:</strong></div>
+            <div class="col-7">{{ order.order_date|date:'Y-m-d H:i' }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Total:</strong></div>
+            <div class="col-7">₹{{ order.total_amount }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Payment Method:</strong></div>
+            <div class="col-7">{{ order.get_mode_of_payment_display }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Shipping Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Tracking Number:</strong></div>
+            <div class="col-7">{{ shipping.tracking_number|default:"Not assigned" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Shipping Status:</strong></div>
+            <div class="col-7">
+              <span class="badge 
+                {% if shipping.shipping_status == 'delivered' %}bg-success
+                {% elif shipping.shipping_status == 'shipped' %}bg-info
+                {% else %}bg-warning{% endif %}">
+                {{ shipping.get_shipping_status_display }}
+              </span>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Expected Delivery:</strong></div>
+            <div class="col-7">{{ shipping.excepted_delivery|date:'Y-m-d'|default:"Not set" }}</div>
+          </div>
+          {% if shipping.shipped_date %}
+          <div class="row mb-2">
+            <div class="col-5"><strong>Shipped Date:</strong></div>
+            <div class="col-7">{{ shipping.shipped_date|date:'Y-m-d H:i' }}</div>
+          </div>
+          {% endif %}
+          {% if shipping.delivered_date %}
+          <div class="row mb-2">
+            <div class="col-5"><strong>Delivered Date:</strong></div>
+            <div class="col-7">{{ shipping.delivered_date|date:'Y-m-d H:i' }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Customer Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Name:</strong></div>
+            <div class="col-7">{{ order.user_id.get_full_name|default:order.user_id.username }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Email:</strong></div>
+            <div class="col-7">{{ order.user_id.email }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Contact:</strong></div>
+            <div class="col-7">
+              {% with order.order_address_set.first as address %}
+                {{ address.phone }}
+              {% endwith %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping Address Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Shipping Address</h5>
+        </div>
+        <div class="card-body">
+          {% with order.order_address_set.first as address %}
+            <div class="row mb-2">
+              <div class="col-12">
+                <strong>{{ address.full_name }}</strong>
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-12">
+                {{ address.address_line_1 }}<br>
+                {% if address.address_line_2 %}{{ address.address_line_2 }}<br>{% endif %}
+                {{ address.city }}, {{ address.state }} {{ address.pincode }}
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-5"><strong>Phone:</strong></div>
+              <div class="col-7">{{ address.phone }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-5"><strong>Address Type:</strong></div>
+              <div class="col-7">{{ address.get_address_type_display }}</div>
+            </div>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Items Card -->
+  <div class="row mt-2">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Items</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in order.order_details_set.all %}
+                  <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.product_sku }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ item.unit_price }}</td>
+                    <td>₹{{ item.total_price }}</td>
+                  </tr>
+                {% endfor %}
+                <tr class="table-light">
+                  <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                  <td><strong>₹{{ order.subtotal }}</strong></td>
+                </tr>
+                {% if order.tax_amount > 0 %}
+                <tr class="table-light">
+                  <td colspan="4" class="text-end"><strong>Tax:</strong></td>
+                  <td><strong>₹{{ order.tax_amount }}</strong></td>
+                </tr>
+                {% endif %}
+                {% if order.shipping_charge > 0 %}
+                <tr class="table-light">
+                  <td colspan="4" class="text-end"><strong>Shipping:</strong></td>
+                  <td><strong>₹{{ order.shipping_charge }}</strong></td>
+                </tr>
+                {% endif %}
+                <tr class="table-primary">
+                  <td colspan="4" class="text-end"><strong>Grand Total:</strong></td>
+                  <td><strong>₹{{ order.total_amount }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shipping Management Form -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Update Shipping Status</h5>
+        </div>
+        <div class="card-body">
+          <form id="shippingForm" method="post" action="{% url 'update_shipping_status' order.id %}">
+            {% csrf_token %}
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="shipping_status" class="form-label">Shipping Status</label>
+                <select class="form-select" id="shipping_status" name="shipping_status">
+                  <option value="confirm" {% if shipping.shipping_status == 'confirm' %}selected{% endif %}>Confirm</option>
+                  <option value="shipped" {% if shipping.shipping_status == 'shipped' %}selected{% endif %}>Shipped</option>
+                  <option value="delivered" {% if shipping.shipping_status == 'delivered' %}selected{% endif %}>Delivered</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="tracking_number" class="form-label">Tracking Number</label>
+                <input type="text" class="form-control" id="tracking_number" name="tracking_number" 
+                       value="{{ shipping.tracking_number|default:'' }}" placeholder="Enter tracking number">
+              </div>
+              <div class="col-md-4">
+                <label for="excepted_delivery" class="form-label">Expected Delivery Date</label>
+                <input type="date" class="form-control" id="excepted_delivery" name="excepted_delivery" 
+                       value="{{ shipping.excepted_delivery|date:'Y-m-d'|default:'' }}">
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="delivery_notes" class="form-label">Delivery Notes</label>
+              <textarea class="form-control" id="delivery_notes" name="delivery_notes" rows="3" 
+                        placeholder="Add any delivery notes or instructions">{{ shipping.delivery_notes|default:'' }}</textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Update Shipping</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

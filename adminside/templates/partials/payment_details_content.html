@@ -1,0 +1,235 @@
+<div class="payment-details">
+  <h4 class="border-bottom pb-2 mb-4">Payment Details: #{{ payment.payment_id }}</h4>
+  
+  <div class="row">
+    <!-- Payment Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Payment Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Payment ID:</strong></div>
+            <div class="col-7">{{ payment.payment_id }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Amount:</strong></div>
+            <div class="col-7">₹{{ payment.amount }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Status:</strong></div>
+            <div class="col-7">
+              <span class="badge 
+                {% if payment.status == 'success' %}bg-success
+                {% elif payment.status == 'failed' %}bg-danger
+                {% elif payment.status == 'refunded' %}bg-warning
+                {% else %}bg-info{% endif %}">
+                {{ payment.status|title }}
+              </span>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Payment Method:</strong></div>
+            <div class="col-7">{{ payment.payment_method }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Payment Gateway:</strong></div>
+            <div class="col-7">{{ payment.payment_gateway|title }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Transaction Date:</strong></div>
+            <div class="col-7">{{ payment.transaction_date|date:'Y-m-d (H:i)' }}</div>
+          </div>
+          {% if payment.refund_amount > 0 %}
+          <div class="row mb-2">
+            <div class="col-5"><strong>Refund Amount:</strong></div>
+            <div class="col-7">₹{{ payment.refund_amount }}</div>
+          </div>
+          {% if payment.refund_reason %}
+          <div class="row mb-2">
+            <div class="col-5"><strong>Refund Reason:</strong></div>
+            <div class="col-7">{{ payment.refund_reason }}</div>
+          </div>
+          {% endif %}
+          {% endif %}
+          {% if payment.failure_reason %}
+          <div class="row mb-2">
+            <div class="col-5"><strong>Failure Reason:</strong></div>
+            <div class="col-7">{{ payment.failure_reason }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Number:</strong></div>
+            <div class="col-7">{{ payment.order_id.order_number }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Status:</strong></div>
+            <div class="col-7">
+              <span class="badge 
+                {% if payment.order_id.status == 'delivered' %}bg-success
+                {% elif payment.order_id.status == 'cancelled' %}bg-danger
+                {% elif payment.order_id.status == 'shipped' %}bg-info
+                {% else %}bg-warning{% endif %}">
+                {{ payment.order_id.status|title }}
+              </span>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Date:</strong></div>
+            <div class="col-7">{{ payment.order_id.order_date|date:'Y-m-d [H:i]' }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Order Total:</strong></div>
+            <div class="col-7">₹{{ payment.order_id.total_amount }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Customer Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Name:</strong></div>
+            <div class="col-7">{{ payment.user_id.get_full_name|default:payment.user_id.username }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Email:</strong></div>
+            <div class="col-7">{{ payment.user_id.email }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Contact:</strong></div>
+            <div class="col-7">{{ payment.user_id.contact|default:"Not provided" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gateway Information Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Gateway Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-5"><strong>Gateway Order ID:</strong></div>
+            <div class="col-7">{{ payment.gateway_order_id|default:"Not available" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Gateway Payment ID:</strong></div>
+            <div class="col-7">{{ payment.gateway_payment_id|default:"Not available" }}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5"><strong>Gateway Signature:</strong></div>
+            <div class="col-7">
+              {% if payment.gateway_signature %}
+                <span class="d-inline-block text-truncate" style="max-width: 150px;" 
+                      data-bs-toggle="tooltip" title="{{ payment.gateway_signature }}">
+                  {{ payment.gateway_signature }}
+                </span>
+                <button class="btn btn-sm btn-outline-secondary ms-1" data-bs-toggle="collapse" 
+                        data-bs-target="#signatureFull">
+                  Show Full
+                </button>
+                <div id="signatureFull" class="collapse mt-2">
+                  <small class="text-muted">{{ payment.gateway_signature }}</small>
+                </div>
+              {% else %}
+                Not available
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Timeline (if available) -->
+  <div class="row mt-2">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Payment Timeline</h5>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-marker bg-primary"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Payment Created</h6>
+                <small class="text-muted">{{ payment.created_at|date:'Y-m-d H:i' }}</small>
+              </div>
+            </div>
+            {% if payment.updated_at != payment.created_at %}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-info"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Last Updated</h6>
+                <small class="text-muted">{{ payment.updated_at|date:'Y-m-d H:i' }}</small>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .timeline {
+    position: relative;
+    padding-left: 30px;
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+  }
+  .timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .timeline-content {
+    margin-left: 10px;
+  }
+  .timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 17px;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+  }
+</style>
+
+<script>
+  // Initialize tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
