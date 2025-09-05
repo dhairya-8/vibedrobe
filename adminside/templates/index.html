@@ -11,6 +11,28 @@
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/libs/sweetalert2/sweetalert2.min.css' %}" rel="stylesheet" type="text/css" />
+  <style>
+    .card-stats {
+      transition: transform 0.2s;
+    }
+    .card-stats:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+      position: relative;
+    }
+    .chart-info {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255,255,255,0.9);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -21,7 +43,7 @@
         <div class="row">
           <!-- Orders Today -->
           <div class="col-md-6 col-lg-3">
-            <div class="card">
+            <div class="card card-stats">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
@@ -39,13 +61,18 @@
 
           <!-- Weekly Revenue -->
           <div class="col-md-6 col-lg-3">
-            <div class="card">
+            <div class="card card-stats">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
                     <h6 class="text-muted mb-2">Weekly Revenue</h6>
                     <h3 class="mb-0">₹{{ revenue_week|intcomma }}</h3>
                     <small class="text-muted">{{ last_week|date:'M d' }} - {{ today|date:'M d' }}</small>
+                    <div class="mt-1">
+                      <small class="text-success">
+                        <i class="iconoir-wallet fs-6"></i> Avg Order: ₹{{ avg_order_value_week|floatformat:2|intcomma }}
+                      </small>
+                    </div>
                   </div>
                   <div class="bg-success bg-opacity-10 p-3 rounded">
                     <i class="iconoir-wallet fs-3 text-success"></i>
@@ -57,7 +84,7 @@
 
           <!-- Low Stock -->
           <div class="col-md-6 col-lg-3">
-            <div class="card">
+            <div class="card card-stats">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
@@ -75,7 +102,7 @@
 
           <!-- New Customers -->
           <div class="col-md-6 col-lg-3">
-            <div class="card">
+            <div class="card card-stats">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
@@ -97,11 +124,24 @@
           <!-- Weekly Sales Trend -->
           <div class="col-lg-8">
             <div class="card">
-              <div class="card-header">
-                <h5 class="mb-0">Weekly Sales Trend</h5>
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Weekly Sales Performance</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-outline-primary active" data-chart-type="revenue">
+                    Revenue
+                  </button>
+                  <button type="button" class="btn btn-outline-primary" data-chart-type="orders">
+                    Orders
+                  </button>
+                </div>
               </div>
               <div class="card-body">
-                <div id="sales-trend-chart" style="min-height: 350px;"></div>
+                <div class="chart-container">
+                  <div class="chart-info" id="chart-summary">
+                    Total: ₹{{ revenue_week|intcomma }} | {{ orders_week }} Orders
+                  </div>
+                  <div id="sales-trend-chart" style="min-height: 350px;"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -110,10 +150,52 @@
           <div class="col-lg-4">
             <div class="card">
               <div class="card-header">
-                <h5 class="mb-0">Order Status</h5>
+                <h5 class="mb-0">Order Status Distribution</h5>
               </div>
               <div class="card-body">
                 <div id="order-status-chart" style="min-height: 350px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Charts Row -->
+        <div class="row mt-4">
+          <!-- Revenue by Category -->
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">Revenue by Category (Last 30 Days)</h5>
+              </div>
+              <div class="card-body">
+                <div id="category-revenue-chart" style="min-height: 300px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Methods -->
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">Payment Methods(Total)</h5>
+              </div>
+              <div class="card-body">
+                <div id="payment-methods-chart" style="min-height: 300px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Charts Row -->
+        <div class="row mt-4">
+          <!-- Top Brands Performance -->
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">Top Performing Brands (Last 30 Days)</h5>
+              </div>
+              <div class="card-body">
+                <div id="brand-performance-chart" style="min-height: 350px;"></div>
               </div>
             </div>
           </div>
@@ -125,7 +207,7 @@
           <div class="col-lg-8">
             <div class="card">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Top Selling Products</h5>
+                <h5 class="mb-0">Top Selling Products (All time)</h5>
                 <a href="{% url 'display_product' %}" class="btn btn-sm btn-soft-primary">View All</a>
               </div>
               <div class="card-body">
@@ -136,6 +218,7 @@
                         <th>Product</th>
                         <th>Price</th>
                         <th>Sold</th>
+                        <th>Revenue</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -143,7 +226,13 @@
                         <tr>
                           <td>
                             <div class="d-flex align-items-center">
-                              <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
+                              {% if product.base_image %}
+                                <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="rounded me-3" width="40" />
+                              {% else %}
+                                <div class="rounded me-3 bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                  <i class="iconoir-image"></i>
+                                </div>
+                              {% endif %}
                               <div>
                                 <h6 class="mb-0">{{ product.name|truncatechars:20 }}</h6>
                                 <small class="text-muted">{{ product.brand_id.name }}</small>
@@ -151,7 +240,8 @@
                             </div>
                           </td>
                           <td>₹{{ product.price|intcomma }}</td>
-                          <td>{{ product.total_sold|default:0 }}</td>
+                          <td>{{ product.total_sold }}</td>
+                          <td>₹{% widthratio product.total_sold 1 product.price|floatformat:0 %}</td>
                         </tr>
                       {% endfor %}
                     </tbody>
@@ -161,9 +251,10 @@
             </div>
           </div>
 
-          <!-- Recent Orders -->
+          <!-- Recent Orders & User Registration -->
           <div class="col-lg-4">
-            <div class="card">
+            <!-- Recent Orders -->
+            <div class="card mb-4">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Orders</h5>
                 <a href="{% url 'display_orders' %}" class="btn btn-sm btn-soft-primary">View All</a>
@@ -174,7 +265,6 @@
                     <thead>
                       <tr>
                         <th>Order #</th>
-                        <th>Customer</th>
                         <th>Amount</th>
                         <th>Status</th>
                       </tr>
@@ -183,16 +273,14 @@
                       {% for order in recent_orders %}
                         <tr>
                           <td>
-                            <a href="{% url 'order_details_content' order.id %}">{{ order.order_number|truncatechars:8 }}</a>
+                            {{ order.order_number|truncatechars:8 }}
                           </td>
-                          <td>{{ order.user_id.first_name }} {{ order.user_id.last_name }}</td>
                           <td>₹{{ order.total_amount|intcomma }}</td>
                           <td>
-                            <span class="badge bg-{% if order.status == 'completed' %}
-                                success
-                              {% else %}
-                                warning
-                              {% endif %}">
+                            <span class="badge bg-{% if order.status == 'delivered' %}success
+                              {% elif order.status == 'cancelled' %}danger
+                              {% elif order.status == 'processing' %}secondary
+                              {% else %}warning{% endif %}">
                               {{ order.status|title }}
                             </span>
                           </td>
@@ -201,6 +289,16 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+            
+            <!-- User Registration Trend -->
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0">User Registration Trend</h5>
+              </div>
+              <div class="card-body">
+                <div id="user-trend-chart" style="min-height: 200px;"></div>
               </div>
             </div>
           </div>
@@ -213,11 +311,8 @@
               <div class="card mb-0 rounded-bottom-0">
                 <div class="card-body">
                   <p class="text-muted mb-0">
-                    {% comment %}©<script>
-                                    document.write(new Date().getFullYear())
-                                  </script> {% endcomment %}
                     <span class="text-muted d-none d-sm-inline-block float-end">
-                      VibeDrobe
+                      VibeDrobe Analytics Dashboard
                       <i class="iconoir-heart text-danger"></i>
                     </span>
                   </p>
@@ -242,54 +337,331 @@
   <script src="{% static 'admin/assets/js/pages/index.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
 
-<!-- Sweet Alert JS -->
+  <!-- Sweet Alert JS -->
   <script src="{% static 'admin/assets/libs/sweetalert2/sweetalert2.min.js' %}"></script>
+  
   <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Sales Trend Chart with REAL DATA
+    // Sales Trend Chart with toggle between revenue and orders
+    let currentChartType = 'revenue';
+    
     var salesOptions = {
         series: [{
-            name: 'Sales',
-            data: {{ sales_trend|safe }}
+            name: 'Revenue',
+            data: {{ sales_trend|safe }},
+            type: 'area'
+        }, {
+            name: 'Orders',
+            data: {{ orders_count_trend|safe }},
+            type: 'column',
+            yAxis: 1
         }],
         chart: {
             height: 350,
-            type: 'area',
-            toolbar: { show: false }
+            type: 'line',
+            toolbar: { show: false },
+            animations: { enabled: true }
         },
-        colors: ['#5b73e8'],
+        colors: ['#5b73e8', '#34c38f'],
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 3 },
         xaxis: {
             categories: {{ week_days|safe }}
         },
-        tooltip: {
-            y: {
-                formatter: function (val) {
-                    return "₹" + val.toLocaleString('en-IN')
+        yaxis: [{
+            title: {
+                text: 'Revenue (₹)',
+            },
+            labels: {
+                formatter: function(val) {
+                    return "₹" + val.toLocaleString('en-IN');
                 }
             }
+        }, {
+            opposite: true,
+            title: {
+                text: 'Orders',
+            }
+        }],
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function (val, { seriesIndex }) {
+                    if (seriesIndex === 0) {
+                        return "₹" + val.toLocaleString('en-IN');
+                    } else {
+                        return val + " orders";
+                    }
+                }
+            }
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right',
         }
     };
+    
     var salesChart = new ApexCharts(document.querySelector("#sales-trend-chart"), salesOptions);
     salesChart.render();
+    
+    // Toggle between revenue and orders view
+    document.querySelectorAll('[data-chart-type]').forEach(button => {
+        button.addEventListener('click', function() {
+            const type = this.getAttribute('data-chart-type');
+            
+            // Update active button state
+            document.querySelectorAll('[data-chart-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            if (type === 'revenue' && currentChartType !== 'revenue') {
+                salesChart.updateSeries([{
+                    name: 'Revenue',
+                    data: {{ sales_trend|safe }},
+                    type: 'area'
+                }, {
+                    name: 'Orders',
+                    data: {{ orders_count_trend|safe }},
+                    type: 'column',
+                    yAxis: 1
+                }]);
+                
+                salesChart.updateOptions({
+                    yaxis: [{
+                        title: { text: 'Revenue (₹)' },
+                        labels: {
+                            formatter: function(val) {
+                                return "₹" + val.toLocaleString('en-IN');
+                            }
+                        }
+                    }, {
+                        opposite: true,
+                        title: { text: 'Orders' }
+                    }]
+                });
+                
+                currentChartType = 'revenue';
+            } else if (type === 'orders' && currentChartType !== 'orders') {
+                salesChart.updateSeries([{
+                    name: 'Orders',
+                    data: {{ orders_count_trend|safe }},
+                    type: 'area'
+                }]);
+                
+                salesChart.updateOptions({
+                    yaxis: [{
+                        title: { text: 'Orders' }
+                    }]
+                });
+                
+                currentChartType = 'orders';
+            }
+        });
+    });
 
     // Order Status Chart with REAL DATA
     var orderOptions = {
         series: {{ status_values|safe }},
-        chart: { height: 300, type: 'donut' },
+        chart: { height: 350, type: 'donut' },
         labels: {{ status_labels|safe }},
-        colors: ['#34c38f', '#5b73e8', '#f1b44c', '#f46a6a'],
+        colors: ['#34c38f', '#5b73e8', '#f1b44c', '#f46a6a', '#e83e8c'],
         legend: { position: 'bottom' },
         responsive: [{
             breakpoint: 480,
             options: { chart: { width: 200 }, legend: { position: 'bottom' } }
-        }]
+        }],
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total Orders',
+                            formatter: function (w) {
+                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     };
     var orderChart = new ApexCharts(document.querySelector("#order-status-chart"), orderOptions);
     orderChart.render();
-});
-</script>
+    
+    // Category Revenue Chart
+    var categoryOptions = {
+        series: [{
+            data: {{ category_values|safe }}
+        }],
+        chart: {
+            type: 'bar',
+            height: 300,
+            toolbar: { show: false }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        xaxis: {
+            categories: {{ category_labels|safe }},
+            labels: {
+                formatter: function(val) {
+                    return "₹" + val.toLocaleString('en-IN');
+                }
+            }
+        },
+        tooltip: {
+            y: {
+                formatter: function(val) {
+                    return "₹" + val.toLocaleString('en-IN');
+                }
+            }
+        },
+        colors: ['#5b73e8']
+    };
+    var categoryChart = new ApexCharts(document.querySelector("#category-revenue-chart"), categoryOptions);
+    categoryChart.render();
+    
+    // User Registration Trend Chart
+    var userOptions = {
+        series: [{
+            name: 'New Users',
+            data: {{ user_trend|safe }}
+        }],
+        chart: {
+            height: 200,
+            type: 'line',
+            toolbar: { show: false }
+        },
+        colors: ['#34c38f'],
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: {
+            categories: {{ user_days|safe }}
+        },
+        yaxis: {
+            labels: {
+                formatter: function(val) {
+                    return val.toFixed(0);
+                }
+            }
+        }
+    };
+    var userChart = new ApexCharts(document.querySelector("#user-trend-chart"), userOptions);
+    userChart.render();
+    
+    // Brand Performance Chart
+    var brandOptions = {
+        series: [
+            {
+                name: 'Revenue',
+                data: {{ brand_revenue|safe }},
+                type: 'bar'
+            },
+            {
+                name: 'Units Sold',
+                data: {{ brand_units|safe }},
+                type: 'line'
+            }
+        ],
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: false }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: false,
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            width: [0, 3]
+        },
+        xaxis: {
+            categories: {{ brand_labels|safe }}
+        },
+        yaxis: [{
+            title: {
+                text: 'Revenue (₹)',
+            },
+            labels: {
+                formatter: function(val) {
+                    return "₹" + val.toLocaleString('en-IN');
+                }
+            }
+        }, {
+            opposite: true,
+            title: {
+                text: 'Units Sold',
+            }
+        }],
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function (val, { seriesIndex }) {
+                    if (seriesIndex === 0) {
+                        return "₹" + val.toLocaleString('en-IN');
+                    } else {
+                        return val + " units";
+                    }
+                }
+            }
+        },
+        colors: ['#5b73e8', '#34c38f'],
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right',
+        }
+    };
+    var brandChart = new ApexCharts(document.querySelector("#brand-performance-chart"), brandOptions);
+    brandChart.render();
+    
+    // Payment Methods Chart
+    var paymentOptions = {
+        series: {{ payment_counts|safe }},
+        chart: { height: 300, type: 'donut' },
+        labels: {{ payment_labels|safe }},
+        colors: ['#5b73e8', '#34c38f', '#f1b44c'],
+        legend: { position: 'bottom' },
+        responsive: [{
+            breakpoint: 480,
+            options: { chart: { width: 200 }, legend: { position: 'bottom' } }
+        }],
+        plotOptions: {
+            pie: {
+                donut: {
+                    labels: {
+                        show: true,
+                        total: {
+                            show: true,
+                            label: 'Total Payments',
+                            formatter: function (w) {
+                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+    var paymentChart = new ApexCharts(document.querySelector("#payment-methods-chart"), paymentOptions);
+    paymentChart.render();
+  });
+  </script>
 
   <script>
    document.addEventListener('DOMContentLoaded', function() {

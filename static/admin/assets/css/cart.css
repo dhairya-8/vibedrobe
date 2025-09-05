@@ -1,35 +1,136 @@
-/* Cart page specific styles */
-.cart-item-img {
-    max-width: 80px;
-    height: auto;
+/* cart.css - Styles for both cart and wishlist pages */
+
+/* Card styling for both cart and wishlist items */
+.card.mb-3.border-light {
+    border: 1px solid #e9ecef !important;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
 }
 
-.quantity-selector {
-    max-width: 120px;
-}
-
-.product-card {
-    transition: all 0.3s ease;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-}
-
-.product-card img {
-    transition: all 0.3s ease;
-}
-
-.product-card:hover img {
-    opacity: 0.9;
-}
-
-.card.border {
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 10px;
-    overflow: hidden;
+.card.mb-3.border-light:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .card-header.bg-light {
     background-color: #f8f9fa !important;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+/* Table styling */
+.table-responsive {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 0.75rem;
+}
+
+.table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Badge styling */
+.badge.rounded-pill {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+/* Image styling */
+.rounded.me-3 {
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+}
+
+/* Button styling */
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Search box styling */
+.input-group {
+    max-width: 300px;
+}
+
+.input-group .form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Text colors */
+.text-primary {
+    color: #3b5de7 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .card-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .badge.rounded-pill {
+        margin-top: 0.5rem;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .rounded.me-3 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Animation for auto-dismiss alerts */
+.alert-auto-dismiss {
+    transition: opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3s;
 }
