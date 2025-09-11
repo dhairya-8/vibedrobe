@@ -12,7 +12,7 @@ from django.db.models import Count, Sum, Q, F, Prefetch
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models.functions import TruncDay, Coalesce 
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_GET
 from datetime import datetime
 from django.utils.decorators import method_decorator
@@ -25,7 +25,6 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.contrib.auth.decorators import user_passes_test
 from django.db import transaction
-
 from django.db.models import Sum, Count, F, Q, Avg
 from django.db.models.functions import TruncDay, Coalesce
 from django.utils import timezone
@@ -223,10 +222,14 @@ def login(request):
     return render(request, 'login.html')
  
 def logout(request):
-      request.session.flush()
-      print("Admin logout successfully !")
-      messages.info(request, 'You have been successfully logged out.')
-      return redirect('login')
+    # Clear only admin-specific session keys
+    for key in ['admin_id', 'admin_username', 'admin_email', 'admin_name', 'admin_role']:
+        if key in request.session:
+            del request.session[key]
+
+    print("Admin logout successfully !")
+    messages.info(request, 'You have been successfully logged out.')
+    return redirect('login')
 
 def generate_random_password(length=12):
     """Generate a random temporary password"""
@@ -407,7 +410,6 @@ def edit_category(request, id):
         
         if request.method == 'POST':
             category.name = request.POST.get('name', '').strip()
-            category.sort_order = request.POST.get('sort_order', 0)
             category.is_active = 'is_active' in request.POST  # Checkbox handling
             category.save()
             
@@ -422,7 +424,15 @@ def edit_category(request, id):
 
 @admin_login_required
 def display_category(request):
-    categories = Category.objects.all().order_by('sort_order')
+    """
+    Displays all categories, annotated with the count of distinct products
+    linked through their subcategories.
+    """
+    # CORRECTED: Use 'subcategories' (plural) to match the related_name in the model.
+    categories = Category.objects.annotate(
+        product_count=Count('subcategories__product', distinct=True)
+    ).order_by('-id')
+    
     return render(request, 'display_category.html', {'categories': categories})
  
 @admin_login_required
@@ -477,7 +487,6 @@ def edit_subcategory(request, id):
         if request.method == 'POST':
             subcategory.category_id = Category.objects.get(id=request.POST.get('category_id'))
             subcategory.name = request.POST.get('name', '').strip()
-            subcategory.sort_order = request.POST.get('sort_order', 0)
             subcategory.save()
             messages.success(request, "SubCategory updated successfully!")
             return redirect('display_subcategory')
@@ -496,7 +505,12 @@ def edit_subcategory(request, id):
 
 @admin_login_required
 def display_subcategory(request):
-    subcategories = Sub_Category.objects.select_related('category_id').all()
+    """
+    Displays all subcategories, annotated with the count of distinct products.
+    """
+    subcategories = Sub_Category.objects.select_related('category_id').annotate(
+        product_count=Count('product', distinct=True)).order_by('-id')
+    
     return render(request, 'display_subcategory.html', {'subcategories': subcategories})
 
 @admin_login_required
@@ -556,7 +570,8 @@ def edit_brand(request, id):
 
 @admin_login_required
 def display_brand(request):
-    brands = Brand.objects.all()
+    # Annotate each brand with the count of associated products
+    brands = Brand.objects.annotate(product_count=Count('product'))
     return render(request, 'display_brand.html', {'brands': brands})
 
 @admin_login_required
@@ -619,7 +634,11 @@ def edit_size(request, id):
 
 @admin_login_required
 def display_size(request):
-    sizes = Size.objects.all().order_by('sort_order')
+    # Annotate each size with the count of associated product variants
+    sizes = Size.objects.annotate(
+        variant_count=Count('product_variants', distinct=True)
+    ).order_by('sort_order')
+    
     return render(request, 'display_size.html', {'sizes': sizes})
 
 @admin_login_required
@@ -682,7 +701,10 @@ def edit_material(request, id):
 
 @admin_login_required
 def display_material(request):
-    materials = Material.objects.all()
+    # Annotate each material with the count of associated products
+    materials = Material.objects.annotate(
+        product_count=Count('product', distinct=True)).order_by('-id')
+    
     return render(request, 'display_material.html', {'materials': materials})
 
 @admin_login_required
@@ -1495,7 +1517,7 @@ def order_details_content(request, order_id):
         'billing_address': order.order_address_set.first(),
         'items': order.order_details_set.all()
     }
-    return render(request, 'order_details_content.html', context)
+    return render(request, 'partials/order_details_content.html', context)
 
 @admin_login_required
 def shipping_management(request):
@@ -1560,14 +1582,8 @@ def update_shipping_status(request, order_id):
         
         shipping.save()
         
-        # Also update the main order status if needed
-        if new_status == 'delivered':
-            order.status = 'delivered'
-            order.save()
-        elif new_status == 'shipped':
-            if order.status != 'delivered':  # Only update if not already delivered
-                order.status = 'shipped'
-                order.save()
+        # Update the main order status based on shipping status
+        order.update_status_based_on_shipping(new_status)
         
         messages.success(request, f'Shipping status for order #{order.order_number} updated successfully!')
         return redirect('shipping_management')

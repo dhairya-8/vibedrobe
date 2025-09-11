@@ -22,8 +22,7 @@ urlpatterns = [
     path('cart/items/update/', update_cart_item, name='update_cart_item'),
     path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
     path('remove-cart-item-drawer/<int:product_id>/<int:variant_id>/', remove_cart_item_drawer, name='remove_cart_item_drawer'),
-
-    
+    # Checkout and Order Confirmation
     path('checkout/', checkout, name='checkout'),
     path('checkout/payment-handler/', payment_handler, name='payment_handler'),
     path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
@@ -57,6 +56,8 @@ urlpatterns = [
     # Order related
     path('account-orders/', account_orders, name='account_orders'),
     path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
+    path('cancel-order/<int:order_id>/', cancel_order, name='cancel_order'),
+
     path('account-details/', account_details, name='account_details'),
     path('account/deactivate/', deactivate_account, name='deactivate_account'),   
     

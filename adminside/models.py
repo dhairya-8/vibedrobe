@@ -98,7 +98,6 @@ class User_Address(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
-    sort_order = models.IntegerField(null=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -108,7 +107,6 @@ class Sub_Category(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE,related_name='subcategories')
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
-    sort_order = models.IntegerField(null=False, default=0)
     
     def __str__(self):
         return f"SubCategory: {self.name} > {self.category_id.name}"
@@ -285,6 +283,20 @@ class Order_Master(models.Model):
                 new_num = 1
             self.order_number = f"ORD-{date_str}-{new_num:04d}"
         super().save(*args, **kwargs)
+        
+    def update_status_based_on_shipping(self, shipping_status):
+        """
+        Update order status based on shipping status changes
+        """
+        status_mapping = {
+            'confirm': 'confirmed',
+            'shipped': 'shipped', 
+            'delivered': 'delivered'
+        }
+        
+        if shipping_status in status_mapping:
+            self.status = status_mapping[shipping_status]
+            self.save()
     
     def __str__(self):
         return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"

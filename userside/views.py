@@ -1,8 +1,6 @@
 import re, time, random, string
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login as auth_login
-from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -14,9 +12,13 @@ from django.core.mail import send_mail, BadHeaderError, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from .decorators import user_login_required
+from django.contrib.auth import get_user_model
 from .utils import *
 from adminside.models import *
 import razorpay
+
+# Get the User model
+User = get_user_model()
 
 # Initialize Razorpay client
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
@@ -197,54 +199,56 @@ def homepage(request):
 def login_register_view(request):
     """Handle both login and registration in one view"""
     active_tab = request.GET.get('tab', 'login')
-    
-    # Handle login form submission
+
+    # -------------------------------
+    # LOGIN
+    # -------------------------------
     if request.method == 'POST' and 'login_email' in request.POST:
         email = request.POST.get('login_email')
         password = request.POST.get('login_password')
         remember_me = request.POST.get('remember', 'off') == 'on'
-        
+
         try:
             user = User.objects.get(email=email)
-            
-            # Check if account is deactivated
+
             if not user.is_active:
-                messages.error(request, 'Account is deactivated. Please contact support to reactivate.')
+                messages.error(request, 'Account is deactivated. Please contact support.')
                 return render(request, 'register.html', {
                     'login_form_data': {'email': email},
                     'active_tab': 'login'
                 })
-            
+
             if user.check_password(password):
-                # Check again in case the account was deactivated between query and login
-                if not user.is_active:
-                    messages.error(request, 'Account is currently deactivated')
-                    return redirect('login_register')
-                
-                # Set session data
+                # update last login time
+                user.last_login = timezone.now()
+                user.save(update_fields=['last_login'])
+
+                # -------------------------------
+                # set only user-specific session keys
+                # -------------------------------
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
                 request.session['user_name'] = user.username
-                
+
                 # Remember me functionality
                 request.session.set_expiry(1209600 if remember_me else 0)
-                
-                # Use Django's login() for session management
-                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                
+
                 messages.success(request, 'Login successful!')
                 return redirect('homepage')
             else:
                 messages.error(request, 'Incorrect password')
+
         except User.DoesNotExist:
             messages.error(request, 'Email not registered')
-        
+
         return render(request, 'register.html', {
             'login_form_data': {'email': email},
             'active_tab': 'login'
         })
-    
-    # Handle registration form submission (existing code remains same)
+
+    # -------------------------------
+    # REGISTRATION
+    # -------------------------------
     elif request.method == 'POST' and 'register_email' in request.POST:
         form_data = {
             'username': request.POST.get('register_username'),
@@ -252,56 +256,57 @@ def login_register_view(request):
             'password': request.POST.get('register_password'),
             'first_name': request.POST.get('first_name'),
         }
-        
+
         errors = validate_user_data(form_data)
-        
+
         if not errors:
             try:
-                # Create user with minimal fields
                 user = User.objects.create(
                     email=form_data['email'],
                     username=form_data['username'],
                     first_name=form_data['first_name'],
-                    is_active=True,  # Ensure new accounts are active
-                    # Other fields will use their defaults
+                    is_active=True,
                 )
                 user.set_password(form_data['password'])
                 user.save()
-                
-                # Auto-login after registration
+
+                # auto-login after registration
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
-                request.session['user_name'] = user.first_name
-                auth_login(request, user)
-                
+                request.session['user_name'] = user.username
+
+                request.session.set_expiry(0)  # default browser session
+
                 messages.success(request, 'Registration successful! Please complete your profile.')
-                success(f"Welcome {user.first_name}!", detailed=True)
                 return redirect('account_details')
-                
+
             except Exception as e:
                 messages.error(request, f'Registration failed: {str(e)}')
                 print(f"Registration error: {str(e)}")
+
         else:
             for field, error in errors.items():
                 messages.error(request, f"{field}: {error}")
-        
+
         return render(request, 'register.html', {
             'register_errors': errors,
             'register_form_data': form_data,
             'active_tab': 'register',
         })
-    
+
+    # -------------------------------
     # GET request
+    # -------------------------------
     return render(request, 'register.html', {'active_tab': active_tab})
 
-
 def user_logout(request):
-    """Logout clears session and uses Django's logout"""
-    auth_logout(request)
-    request.session.flush()
+    """Logout clears only user-specific session keys"""
+    for key in ['user_id', 'user_email', 'user_name']:
+        if key in request.session:
+            del request.session[key]
+
     messages.success(request, 'You have been logged out')
     return redirect('homepage')
-
 
 def forgotpassword(request):
     if request.method == 'POST':
@@ -334,7 +339,6 @@ def forgotpassword(request):
             messages.error(request, 'No account found with this email address.')
     
     return render(request, 'forgotpassword.html')
-
 
 def reset_password(request, token):
     # Check if token matches what's in the session
@@ -445,6 +449,56 @@ def order_detail(request, order_id):
         return redirect('account_orders')
 
 
+@user_login_required
+@require_POST
+def cancel_order(request, order_id):
+    try:
+        user_id_session = request.session.get('user_id')
+        order = get_object_or_404(Order_Master, id=order_id, user_id_id=user_id_session)
+
+        if order.status in ['processing', 'confirmed']:
+            # [IMPROVEMENT] Use a transaction to ensure data integrity
+            with transaction.atomic():
+                # --- Restock Inventory ---
+                order_items = order.order_details_set.all()
+                for item in order_items:
+                    variant = item.product_variant_id
+                    
+                    # --- [FIX] Check if the variant still exists ---
+                    if variant:
+                        variant.stock_quantity += item.quantity
+                        variant.save()
+                    else:
+                        # This variant was likely deleted. Log this serious issue.
+                        error(f"Cannot restock item for Order #{order.order_number}. Product Variant ID {item.product_variant_id_id} not found.")
+                        # We will still cancel the order but the admin needs to know about the stock discrepancy.
+                
+                # --- Handle Refund for Prepaid Orders ---
+                if order.mode_of_payment != 'cod':
+                    try:
+                        payment = Payment.objects.get(order_id=order)
+                        payment.status = 'refund_initiated'
+                        payment.refund_amount = order.total_amount
+                        payment.refund_reason = 'Order cancelled by customer.'
+                        payment.save()
+                    except Payment.DoesNotExist:
+                        error(f'Payment record not found for prepaid order {order.order_number} during cancellation.')
+                        
+                # --- Update Order Status ---
+                order.status = 'cancelled'
+                order.save()
+            
+            messages.success(request, f"Order #{order.order_number} has been successfully cancelled.")
+
+        else:
+            messages.error(request, "This order cannot be cancelled as it has already been shipped.")
+
+    except Exception as e:
+        error(f'Error cancelling order: {str(e)}', detailed=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+
+    return redirect('account_orders')
+    
 @user_login_required
 def account_addresses(request):
     user_id_from_session = request.session.get('user_id')
@@ -557,67 +611,90 @@ def set_default_address(request, address_id):
 
 @user_login_required
 def account_details(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Please login to continue")
+        return redirect('login_register')
+
+    try:
+        user = User.objects.get(id=user_id)  # fetch from DB using session
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('homepage')
+
     if request.method == 'POST':
-        if request.POST.get('form_type') == 'profile':
-            # Handle profile update
-            user = request.user
-            user.first_name = request.POST.get('first_name')
-            user.last_name = request.POST.get('last_name')
-            user.contact = request.POST.get('contact')
-            user.date_of_birth = request.POST.get('date_of_birth')
-            user.gender = request.POST.get('gender')
-            
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'profile':
+            # Profile update
+            user.first_name = request.POST.get('first_name', user.first_name)
+            user.last_name = request.POST.get('last_name', user.last_name)
+            user.contact = request.POST.get('contact', user.contact)
+            user.date_of_birth = request.POST.get('date_of_birth', user.date_of_birth)
+            user.gender = request.POST.get('gender', user.gender)
+
             if 'profile_image' in request.FILES:
                 user.profile_image = request.FILES['profile_image']
-            
+                
+            elif request.POST.get('clear_image') == '1':
+                user.profile_image.delete(save=False)
+                user.profile_image = None
+
             user.save()
             messages.success(request, 'Profile updated successfully!')
-            
-        elif request.POST.get('form_type') == 'password':
-            # Handle password change
+
+        elif form_type == 'password':
+            # Password change
             current_password = request.POST.get('current_password')
             new_password1 = request.POST.get('new_password1')
             new_password2 = request.POST.get('new_password2')
-            
-            if not request.user.check_password(current_password):
+
+            if not user.check_password(current_password):
                 messages.error(request, 'Current password is incorrect')
             elif new_password1 != new_password2:
                 messages.error(request, 'New passwords do not match')
             elif len(new_password1) < 8:
                 messages.error(request, 'Password must be at least 8 characters')
             else:
-                request.user.set_password(new_password1)
-                request.user.save()
-                
-                # Re-login the user to maintain session
-                from django.contrib.auth import login
-                login(request, request.user)
-                
+                user.set_password(new_password1)
+                user.save()
                 messages.success(request, 'Password changed successfully!')
                 return redirect('account_details')
-        
+
         return redirect('account_details')
-    
-    return render(request, 'account_details.html')
+
+    return render(request, 'account_details.html', {"user": user})
 
 
 @user_login_required
 def deactivate_account(request):
     if request.method == 'POST':
         password = request.POST.get('password')
-        if request.user.check_password(password):
-            request.user.is_active = False
-            request.user.save()
-            
-            auth_logout(request)
-            
-            messages.success(request, 'Account deactivated successfully')
-            return redirect('homepage')
-        else:
-            messages.error(request, 'Incorrect password')
-            return redirect('account_details')
-    return redirect('account_details')
+        try:
+            # get current user from session
+            user_id = request.session.get('user_id')
+            user = User.objects.get(id=user_id)
 
+            if user.check_password(password):
+                user.is_active = False
+                user.save()
+
+                # clear only user session keys instead of auth_logout
+                for key in ['user_id', 'user_email', 'user_name']:
+                    if key in request.session:
+                        del request.session[key]
+
+                messages.success(request, 'Account deactivated successfully')
+                return redirect('homepage')
+            else:
+                messages.error(request, 'Incorrect password')
+                return redirect('account_details')
+
+        except User.DoesNotExist:
+            messages.error(request, 'User not found. Please log in again.')
+            return redirect('login_register')
+
+    return redirect('account_details')
 
 # ============================= PRODUCT VIEWS =============================
 
@@ -1363,7 +1440,7 @@ def quick_add_to_cart(request, product_id):
             return redirect('shop')
         
         # Get or create user's cart
-        cart, created = Cart.objects.get_or_create(user_id=request.user)
+        cart, created = Cart.objects.get_or_create(user_id=request.session['user_id'])
         
         # Check if item already exists in cart
         cart_item, created = Cart_Items.objects.get_or_create(
@@ -1390,8 +1467,8 @@ def quick_add_to_cart(request, product_id):
         
     except Exception as e:
         messages.error(request, "Couldn't add item to cart. Please try again.")
-        # Log the error here in production
-    
+        error(f"Quick add from grid error: {str(e)}")
+           
     # Redirect back to shop with parameter to open cart drawer
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
@@ -1585,21 +1662,22 @@ def move_to_cart(request, item_id):
 @user_login_required
 def quick_add_to_wishlist(request, product_id):
     try:
+        user = User.objects.get(id=request.session['user_id'])
         product = get_object_or_404(Product, id=product_id, is_active=True)
         
         # Check if product is already in wishlist
-        if Wishlist.objects.filter(user_id=request.user, product_id=product).exists():
+        if Wishlist.objects.filter(user_id=user, product_id=product).exists():
             messages.info(request, f"{product.name} is already in your wishlist 💖")
         else:
-            Wishlist.objects.create(user_id=request.user, product_id=product)
+            Wishlist.objects.create(user_id=user, product_id=product)
             messages.success(request, f"✓ {product.name} added to wishlist!")
             
     except IntegrityError:
         messages.error(request, "Couldn't add to wishlist. Please try again.")
     except Exception as e:
         messages.error(request, "An unexpected error occurred.")
-        # Log the error here in production
-    
+        error(f"Quick add to wishlist error: {str(e)}")
+           
     return redirect('shop')
 
 
@@ -1609,7 +1687,7 @@ def quick_add_to_wishlist(request, product_id):
 def checkout(request):
     try:
         user_id = request.session.get('user_id')
-        user = request.user
+        user = User.objects.get(id=user_id)
         
         # Get user's cart
         cart_obj, created = Cart.objects.get_or_create(user_id_id=user_id)
@@ -1647,6 +1725,13 @@ def checkout(request):
             # Create order using transaction to ensure data consistency
             try:
                 with transaction.atomic():
+                    # --- First, check stock for all items BEFORE creating the order ---
+                    for cart_item in cart_items:
+                        variant = cart_item.product_variant_id
+                        if variant.stock_quantity < cart_item.quantity:
+                            messages.error(request, f"Sorry, we don't have enough stock for {variant.product_id.name}. Only {variant.stock_quantity} left.")
+                            return redirect('cart')
+                        
                     # Create order master
                     order = Order_Master(
                         user_id=user,
@@ -1686,6 +1771,11 @@ def checkout(request):
                             product_sku=cart_item.product_variant_id.sku,
                         )
                         order_details_list.append(order_detail)
+                        
+                        # --- [CORRECTED] Decrement the stock for the purchased variant ---
+                        variant = cart_item.product_variant_id
+                        variant.stock_quantity -= cart_item.quantity
+                        variant.save()
                     
                     # Handle different payment methods
                     if payment_method == 'cod':
@@ -1786,7 +1876,7 @@ def checkout(request):
 def orderconfirm(request, order_id):
     try:
         user_id = request.session.get('user_id')
-        user = request.user
+        user = User.objects.get(id=user_id)
         
         # Get the order with related data
         order = get_object_or_404(Order_Master, id=order_id, user_id=user)
@@ -1946,7 +2036,6 @@ def contactus(request):
             return render(request, 'contactus.html')
     
     return render(request, 'contactus.html')
-
 
 def aboutus(request):
    return render(request, 'aboutus.html')

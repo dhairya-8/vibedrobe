@@ -97,25 +97,9 @@
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_user' %}">
               <i class="fas fa-user-friends menu-icon"></i>
-              <span>View Users</span>
+              <span>Users</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_orders' %}">
-              <i class="iconoir-table-rows menu-icon"></i>
-              <span>Orders</span>
-            </a>
-        
-            <!-- end startbarTables -->
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'shipping_management' %}">
-              <i class="fas fa-shipping-fast menu-icon"></i>
-              <span>Shipping</span>
-            </a>
-          </li>
-
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_cart' %}">
               <i class="fab fa-opencart menu-icon"></i>
@@ -129,7 +113,19 @@
               <span>Wishlist</span>
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'display_orders' %}">
+              <i class="iconoir-table-rows menu-icon"></i>
+              <span>Orders</span>
+            </a>
+          </li>
 
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'shipping_management' %}">
+              <i class="fas fa-shipping-fast menu-icon"></i>
+              <span>Shipping</span>
+            </a>
+          </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_payment' %}">
               <i class="iconoir-dollar-circle menu-icon"></i>

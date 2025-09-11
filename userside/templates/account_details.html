@@ -4,7 +4,6 @@
 {% block title %} Account Details | VibeDrobe {% endblock %}
 
 {% block css %}
-  <!-- Your existing CSS imports -->
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta name="author" content="flexkit">
   <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
@@ -14,7 +13,6 @@
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
-  <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   
   <style>
@@ -71,23 +69,37 @@
       border-radius: 50%;
       object-fit: cover;
       margin-right: 20px;
+      background-color: #f0f0f0; /* Fallback background for default image */
+    }
+    .profile-image-buttons {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      font-weight: bold;
-      color: white;
-      background-color: #6c5ce7;
+      gap: 10px;
     }
-    .image-upload-btn {
-      display: inline-block;
-      padding: 8px 15px;
-      background: #f5f5f5;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .image-upload-btn:hover {
-      background: #e5e5e5;
+/* Common button styles */
+.image-upload-btn,
+.image-clear-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 120px;
+  text-align: center;
+  border: none;
+}
+
+/* Upload button (subtle blue) */
+.image-upload-btn {
+  background-color: #e3f2fd; /* light blue */
+  color: #1565c0;           /* deep blue text */
+}
+
+/* Clear button (subtle red) */
+.image-clear-btn {
+  background-color: #ffebee; /* light red */
+  color: #c62828;            /* deep red text */
+}
+
     }
     .flatpickr-input {
       background-color: white !important;
@@ -119,6 +131,7 @@
   </style>
 {% endblock %}
 
+
 {% block content %}
 <main>
   <div class="mb-4 pb-4"></div>
@@ -136,7 +149,6 @@
       </div>
       <div class="col-lg-9">
         <div class="account-details-container">
-          <!-- Tab Buttons with Deactivate -->
           <div class="tab-buttons">
             <div class="d-flex">
               <button class="tab-button active" data-tab="profile">Profile Details</button>
@@ -147,7 +159,6 @@
             </button>
           </div>
           
-          <!-- Profile Details Section -->
           <div id="profile-section" class="form-section tab-content active">
             <h3 class="form-title">Personal Information</h3>
             
@@ -156,15 +167,11 @@
               <input type="hidden" name="form_type" value="profile">
               
               <div class="profile-image-container">
-                {% if user.profile_image %}
-                  <img src="{{ user.profile_image.url }}" alt="Profile Image" class="profile-image-preview" id="profile-image-preview">
-                {% else %}
-                  <div class="profile-image-preview" id="profile-image-preview">
-                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-                  </div>
-                {% endif %}
-                <div>
-                  <label for="profile-image-upload" class="image-upload-btn">Change Image</label>
+                <input type="hidden" name="clear_image" id="clear-image-flag" value="0">
+                <img src="{% if user.profile_image %}{{ user.profile_image.url }}{% else %}{% static 'user/assets/images/default_pic.png' %}{% endif %}" alt="Profile Image" class="profile-image-preview" id="profile-image-preview">
+                <div class="profile-image-buttons">
+                  <label for="profile-image-upload" class="image-upload-btn">Upload Image</label>
+                  <button type="button" class="image-clear-btn" id="clear-image-btn">Clear Image</button>
                   <input type="file" name="profile_image" id="profile-image-upload" accept="image/*" style="display: none;">
                 </div>
               </div>
@@ -172,7 +179,7 @@
               <div class="row">
                 <div class="col-md-6 mb-4">
                   <label class="form-label">First Name</label>
-                  <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                  <input type="text" name="first_name" class="form-control" value="{{ user.first_name|default:'' }}" required>
                 </div>
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Last Name</label>
@@ -191,16 +198,20 @@
                 <input type="text" class="form-control" value="{{ user.username }}" readonly>
               </div>
               
-              <div class="mb-4">
-                <label class="form-label">Phone Number</label>
-                <input type="tel" name="contact" class="form-control" value="{{ user.contact }}" required>
+              <div class="form-group mb-2">
+                <label class="form-label" for="contact">Phone Number</label>
+                <div class="input-group">
+                  <span class="input-group-text">+91</span>
+                  <input type="text" class="form-control" id="contact" name="contact" 
+                    placeholder="Enter phone number" value="{{ user.contact|default:'' }}">
+                </div>
               </div>
               
               <div class="row">
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Date of Birth</label>
-                  <input type="text" name="date_of_birth" class="form-control flatpickr-input" 
-                         value="{{ user.date_of_birth|date:'Y-m-d' }}" placeholder="Select Date" readonly required>
+                  <input type="text" name="date_of_birth" class="form-control flatpickr-input"  
+                          value="{{ user.date_of_birth|date:'Y-m-d' }}" placeholder="Select Date" readonly required>
                 </div>
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Gender</label>
@@ -217,7 +228,6 @@
             </form>
           </div>
           
-          <!-- Change Password Section -->
           <div id="password-section" class="form-section tab-content">
             <h3 class="form-title">Change Password</h3>
             
@@ -251,7 +261,6 @@
     </div>
   </section>
   
-  <!-- Deactivate Account Modal -->
   <div class="modal fade" id="deactivateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -280,10 +289,8 @@
 {% endblock %}
 
 {% block script %}
-  <!-- Your existing JS imports -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
-  <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   
   <script>
@@ -308,32 +315,32 @@
         });
       });
       
-      // Profile image preview
+      // Profile image preview and handling
       const profileImageInput = document.getElementById('profile-image-upload');
       const profileImagePreview = document.getElementById('profile-image-preview');
-      if (profileImageInput && profileImagePreview) {
-        profileImageInput.addEventListener('change', function() {
-          const file = this.files[0];
-          if (file) {
-            if (profileImagePreview.tagName === 'DIV') {
-              // Convert the div to an img element
-              const newImg = document.createElement('img');
-              newImg.id = 'profile-image-preview';
-              newImg.className = 'profile-image-preview';
-              newImg.alt = 'Profile Image';
-              profileImagePreview.parentNode.replaceChild(newImg, profileImagePreview);
-              profileImagePreview = newImg;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-              profileImagePreview.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-          }
-        });
-      }
+      const clearImageBtn = document.getElementById('clear-image-btn');
+      const defaultImageUrl = "{% static 'user/assets/images/default_pic.png' %}";
       
+      // Handle image upload and preview
+      profileImageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            profileImagePreview.src = e.target.result;
+          }
+          reader.readAsDataURL(file);
+        }
+      });
+      
+// Handle "Clear Image" button click
+clearImageBtn.addEventListener('click', function() {
+  profileImagePreview.src = defaultImageUrl;
+  profileImageInput.value = ''; // Clear the file input
+  document.getElementById('clear-image-flag').value = "1"; // Mark image for deletion
+});
+
+
       // Form validation
       const forms = document.querySelectorAll('form');
       forms.forEach(form => {
@@ -359,11 +366,15 @@
             if (pass1.value !== pass2.value) {
               pass2.classList.add('is-invalid');
               valid = false;
+            } else {
+              pass2.classList.remove('is-invalid');
             }
             
             if (pass1.value.length < 8) {
               pass1.classList.add('is-invalid');
               valid = false;
+            } else {
+              pass1.classList.remove('is-invalid');
             }
           }
           
