@@ -14,6 +14,8 @@
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+  
+ 
 {% endblock %}
 
 {% block content %}
@@ -30,14 +32,25 @@
                     <h4 class="card-title">Customer Activity Report</h4>
                   </div>
                   <!-- end col -->
-                 
+                  <div class="col-auto">
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-download me-1"></i> Export
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item export-link" href="?export=csv">CSV</a>
+                        <a class="dropdown-item export-link" href="?export=excel">Excel</a>
+                        <a class="dropdown-item export-link" href="?export=pdf">PDF</a>
+                      </div>
+                    </div>
+                  </div>
                   <!-- end col -->
                 </div> <!-- end row -->
               </div>
               <!-- end card-header -->
               <div class="card-body pt-0">
                 <div class="table-responsive">
-                  <table class="table">
+                  <table class="table" id="customerReportTable">
                     <thead class="table-light">
                       <tr>
                         <th>ID</th>
@@ -49,34 +62,22 @@
                       </tr>
                     </thead>
                     <tbody>
+                      {% for customer in customers %}
                       <tr>
-                        <td>1</td>
-                        <td>Priya Sharma</td>
-                        <td>priya@gmail.com</td>
-                        <td>12</td>
-                        <td>₹15,400</td>
-                        <td>2025-04-01</td>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+                        <td>{{ customer.email }}</td>
+                        <td>{{ customer.total_orders|default:0 }}</td>
+                        <td>₹{{ customer.total_spent|default:0|floatformat:2 }}</td>
+                        <td>{{ customer.last_order_date|date:"Y-m-d"|default:"No orders" }}</td>
                       </tr>
+                      {% empty %}
                       <tr>
-                        <td>2</td>
-                        <td>Arjun Mehta</td>
-                        <td>arjun@hotmail.com</td>
-                        <td>10</td>
-                        <td>₹13,200</td>
-                        <td>2025-03-27</td>
+                        <td colspan="6" class="text-center">No customer data available</td>
                       </tr>
-                      <tr>
-                        <td>3</td>
-                        <td>Sneha Verma</td>
-                        <td>sneha@outlook.com</td>
-                        <td>9</td>
-                        <td>₹12,100</td>
-                        <td>2025-03-30</td>
-                      </tr>
+                      {% endfor %}
                     </tbody>
                   </table>
-                  
-                      
                 </div>
               </div>
               <!-- end card-body -->
@@ -87,13 +88,7 @@
         <!-- end row -->
       </div>
       <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
       <!-- Start Footer -->
-
       {% include 'footer.html' %}
       <!-- end footer -->
     </div>
@@ -103,7 +98,6 @@
 {% endblock %}
 
 <!-- Javascript -->
-
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
@@ -111,5 +105,32 @@
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
   <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+  
+  <script>
+    // Initialize the data table
+    document.addEventListener('DOMContentLoaded', function() {
+      const table = document.getElementById('customerReportTable');
+      if (table) {
+        const dataTable = new DataTable(table, {
+          perPage: 10,
+          perPageSelect: [5, 10, 20, 50],
+          searchable: true,
+          sortable: true,
+          labels: {
+            placeholder: "Search customers...",
+            perPage: "{select} entries per page",
+            noRows: "No customers found",
+            info: "Showing {start} to {end} of {rows} entries"
+          }
+        });
+      }
+
+      // Add loading indicator for export links
+      document.querySelectorAll('.export-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          document.getElementById('exportLoading').style.display = 'block';
+        });
+      });
+    });
+  </script>
 {% endblock %}
-<!-- end body -->

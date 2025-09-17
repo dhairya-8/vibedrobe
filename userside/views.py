@@ -6,7 +6,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
-from django.db.models import Min, Max, Count, Prefetch
+from django.db.models import Min, Max, Count, Prefetch, Sum, Avg
 from django.db import IntegrityError, transaction
 from django.views.decorators.http import require_POST
 from django.urls import reverse
@@ -191,8 +191,86 @@ For support, contact us at support@vibedrobe.com
 # ============================= AUTHENTICATION VIEWS =============================
 
 def homepage(request):
-   return render(request, 'homepage.html')
+    """
+    View for the homepage, fetching various product lists.
+    """
+    
+    # Fetch New Arrivals (latest 8 products)
+    # all_products = Product.objects.filter(is_active=True).order_by('id')[:8]
+    
+    # Fetch New Arrivals (latest 8 products)
+    new_arrivals = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
 
+    # Fetch Best Sellers (top 8 products by quantity sold)
+    # This query calculates the sum of quantities sold for each product.
+    best_seller_ids = Order_Details.objects.values('product_variant_id__product_id') \
+        .annotate(total_sold=Sum('quantity')) \
+        .order_by('-total_sold') \
+        .values_list('product_variant_id__product_id', flat=True)
+        
+    # Fetch the product objects for the best seller IDs
+    # Note: This creates a new query. For very large datasets, you might optimize.
+    best_sellers = Product.objects.filter(id__in=list(best_seller_ids)[:8])
+
+    # Fetch Top Rated products (top 8 by average rating)
+    top_rated = Product.objects.filter(is_active=True) \
+        .annotate(average_rating=Avg('review__rating')) \
+        .filter(average_rating__isnull=False) \
+        .order_by('-average_rating')[:8]
+
+    # Fetch Limited Edition products (carousel)
+    limited_edition = Product.objects.filter(product_tags__tag__iexact='Limited Edition', is_active=True)[:8]
+    if not limited_edition.exists():
+        # Fallback: get the 8 most expensive products if the tag doesn't exist or isn't used
+        limited_edition = Product.objects.filter(is_active=True).order_by('-price')[:8]
+
+    try:
+        ethnic_category = Category.objects.get(name__iexact="Ethnic Wear")
+    except Category.DoesNotExist:
+        ethnic_category = None
+
+    try:
+        tshirts_subcategory = Sub_Category.objects.get(name__iexact="T-Shirts")
+    except Sub_Category.DoesNotExist:
+        tshirts_subcategory = None
+        
+    try:
+        jackets_subcategory = Sub_Category.objects.get(name__iexact="Jacket")
+    except Sub_Category.DoesNotExist:
+        jackets_subcategory = None 
+        
+    # Calculate the minimum price for Women's T-Shirts
+    tshirts_min_price = None
+    if tshirts_subcategory:
+        price_agg = Product.objects.filter(
+            subcategory_id=tshirts_subcategory, 
+            gender='Female'
+        ).aggregate(min_price=Min('price'))
+        tshirts_min_price = price_agg.get('min_price')
+
+    # Calculate the minimum price for Men's Jackets
+    jackets_min_price = None
+    if jackets_subcategory:
+        price_agg = Product.objects.filter(
+            subcategory_id=jackets_subcategory, 
+            gender='Male'
+        ).aggregate(min_price=Min('price'))
+        jackets_min_price = price_agg.get('min_price')
+    
+    context = {
+        'all_products': new_arrivals, # Using new_arrivals for the 'All' tab for simplicity
+        'new_arrivals': new_arrivals,
+        'best_sellers': best_sellers,
+        'top_rated': top_rated,
+        'limited_edition_products': limited_edition,
+        'ethnic_category': ethnic_category,
+        'tshirts_subcategory': tshirts_subcategory,
+        'jackets_subcategory': jackets_subcategory,
+        'tshirts_min_price': tshirts_min_price,
+        'jackets_min_price': jackets_min_price,
+    }
+    
+    return render(request, 'homepage.html', context)
 
 def login_register_view(request):
     """Handle both login and registration in one view"""
@@ -904,6 +982,17 @@ def product_detail(request, product_id):
             id__gt=product.id, is_active=True
         ).order_by('id').first()
         
+        # Get reviews for this product
+        reviews = Review.objects.filter(product_id=product).select_related('user_id')
+    
+        # Calculate average rating
+        average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    
+        # Get rating counts
+        rating_counts = {}
+        for rating in range(1, 6):
+            rating_counts[rating] = reviews.filter(rating=rating).count()
+        
         context = {
             'product': product,
             'in_wishlist': in_wishlist,
@@ -917,6 +1006,9 @@ def product_detail(request, product_id):
             'has_purchased': has_purchased,
             'prev_product': prev_product,
             'next_product': next_product,
+            'reviews': reviews,
+            'average_rating': average_rating,
+            'rating_counts': rating_counts,
         }
         
         return render(request, 'product_detail.html', context)
@@ -1396,6 +1488,54 @@ def quick_add_to_cart(request, product_id):
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
 
+@user_login_required
+def quick_add_to_cart_home(request, product_id):
+    try:
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        variant = product.variants.filter(is_active=True).first()
+        
+        if not variant:
+            messages.error(request, "This product is currently unavailable.")
+            return redirect('homepage')
+        
+        if variant.stock_quantity <= 0:
+            messages.warning(request, f"Sorry, {product.name} is out of stock.")
+            return redirect('homepage')
+        
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user_id=request.user)
+        
+        # Check if item already exists in cart
+        cart_item, created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'price_at_time': product.price + (variant.additional_price or 0),
+                'quantity': 1
+            }
+        )
+        
+        if not created:
+            # If item exists and we can add more
+            new_quantity = cart_item.quantity + 1
+            if new_quantity <= variant.stock_quantity:
+                cart_item.quantity = new_quantity
+                cart_item.save()
+                messages.success(request, f"Added one more {product.name} to your cart. Total: {new_quantity}")
+            else:
+                messages.warning(request, 
+                    f"You already have {cart_item.quantity} in cart. Only {variant.stock_quantity} available.")
+        else:
+            messages.success(request, f"✓ {product.name} added to cart!")
+        
+    except Exception as e:
+        messages.error(request, "Couldn't add item to cart. Please try again.")
+        # Log the error here in production
+    
+    # Redirect back to homepage with parameter to open cart drawer
+    homepage_url = reverse('homepage')
+    return redirect(f"{homepage_url}?open_cart_drawer=true")
+
 
 # ============================= WISHLIST VIEWS =============================
 
@@ -1602,6 +1742,36 @@ def quick_add_to_wishlist(request, product_id):
     
     return redirect('shop')
 
+@user_login_required
+def quick_add_to_wishlist_home(request, product_id):
+    try:
+        print(f"Wishlist request received for product ID: {product_id}")  # Debug
+        print(f"User: {request.user}")  # Debug
+        
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        print(f"Product found: {product.name}")  # Debug
+        
+        # Check if product is already in wishlist
+        wishlist_exists = Wishlist.objects.filter(user_id=request.user, product_id=product).exists()
+        print(f"Wishlist exists: {wishlist_exists}")  # Debug
+        
+        if wishlist_exists:
+            messages.info(request, f"{product.name} is already in your wishlist 💖")
+            print("Product already in wishlist")  # Debug
+        else:
+            Wishlist.objects.create(user_id=request.user, product_id=product)
+            messages.success(request, f"✓ {product.name} added to wishlist!")
+            print("Product added to wishlist")  # Debug
+            
+    except IntegrityError as e:
+        print(f"IntegrityError: {e}")  # Debug
+        messages.error(request, "Couldn't add to wishlist. Please try again.")
+    except Exception as e:
+        print(f"Exception: {e}")  # Debug
+        messages.error(request, "An unexpected error occurred.")
+        # Log the error here in production
+    
+    return redirect('homepage')
 
 # ============================= CHECKOUT & PAYMENT VIEWS =============================
 

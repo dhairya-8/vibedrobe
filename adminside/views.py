@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.urls import reverse
 from .models import *
 from .decorators import admin_login_required
 from decimal import Decimal, InvalidOperation
@@ -8,10 +7,9 @@ from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.conf import settings
 import random, string, os, json
-from django.db.models import Count, Sum, Q, F, Prefetch
+from django.db.models import Count, Sum, Q, F, Prefetch, Max
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models.functions import TruncDay, Coalesce 
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_GET
 from datetime import datetime
@@ -19,15 +17,13 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from django.template.loader import render_to_string
 from django.db import transaction
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
-from django.contrib.auth.decorators import user_passes_test
-from django.db import transaction
-
+import csv
+import xlwt
 from django.db.models import Sum, Count, F, Q, Avg
-from django.db.models.functions import TruncDay, Coalesce
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
 
@@ -1742,8 +1738,164 @@ def update_payment_status(request, payment_id):
 def report_FBT(request):
     return render(request, 'report_FBT.html')
 
+@admin_login_required
 def report_customer(request):
-    return render(request, 'report_customer.html')
+    customers = get_customer_data()
+    
+    # Check if export was requested
+    export_format = request.GET.get('export')
+    if export_format:
+        return export_customer_report(customers, export_format)
+    
+    context = {
+        'customers': customers
+    }
+    return render(request, 'report_customer.html', context)
+
+def get_customer_data():
+    """Helper function to get customer data"""
+    return User.objects.annotate(
+        total_orders=Count('order_master'),
+        total_spent=Sum('order_master__total_amount'),
+        last_order_date=Max('order_master__order_date')
+    ).order_by('-total_spent')
+
+def export_customer_report(customers, export_format):
+    """Export customer report in the requested format"""
+    if export_format == 'csv':
+        return export_csv(customers)
+    elif export_format == 'excel':
+        return export_excel(customers)
+    elif export_format == 'pdf':
+        return export_pdf(customers)
+    else:
+        # Default to CSV if format is not recognized
+        return export_csv(customers)
+
+def export_csv(customers):
+    """Export customer data as CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="customer_report.csv"'
+    
+    writer = csv.writer(response)
+    # Write header row
+    writer.writerow(['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date'])
+    
+    # Write data rows
+    for customer in customers:
+        writer.writerow([
+            customer.id,
+            f"{customer.first_name} {customer.last_name}",
+            customer.email,
+            customer.total_orders or 0,
+            customer.total_spent or 0,
+            customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
+        ])
+    
+    return response
+
+def export_excel(customers):
+    """Export customer data as Excel"""
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="customer_report.xls"'
+    
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet('Customer Report')
+    
+    # Sheet header, first row
+    row_num = 0
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+    
+    columns = ['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date']
+    
+    for col_num, column_title in enumerate(columns):
+        ws.write(row_num, col_num, column_title, font_style)
+    
+    # Sheet body, remaining rows
+    font_style = xlwt.XFStyle()
+    
+    for customer in customers:
+        row_num += 1
+        ws.write(row_num, 0, customer.id, font_style)
+        ws.write(row_num, 1, f"{customer.first_name} {customer.last_name}", font_style)
+        ws.write(row_num, 2, customer.email, font_style)
+        ws.write(row_num, 3, customer.total_orders or 0, font_style)
+        ws.write(row_num, 4, float(customer.total_spent or 0), font_style)
+        ws.write(row_num, 5, customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders', font_style)
+    
+    wb.save(response)
+    return response
+
+def export_pdf(customers):
+    """Export customer data as PDF"""
+    # For PDF export, we'll use reportlab
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.units import inch
+        
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="customer_report.pdf"'
+        
+        # Create the PDF object, using the response object as its "file."
+        p = canvas.Canvas(response, pagesize=letter)
+        width, height = letter
+        
+        # Draw title
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(1 * inch, height - 1 * inch, "Customer Activity Report")
+        
+        # Draw headers
+        p.setFont("Helvetica-Bold", 10)
+        headers = ["ID", "Customer Name", "Email", "Orders", "Total Spent", "Last Order"]
+        col_widths = [0.5 * inch, 1.5 * inch, 2 * inch, 0.7 * inch, 1 * inch, 1 * inch]
+        
+        y = height - 1.5 * inch
+        x = 0.5 * inch
+        
+        for i, header in enumerate(headers):
+            p.drawString(x, y, header)
+            x += col_widths[i]
+        
+        # Draw data rows
+        p.setFont("Helvetica", 9)
+        y -= 0.25 * inch
+        row_height = 0.2 * inch
+        
+        for customer in customers:
+            if y < 1 * inch:  # Add new page if needed
+                p.showPage()
+                p.setFont("Helvetica", 9)
+                y = height - 1 * inch
+            
+            x = 0.5 * inch
+            fields = [
+                str(customer.id),
+                f"{customer.first_name} {customer.last_name}",
+                customer.email,
+                str(customer.total_orders or 0),
+                f"₹{customer.total_spent or 0:.2f}",
+                customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
+            ]
+            
+            for i, field in enumerate(fields):
+                # Truncate long text
+                if len(field) > 25:
+                    field = field[:22] + "..."
+                p.drawString(x, y, field)
+                x += col_widths[i]
+            
+            y -= row_height
+        
+        # Close the PDF object cleanly, and we're done.
+        p.showPage()
+        p.save()
+        return response
+        
+    except ImportError:
+        # Fallback to CSV if reportlab is not installed
+        return export_csv(customers)
 
 def report_sales(request):
     return render(request, 'report_sales.html')

@@ -16,6 +16,55 @@
     border-color: #000;
     background-color: #f5f5f5;
 }
+
+.products-carousel .pc__img-wrapper {
+    height: 300px; /* Fixed height for consistency */
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-color: #ffffffff; /* Neutral background for better appearance */
+  }
+  
+  .products-carousel .pc__img {
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Changed from cover to contain to show full image */
+  }
+
+  .size-guide .table {
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+.size-guide .table th, 
+.size-guide .table td {
+  padding: 8px 5px;
+}
+
+.composition-care-wrapper .card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+}
+
+.composition-care-wrapper .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.bg-opacity-10 {
+  background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+}
+
+.composition-care-wrapper .bi {
+  font-size: 1.1em;
+}
+
+.small {
+  font-size: 0.875rem;
+}
 </style>
 
 {% endblock %}
@@ -211,22 +260,22 @@
               </div>
             </div>
             <div id="product_single_details_accordion" class="product-single__details-accordion accordion">
-              <div class="accordion-item">
-                <h5 class="accordion-header" id="accordion-heading-11">
-                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-1" aria-expanded="true" aria-controls="accordion-collapse-1">
-                    Description
-                    <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
-                  </button>
-                </h5>
-                <div id="accordion-collapse-1" class="accordion-collapse collapse show" aria-labelledby="accordion-heading-11" data-bs-parent="#product_single_details_accordion">
-                  <div class="accordion-body">
-                    <div class="product-single__description">
-                      <h3 class="block-title mb-4">{{ product.description|truncatechars:45 }}</h3>
-                      <p class="content">{{ product.description|linebreaks }}</p>    
-                    </div>
-                  </div>
-                </div>
-              </div><!-- /.accordion-item -->
+  <div class="accordion-item">
+    <h5 class="accordion-header" id="accordion-heading-11">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-1" aria-expanded="false" aria-controls="accordion-collapse-1">
+        Description
+        <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
+      </button>
+    </h5>
+    <div id="accordion-collapse-1" class="accordion-collapse collapse" aria-labelledby="accordion-heading-11" data-bs-parent="#product_single_details_accordion">
+      <div class="accordion-body">
+        <div class="product-single__description">
+          <h3 class="block-title mb-4">{{ product.description|truncatechars:45 }}</h3>
+          <p class="content">{{ product.description|linebreaks }}</p>    
+        </div>
+      </div>
+    </div>
+  </div><!-- /.accordion-item -->
 
               <div class="accordion-item">
                 <h5 class="accordion-header" id="accordion-heading-2">
@@ -262,113 +311,132 @@
               </div><!-- /.accordion-item -->
 
               <div class="accordion-item">
-                <h5 class="accordion-header" id="accordion-heading-3">
-                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-3" aria-expanded="false" aria-controls="accordion-collapse-3">
-                    Reviews (3)
-                    <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
-                  </button>
-                </h5>
-                <div id="accordion-collapse-3" class="accordion-collapse collapse" aria-labelledby="accordion-heading-3" data-bs-parent="#product_single_details_accordion">
-                  <div class="accordion-body">
-                    <h2 class="product-single__reviews-title">Reviews</h2>
-                    <div class="product-single__reviews-list">
-                      <div class="product-single__reviews-item">
-                        <div class="customer-avatar">
-                          <img loading="lazy" src="../images/avatar.jpg" alt="">
-                        </div>
-                        <div class="customer-review">
-                          <div class="customer-name">
-                            <h6>Janice Miller</h6>
-                            <div class="reviews-group d-flex">
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                            </div>
-                          </div>
-                          <div class="review-date">April 06, 2023</div>
-                          <div class="review-text">
-                            <p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est…</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="product-single__reviews-item">
-                        <div class="customer-avatar">
-                          <img loading="lazy" src="../images/avatar.jpg" alt="">
-                        </div>
-                        <div class="customer-review">
-                          <div class="customer-name">
-                            <h6>Benjam Porter</h6>
-                            <div class="reviews-group d-flex">
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                              <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                            </div>
-                          </div>
-                          <div class="review-date">April 06, 2023</div>
-                          <div class="review-text">
-                            <p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est…</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="product-single__review-form">
-                      <form name="customer-review-form">
-                        <h5>Be the first to review “Message Cotton T-Shirt”</h5>
-                        <p>Your email address will not be published. Required fields are marked *</p>
-                        <div class="select-star-rating">
-                          <label>Your rating *</label>
-                          <span class="star-rating">
-                            <svg class="star-rating__star-icon" width="12" height="12" fill="#ccc" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.1429 5.04687C11.1429 4.84598 10.9286 4.76562 10.7679 4.73884L7.40625 4.25L5.89955 1.20312C5.83929 1.07589 5.72545 0.928571 5.57143 0.928571C5.41741 0.928571 5.30357 1.07589 5.2433 1.20312L3.73661 4.25L0.375 4.73884C0.207589 4.76562 0 4.84598 0 5.04687C0 5.16741 0.0870536 5.28125 0.167411 5.3683L2.60491 7.73884L2.02902 11.0871C2.02232 11.1339 2.01563 11.1741 2.01563 11.221C2.01563 11.3951 2.10268 11.5558 2.29688 11.5558C2.39063 11.5558 2.47768 11.5223 2.56473 11.4754L5.57143 9.89509L8.57813 11.4754C8.65848 11.5223 8.75223 11.5558 8.84598 11.5558C9.04018 11.5558 9.12054 11.3951 9.12054 11.221C9.12054 11.1741 9.12054 11.1339 9.11384 11.0871L8.53795 7.73884L10.9688 5.3683C11.0558 5.28125 11.1429 5.16741 11.1429 5.04687Z"/>
-                            </svg>
-                            <svg class="star-rating__star-icon" width="12" height="12" fill="#ccc" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.1429 5.04687C11.1429 4.84598 10.9286 4.76562 10.7679 4.73884L7.40625 4.25L5.89955 1.20312C5.83929 1.07589 5.72545 0.928571 5.57143 0.928571C5.41741 0.928571 5.30357 1.07589 5.2433 1.20312L3.73661 4.25L0.375 4.73884C0.207589 4.76562 0 4.84598 0 5.04687C0 5.16741 0.0870536 5.28125 0.167411 5.3683L2.60491 7.73884L2.02902 11.0871C2.02232 11.1339 2.01563 11.1741 2.01563 11.221C2.01563 11.3951 2.10268 11.5558 2.29688 11.5558C2.39063 11.5558 2.47768 11.5223 2.56473 11.4754L5.57143 9.89509L8.57813 11.4754C8.65848 11.5223 8.75223 11.5558 8.84598 11.5558C9.04018 11.5558 9.12054 11.3951 9.12054 11.221C9.12054 11.1741 9.12054 11.1339 9.11384 11.0871L8.53795 7.73884L10.9688 5.3683C11.0558 5.28125 11.1429 5.16741 11.1429 5.04687Z"/>
-                            </svg>
-                            <svg class="star-rating__star-icon" width="12" height="12" fill="#ccc" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.1429 5.04687C11.1429 4.84598 10.9286 4.76562 10.7679 4.73884L7.40625 4.25L5.89955 1.20312C5.83929 1.07589 5.72545 0.928571 5.57143 0.928571C5.41741 0.928571 5.30357 1.07589 5.2433 1.20312L3.73661 4.25L0.375 4.73884C0.207589 4.76562 0 4.84598 0 5.04687C0 5.16741 0.0870536 5.28125 0.167411 5.3683L2.60491 7.73884L2.02902 11.0871C2.02232 11.1339 2.01563 11.1741 2.01563 11.221C2.01563 11.3951 2.10268 11.5558 2.29688 11.5558C2.39063 11.5558 2.47768 11.5223 2.56473 11.4754L5.57143 9.89509L8.57813 11.4754C8.65848 11.5223 8.75223 11.5558 8.84598 11.5558C9.04018 11.5558 9.12054 11.3951 9.12054 11.221C9.12054 11.1741 9.12054 11.1339 9.11384 11.0871L8.53795 7.73884L10.9688 5.3683C11.0558 5.28125 11.1429 5.16741 11.1429 5.04687Z"/>
-                            </svg>
-                            <svg class="star-rating__star-icon" width="12" height="12" fill="#ccc" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.1429 5.04687C11.1429 4.84598 10.9286 4.76562 10.7679 4.73884L7.40625 4.25L5.89955 1.20312C5.83929 1.07589 5.72545 0.928571 5.57143 0.928571C5.41741 0.928571 5.30357 1.07589 5.2433 1.20312L3.73661 4.25L0.375 4.73884C0.207589 4.76562 0 4.84598 0 5.04687C0 5.16741 0.0870536 5.28125 0.167411 5.3683L2.60491 7.73884L2.02902 11.0871C2.02232 11.1339 2.01563 11.1741 2.01563 11.221C2.01563 11.3951 2.10268 11.5558 2.29688 11.5558C2.39063 11.5558 2.47768 11.5223 2.56473 11.4754L5.57143 9.89509L8.57813 11.4754C8.65848 11.5223 8.75223 11.5558 8.84598 11.5558C9.04018 11.5558 9.12054 11.3951 9.12054 11.221C9.12054 11.1741 9.12054 11.1339 9.11384 11.0871L8.53795 7.73884L10.9688 5.3683C11.0558 5.28125 11.1429 5.16741 11.1429 5.04687Z"/>
-                            </svg>
-                            <svg class="star-rating__star-icon" width="12" height="12" fill="#ccc" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.1429 5.04687C11.1429 4.84598 10.9286 4.76562 10.7679 4.73884L7.40625 4.25L5.89955 1.20312C5.83929 1.07589 5.72545 0.928571 5.57143 0.928571C5.41741 0.928571 5.30357 1.07589 5.2433 1.20312L3.73661 4.25L0.375 4.73884C0.207589 4.76562 0 4.84598 0 5.04687C0 5.16741 0.0870536 5.28125 0.167411 5.3683L2.60491 7.73884L2.02902 11.0871C2.02232 11.1339 2.01563 11.1741 2.01563 11.221C2.01563 11.3951 2.10268 11.5558 2.29688 11.5558C2.39063 11.5558 2.47768 11.5223 2.56473 11.4754L5.57143 9.89509L8.57813 11.4754C8.65848 11.5223 8.75223 11.5558 8.84598 11.5558C9.04018 11.5558 9.12054 11.3951 9.12054 11.221C9.12054 11.1741 9.12054 11.1339 9.11384 11.0871L8.53795 7.73884L10.9688 5.3683C11.0558 5.28125 11.1429 5.16741 11.1429 5.04687Z"/>
-                            </svg>
-                          </span>
-                          <input type="hidden" id="form-input-rating" value="">
-                        </div>
-                        <div class="mb-4">
-                          <textarea id="form-input-review" class="form-control form-control_gray" placeholder="Your Review" cols="30" rows="8"></textarea>
-                        </div>
-                        <div class="form-label-fixed mb-4">
-                          <label for="form-input-name" class="form-label">Name *</label>
-                          <input id="form-input-name" class="form-control form-control-md form-control_gray">
-                        </div>
-                        <div class="form-label-fixed mb-4">
-                          <label for="form-input-email" class="form-label">Email address *</label>
-                          <input id="form-input-email" class="form-control form-control-md form-control_gray">
-                        </div>
-                        <div class="form-check mb-4">
-                          <input class="form-check-input form-check-input_fill" type="checkbox" value="" id="remember_checkbox">
-                          <label class="form-check-label" for="remember_checkbox">
-                            Save my name, email, and website in this browser for the next time I comment.
-                          </label>
-                        </div>
-                        <div class="form-action">
-                          <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                      </form>
-                    </div>
+  <h5 class="accordion-header" id="accordion-heading-3">
+    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-3" aria-expanded="false" aria-controls="accordion-collapse-3">
+      Reviews ({{ reviews.count }})
+      <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
+    </button>
+  </h5>
+  <div id="accordion-collapse-3" class="accordion-collapse collapse" aria-labelledby="accordion-heading-3" data-bs-parent="#product_single_details_accordion">
+    <div class="accordion-body">
+      <h2 class="product-single__reviews-title mb-4">Customer Reviews</h2>
+      
+      <!-- Review Stats -->
+      <div class="review-stats mb-4 p-3 bg-light rounded">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <div class="d-flex align-items-center">
+              <div class="display-4 fw-bold text-primary me-3">{{ average_rating|floatformat:1 }}</div>
+              <div>
+                <div class="reviews-group d-flex mb-1">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= average_rating %}
+                      <svg class="review-star filled" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
+                    {% else %}
+                      <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <div class="text-muted small">Based on {{ reviews.count }} reviews</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="rating-bars">
+              {% for rating_value in "54321" %}
+                {% with rating=rating_value|add:"0" %}
+                {% with count=rating_counts|get_item:rating %}
+                <div class="rating-bar-item d-flex align-items-center mb-2">
+                  <div class="rating-number me-2">{{ rating }}</div>
+                  <svg class="review-star me-2" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
+                  <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {% widthratio count reviews.count 100 %}%;" 
+                         aria-valuenow="{% widthratio count reviews.count 100 %}" 
+                         aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="rating-count small text-muted" style="min-width: 30px;">{{ count }}</div>
+                </div>
+                {% endwith %}
+                {% endwith %}
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews List -->
+      <div class="product-single__reviews-list">
+        {% for review in reviews %}
+        <div class="product-single__reviews-item mb-4 pb-4 border-bottom">
+          <div class="d-flex">
+            <div class="customer-avatar me-3">
+              <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                {{ review.user_id.first_name|first|upper }}{{ review.user_id.last_name|first|upper }}
+              </div>
+            </div>
+            <div class="customer-review flex-grow-1">
+              <div class="customer-name d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <h6 class="mb-1">{{ review.user_id.first_name }} {{ review.user_id.last_name }}</h6>
+                  <div class="reviews-group d-flex">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= review.rating %}
+                        <svg class="review-star filled" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
+                      {% else %}
+                        <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
+                      {% endif %}
+                    {% endfor %}
                   </div>
                 </div>
-              </div><!-- /.accordion-item -->
+                <div class="review-date text-muted small">{{ review.created_at|date:"F d, Y" }}</div>
+              </div>
+              {% if review.title %}
+              <h6 class="review-title fw-semibold mb-2">{{ review.title }}</h6>
+              {% endif %}
+              <div class="review-text">
+                <p class="mb-0">{{ review.comment }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4">
+          <div class="mb-3">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#6c757d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h5 class="text-muted">No reviews yet</h5>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div><!-- /.accordion-item -->
+
+<style>
+.review-star {
+  width: 16px;
+  height: 16px;
+  fill: #ddd;
+}
+
+.review-star.filled {
+  fill: #ffc107;
+}
+
+.progress-bar {
+  background-color: #ffc107;
+}
+
+.rating-bar-item {
+  font-size: 0.9rem;
+}
+</style>
             </div>
             <div class="product-single__additional-info">
-              <a href="#" data-bs-toggle="modal" data-bs-target="#deliveryModal">Composition and Care</a>
-              <a href="#" data-bs-toggle="modal" data-bs-target="#deliveryModal">In-Store Availability</a>
+              <a href="#" data-bs-toggle="modal" data-bs-target="#compositionModal">Composition and Care</a>
               <a href="#" data-bs-toggle="modal" data-bs-target="#deliveryModal">Delivery and Return</a>
             </div>
           </div>
@@ -377,53 +445,53 @@
     </section>
 
     {% if recently_viewed_products %}
-<section class="products-carousel container">
-  <h2 class="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">Recently Viewed</h2>
+    <section class="products-carousel container">
+      <h2 class="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">Recently Viewed</h2>
 
-  <div id="product_carousel" class="position-relative">
-    <div class="swiper-container js-swiper-slider"
-      data-settings='{
-        "autoplay": {
-          "delay": 5000
-        },
-        "slidesPerView": 4,
-        "slidesPerGroup": 4,
-        "effect": "none",
-        "loop": true,
-        "pagination": {
-          "el": "#product_carousel .products-pagination",
-          "type": "bullets",
-          "clickable": true
-        },
-        "navigation": {
-          "nextEl": "#product_carousel .products-carousel__next",
-          "prevEl": "#product_carousel .products-carousel__prev"
-        },
-        "breakpoints": {
-          "320": {
-            "slidesPerView": 2,
-            "slidesPerGroup": 2,
-            "spaceBetween": 14
-          },
-          "768": {
-            "slidesPerView": 3,
-            "slidesPerGroup": 3,
-            "spaceBetween": 24
-          },
-          "992": {
+      <div id="product_carousel" class="position-relative">
+        <div class="swiper-container js-swiper-slider"
+          data-settings='{
+            "autoplay": {
+              "delay": 5000
+            },
             "slidesPerView": 4,
-            "slidesPerGroup": 1,
-            "spaceBetween": 30
-          }
-        }
-      }'>
-      <div class="swiper-wrapper">
-         {% for product in recently_viewed_products %}
-        <div class="swiper-slide product-card">
-          <div class="pc__img-wrapper" style="height: 400px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <a href="{% url 'product_detail' product.id %}">
-              <img loading="lazy" src="{{ product.base_image.url }}" width="330" height="400" alt="Cropped Faux leather Jacket" class="pc__img" style="width: 100%; height: 100%; object-fit: cover;">
-            </a>
+            "slidesPerGroup": 4,
+            "effect": "none",
+            "loop": true,
+            "pagination": {
+              "el": "#product_carousel .products-pagination",
+              "type": "bullets",
+              "clickable": true
+            },
+            "navigation": {
+              "nextEl": "#product_carousel .products-carousel__next",
+              "prevEl": "#product_carousel .products-carousel__prev"
+            },
+            "breakpoints": {
+              "320": {
+                "slidesPerView": 2,
+                "slidesPerGroup": 2,
+                "spaceBetween": 14
+              },
+              "768": {
+                "slidesPerView": 3,
+                "slidesPerGroup": 3,
+                "spaceBetween": 24
+              },
+              "992": {
+                "slidesPerView": 4,
+                "slidesPerGroup": 1,
+                "spaceBetween": 30
+              }
+            }
+          }'>
+          <div class="swiper-wrapper">
+             {% for product in recently_viewed_products %}
+            <div class="swiper-slide product-card">
+              <div class="pc__img-wrapper">
+                <a href="{% url 'product_detail' product.id %}">
+                  <img loading="lazy" src="{{ product.base_image.url }}" alt="{{ product.name }}" class="pc__img">
+                </a>
             <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
           </div>
 
@@ -459,50 +527,53 @@
 {% endif %}
 
 {% if related_products %}
-<section class="products-carousel container">
-  <h2 class="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">Related <strong>Products</strong></h2>
+    <section class="products-carousel container">
+      <h2 class="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">Related Products</h2>
 
-  <div id="related_products" class="position-relative">
-    <div class="swiper-container js-swiper-slider"
-      data-settings='{
-        "autoplay": false,
-        "slidesPerView": 4,
-        "slidesPerGroup": 4,
-        "effect": "none",
-        "loop": true,
-        "pagination": {
-          "el": "#related_products .products-pagination",
-          "type": "bullets",
-          "clickable": true
-        },
-        "navigation": {
-          "nextEl": "#related_products .products-carousel__next",
-          "prevEl": "#related_products .products-carousel__prev"
-        },
-        "breakpoints": {
-          "320": {
-            "slidesPerView": 2,
-            "slidesPerGroup": 2,
-            "spaceBetween": 14
-          },
-          "768": {
-            "slidesPerView": 3,
-            "slidesPerGroup": 3,
-            "spaceBetween": 24
-          },
-          "992": {
+      <div id="product_carousel" class="position-relative">
+        <div class="swiper-container js-swiper-slider"
+          data-settings='{
+            "autoplay": {
+              "delay": 5000
+            },
             "slidesPerView": 4,
             "slidesPerGroup": 4,
-            "spaceBetween": 30
-          }
-        }
-      }'>
+            "effect": "none",
+            "loop": true,
+            "pagination": {
+              "el": "#product_carousel .products-pagination",
+              "type": "bullets",
+              "clickable": true
+            },
+            "navigation": {
+              "nextEl": "#product_carousel .products-carousel__next",
+              "prevEl": "#product_carousel .products-carousel__prev"
+            },
+            "breakpoints": {
+              "320": {
+                "slidesPerView": 2,
+                "slidesPerGroup": 2,
+                "spaceBetween": 14
+              },
+              "768": {
+                "slidesPerView": 3,
+                "slidesPerGroup": 3,
+                "spaceBetween": 24
+              },
+              "992": {
+                "slidesPerView": 4,
+                "slidesPerGroup": 1,
+                "spaceBetween": 30
+              }
+            }
+          }'>
+            
       <div class="swiper-wrapper">
          {% for related_product in related_products %}
         <div class="swiper-slide product-card">
-          <div class="pc__img-wrapper" style="height: 330px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <div class="pc__img-wrapper" >
             <a href="{% url 'product_detail' related_product.id %}">
-              <img loading="lazy" src="{{ related_product.base_image.url }}" width="330" height="330" alt="{{ related_product.name }}" class="pc__img" style="width: 100%; height: 100%; object-fit: cover;">
+              <img loading="lazy" src="{{ related_product.base_image.url }}" alt="{{ related_product.name }}" class="pc__img">
             </a>
             <button class="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium js-add-cart js-open-aside" data-aside="cartDrawer" title="Add To Cart">Add To Cart</button>
           </div>
@@ -547,147 +618,329 @@
   <div id="scrollTop" class="visually-hidden end-0"></div>
 
   <!-- Sizeguide -->
-  <div class="modal fade" id="sizeGuide" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog size-guide">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Size Guide</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="size-guide__wrapper">
-            <div class="size-guide__image">
-              <img loading="lazy" src="{% static 'user/assets/images/size-guide.jpg' %}" alt="">
-            </div>
-            <div class="size-guide__detail">
-              <h5>Tops</h5>
-              <table>
-                <thead>
-                  <tr>
-                    <th>SIZE</th>
-                    <th>XS</th>
-                    <th>S</th>
-                    <th>M</th>
-                    <th>L</th>
-                    <th>XL</th>
-                    <th>XXL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>BUST</td>
-                    <td>32</td>
-                    <td>34</td>
-                    <td>36</td>
-                    <td>38</td>
-                    <td>40</td>
-                    <td>42</td>
-                  </tr>
-                  <tr>
-                    <td>WAIST</td>
-                    <td>26</td>
-                    <td>28</td>
-                    <td>30</td>
-                    <td>32</td>
-                    <td>34</td>
-                    <td>36</td>
-                  </tr>
-                  <tr>
-                    <td>HIPS</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                  </tr>
-                </tbody>
-              </table>
-              <h5>Bottoms</h5>
-              <table>
-                <thead>
-                  <tr>
-                    <th>SIZE</th>
-                    <th>XS</th>
-                    <th>S</th>
-                    <th>M</th>
-                    <th>L</th>
-                    <th>XL</th>
-                    <th>XXL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>BUST</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                  </tr>
-                  <tr>
-                    <td>WAIST</td>
-                    <td>67</td>
-                    <td>67</td>
-                    <td>67</td>
-                    <td>67</td>
-                    <td>67</td>
-                    <td>67</td>
-                  </tr>
-                  <tr>
-                    <td>HIPS</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                    <td>87</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+<!-- Simple Size Guide -->
+<div class="modal fade" id="sizeGuide" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog size-guide">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Size Guide</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.size-guide position-fixed-->
+      <div class="modal-body">
+        
+        <!-- Women's Size Chart -->
+        <h6 class="mb-3">Women's Clothing</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Size</th>
+                <th>XS</th>
+                <th>S</th>
+                <th>M</th>
+                <th>L</th>
+                <th>XL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-start">Bust (inches)</td>
+                <td>32</td>
+                <td>34</td>
+                <td>36</td>
+                <td>38</td>
+                <td>40</td>
+              </tr>
+              <tr>
+                <td class="text-start">Waist (inches)</td>
+                <td>26</td>
+                <td>28</td>
+                <td>30</td>
+                <td>32</td>
+                <td>34</td>
+              </tr>
+              <tr>
+                <td class="text-start">Hip (inches)</td>
+                <td>36</td>
+                <td>38</td>
+                <td>40</td>
+                <td>42</td>
+                <td>44</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-  <!-- Delivery Modal -->
-  <div class="modal fade" id="deliveryModal" tabindex="-1" aria-labelledby="deliveryModal" aria-hidden="true">
-    <div class="modal-dialog delivery-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Delivery</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Men's Size Chart -->
+        <h6 class="mb-3 mt-4">Men's Clothing</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm text-center">
+            <thead class="table-light">
+              <tr>
+                <th>Size</th>
+                <th>S</th>
+                <th>M</th>
+                <th>L</th>
+                <th>XL</th>
+                <th>XXL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-start">Chest (inches)</td>
+                <td>36</td>
+                <td>38</td>
+                <td>40</td>
+                <td>42</td>
+                <td>44</td>
+              </tr>
+              <tr>
+                <td class="text-start">Waist (inches)</td>
+                <td>30</td>
+                <td>32</td>
+                <td>34</td>
+                <td>36</td>
+                <td>38</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="modal-body">
-          <div class="delivery-modal__wrapper">
+
+        <!-- How to Measure -->
+        <div class="mt-4 p-3 bg-light rounded">
+          <h6 class="mb-2">How to Measure:</h6>
+          <ul class="mb-0 small ps-3">
+            <li><strong>Bust/Chest:</strong> Measure around the fullest part</li>
+            <li><strong>Waist:</strong> Measure around your natural waistline</li>
+            <li><strong>Hips:</strong> Measure around the widest part</li>
+          </ul>
+        </div>
+
+        <!-- Size Tip -->
+        <div class="alert alert-warning mt-3 py-2 small">
+          <strong>Note:</strong> Indian sizes may vary slightly between brands.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+  
+
+<!-- Delivery Modal -->
+<div class="modal fade" id="deliveryModal" tabindex="-1" aria-labelledby="deliveryModal" aria-hidden="true">
+  <div class="modal-dialog delivery-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delivery & Returns</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="delivery-modal__wrapper">
+          
+          <!-- Express Delivery -->
+          <div class="delivery-option mb-4">
             <div class="d-flex align-items-center justify-content-between">
-              <h6>Next day delivery in store</h6>
-              <span class="third-color">FREE</span>
+              <h6 class="mb-1">Express Delivery</h6>
+              <span class="text-primary fw-bold">₹149</span>
             </div>
-            <p>Buy before 6pm to receive your order next day.</p>
-            <div class="d-flex align-items-center justify-content-between">
-              <h6>Next day delivery</h6>
-              <span>4 USD</span>
-            </div>
-            <p>Orders before 6pm from Monday to Saturday (or before 1pm on Sunday) will be delivered Next working day (except Northern Ireland and Highlands).<br>Orders placed after 6pm (after 1pm on Sunday) or for Northern Ireland and Highlands will be delivered in 2 working days.</p>
-            <div class="d-flex align-items-center justify-content-between">
-              <h6>Drop Point</h6>
-              <span>8 USD</span>
-            </div>
-            <p>In 2-3 working days. Pick up your parcel in one of the many different collection points available and during a wide range of hours.</p>
-            <div class="d-flex align-items-center justify-content-between">
-              <h6>Same day delivery in London:</h6>
-              <span>9 USD</span>
-            </div>
-            <p>Place your order before 13:00 to get it today!.<br>If you order later on, you’ll receive it the next day and if you order on Sunday, you’ll receive it the next working day.</p>
+            <p class="mb-0">Get your order delivered within 1-2 business days</p>
+            <small class="text-muted">Order before 4 PM for next day delivery</small>
           </div>
+
+          <!-- Standard Delivery -->
+          <div class="delivery-option mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h6 class="mb-1">Standard Delivery</h6>
+              <span class="text-primary fw-bold">₹69</span>
+            </div>
+            <p class="mb-0">Delivery within 3-5 business days</p>
+            <small class="text-muted">Free delivery on orders above ₹999</small>
+          </div>
+
+          <!-- Free Delivery -->
+          <div class="delivery-option mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <h6 class="mb-1">Free Delivery</h6>
+              <span class="text-success fw-bold">FREE</span>
+            </div>
+            <p class="mb-0">On all orders above ₹999</p>
+            <small class="text-muted">Delivery within 5-7 business days</small>
+          </div>
+
+          <!-- Easy Returns -->
+          <div class="returns-policy p-3 bg-light rounded">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">Easy Returns</h6>
+              <span class="badge bg-success">7 Days</span>
+            </div>
+            <p class="mb-1">Easy 7-day return policy</p>
+            <small class="text-muted">
+              • Return within 7 days of delivery<br>
+              • Items must be unused with original tags<br>
+              • Free pickup for returns
+            </small>
+          </div>
+
         </div>
       </div>
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.delivery-modal position-fixed-->
+    </div>
+  </div><!-- /.modal-dialog -->
+</div><!-- /.delivery-modal -->
+
+<!-- Composition & Care Modal -->
+<div class="modal fade" id="compositionModal" tabindex="-1" aria-labelledby="compositionModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold text-dark"><i class="bi bi-info-circle me-2"></i>Composition & Care Guide</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="composition-care-wrapper">
+          
+          <!-- Fabric Composition -->
+          <div class="composition-section mb-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-primary p-2 rounded-circle me-3">
+                <i class="bi bi-grid-3x3 text-white fs-5"></i>
+              </div>
+              <h6 class="mb-0 fw-semibold">Fabric Composition</h6>
+            </div>
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-3">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                      <span class="text-muted">Main Fabric</span>
+                      <span class="fw-medium text-dark">100% Cotton</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-top">
+                      <span class="text-muted">Lining</span>
+                      <span class="fw-medium text-dark">100% Polyester</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                      <span class="text-muted">Thread</span>
+                      <span class="fw-medium text-dark">Polyester</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-top">
+                      <span class="text-muted">Embellishments</span>
+                      <span class="fw-medium text-dark">None</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Care Instructions -->
+          <div class="care-section">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-success p-2 rounded-circle me-3">
+                <i class="bi bi-heart text-white fs-5"></i>
+              </div>
+              <h6 class="mb-0 fw-semibold">Care Instructions</h6>
+            </div>
+            
+            <div class="row g-3">
+              <!-- Washing -->
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body text-center p-3">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                      <i class="bi bi-droplet-fill text-info fs-5"></i>
+                    </div>
+                    <h6 class="card-title fw-semibold mb-2">Washing</h6>
+                    <ul class="list-unstyled mb-0">
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Machine wash cold (30°C)</span>
+                      </li>
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Gentle cycle</span>
+                      </li>
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Use mild detergent</span>
+                      </li>
+                      <li class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Wash with similar colors</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Drying & Ironing -->
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body text-center p-3">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                      <i class="bi bi-sun-fill text-warning fs-5"></i>
+                    </div>
+                    <h6 class="card-title fw-semibold mb-2">Drying & Ironing</h6>
+                    <ul class="list-unstyled mb-0">
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Tumble dry low heat</span>
+                      </li>
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Line dry in shade</span>
+                      </li>
+                      <li class="mb-1 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2 small"></i>
+                        <span class="small">Iron on medium heat</span>
+                      </li>
+                      <li class="d-flex align-items-center">
+                        <i class="bi bi-x-circle-fill text-danger me-2 small"></i>
+                        <span class="small">Do not bleach</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Tips -->
+          <div class="tips-section mt-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                  <h6 class="mb-0 fw-semibold small">Pro Care Tips</h6>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <ul class="mb-0 small">
+                      <li class="mb-1">Turn garment inside out before washing</li>
+                      <li class="mb-0">Do not wring or twist the fabric</li>
+                    </ul>
+                  </div>
+                  <div class="col-md-6">
+                    <ul class="mb-0 small">
+                      <li class="mb-1">Store in dry place away from direct sunlight</li>
+                      <li class="mb-0">For stains, treat immediately with mild solution</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 

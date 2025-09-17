@@ -10,6 +10,39 @@
     <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
     <link rel="stylesheet" href="{% static 'user/assets/css/shop.css' %}" type="text/css">
     <style>
+
+        /* Fix for the "Clear" filter links */
+.btn-link.text-danger {
+    text-decoration: none !important; /* Disables the default underline */
+}
+
+/* Add a subtle bottom border for the desired "underline" look */
+.btn-link.text-danger:hover {
+    text-decoration: none;
+    border-bottom: 1px solid #00000001; /* Adds a single line on hover */
+}
+
+        /* Resetting the default blue color and double underline for all pagination links */
+.shop-pages a,
+.shop-pages a:hover,
+.shop-pages a:focus {
+    color: initial; /* or your desired text color, e.g., #000 */
+    text-decoration: none;
+}
+
+/* Styling for the active page link */
+.shop-pages .btn-link_active {
+    color: #fff; /* or the color you want for the active link text */
+    background-color: #000; /* or your desired active link background color */
+    border: 1px solid #000; /* or your desired border color */
+    text-decoration: none; /* Ensure no underline on the active link */
+}
+
+/* Styling for the disabled "PREV" and "NEXT" spans */
+.shop-pages .disabled {
+    color: #ccc; /* or a lighter color to indicate it's disabled */
+    pointer-events: none; /* Disable click events */
+}
         .product-count-badge {
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;

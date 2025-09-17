@@ -559,7 +559,7 @@
             <a href="{% url 'shop' %}" class="navigation__link">Shop</a>
           </li>
 
-          <li class="navigation__item">
+          {% comment %} <li class="navigation__item">
             <a href="#" class="navigation__link">Pages</a>
             <ul class="default-menu list-unstyled">
               <li class="sub-menu__item">
@@ -588,7 +588,7 @@
               </li>
             </ul>
             <!-- /.box-menu -->
-          </li>
+          </li> {% endcomment %}
           <li class="navigation__item">
             <a href="{% url 'aboutus' %}" class="navigation__link">About</a>
           </li>

@@ -28,6 +28,10 @@ urlpatterns = [
     path('checkout/payment-handler/', payment_handler, name='payment_handler'),
     path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
     
+    # ==================== Quick Add to Cart/Wishlist (Home Page) URLs ====================
+    path('quick_add-to-cart_home/<int:product_id>/', quick_add_to_cart_home, name='quick_add_to_cart_home'),
+    path('quick_add_to_wishlist_home/<int:product_id>/', quick_add_to_wishlist_home, name='quick_add_to_wishlist_home'),
+
     #quick view's cart and wishlist
     path('cart_quick_view/items/add/<int:product_id>/', add_to_cart_quick_view, name='add_to_cart_quick_view'),
     path('wishlist_quick_view/add/<int:product_id>/', add_to_wishlist_quick_view, name='add_to_wishlist_quick_view'),
