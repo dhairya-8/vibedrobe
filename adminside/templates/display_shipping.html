@@ -77,6 +77,7 @@
                         <th>Order #ID</th>
                         <th>Customer</th>
                         <th>Order Date</th>
+                        <th>Order Status</th> <!-- Added -->
                         <th>Shipping Status</th>
                         <th>Tracking #ID</th>
                         <th>Expected Delivery</th>
@@ -92,15 +93,33 @@
                           <td>{{ order.user_id.get_full_name|default:order.user_id.username }}</td>
                           <td>{{ order.order_date|date:'Y-m-d H:i' }}</td>
                           <td>
+                            <span class="badge 
+                              {% if order.status == 'cancelled' %}
+                                bg-danger
+                              {% elif order.status == 'delivered' %}
+                                bg-success
+                              {% elif order.status == 'shipped' %}
+                                bg-info
+                              {% elif order.status == 'confirmed' %}
+                                bg-primary
+                              {% else %}
+                                bg-secondary
+                              {% endif %}">
+                              {{ order.get_status_display|default:order.status|capfirst }}
+                            </span>
+                          </td>
+                          <td>
                             <span class="badge shipping-badge 
                             {% if shipping.shipping_status == 'delivered' %}
                                 bg-success
                             {% elif shipping.shipping_status == 'shipped' %}
                                 bg-info
+                            {% elif shipping.shipping_status == 'confirm' %}
+                                bg-secondary
                             {% else %}
                                 bg-warning
                             {% endif %}">
-                              {{ shipping.get_shipping_status_display }}
+                              {{ shipping.get_shipping_status_display|default:"Not set" }}
                             </span>
                           </td>
                           <td>{{ shipping.tracking_number|default:"Not assigned" }}</td>
@@ -119,7 +138,7 @@
                         {% endwith %}
                       {% empty %}
                         <tr>
-                          <td colspan="8" class="text-center">No orders found</td>
+                          <td colspan="9" class="text-center">No orders found</td>
                         </tr>
                       {% endfor %}
                     </tbody>

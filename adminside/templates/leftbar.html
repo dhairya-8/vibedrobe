@@ -44,7 +44,7 @@
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_admin' %}">
-              <i class="fas fa-universal-access menu-icon"></i>
+              <i class="fas fa-user-shield menu-icon"></i>
               <span>View Admins</span>
             </a>
           </li>
@@ -59,7 +59,7 @@
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_brand' %}">
-              <i class="icofont-brand-puma menu-icon"></i>
+              <i class="fas fa-tags menu-icon"></i>
               <span>Brands</span>
             </a>
             <!-- end startbarForms -->
@@ -81,7 +81,7 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_size' %}">
-              <i class="fas fa-ruler menu-icon"></i>
+              <i class="fas fa-ruler-combined menu-icon"></i>
               <span>Size</span>
             </a>
             <!-- end startbarForms -->
@@ -89,14 +89,14 @@
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_material' %}">
-              <i class="iconoir-flower menu-icon"></i>
+              <i class="fas fa-leaf menu-icon"></i>
               <span>Materials</span>
             </a>
             <!-- end startbarForms -->
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_user' %}">
-              <i class="fas fa-user-friends menu-icon"></i>
+              <i class="fas fa-users menu-icon"></i>
               <span>Users</span>
             </a>
           </li>
@@ -109,27 +109,33 @@
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_wishlist' %}">
-              <i class="fab fa-gratipay menu-icon"></i>
+              <i class="fas fa-heart menu-icon"></i>
               <span>Wishlist</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_orders' %}">
-              <i class="iconoir-table-rows menu-icon"></i>
-              <span>Orders</span>
+              <i class="fas fa-list-alt menu-icon"></i>
+              <span>Orders List</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" href="{% url 'shipping_management' %}">
               <i class="fas fa-shipping-fast menu-icon"></i>
-              <span>Shipping</span>
+              <span>Shipping List</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'display_payment' %}">
-              <i class="iconoir-dollar-circle menu-icon"></i>
-              <span>View Payment List</span>
+              <i class="fas fa-credit-card menu-icon"></i>
+              <span>Payment List</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'display_invoice' %}">
+              <i class="fas fa-file-invoice menu-icon"></i>
+              <span>Invoice List</span>
             </a>
           </li>
 

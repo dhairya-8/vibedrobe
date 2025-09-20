@@ -1,34 +1,39 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.urls import reverse
-from .models import *
-from .decorators import admin_login_required
+# Standard library
+import os
+import json
+import random
+import string
+from io import BytesIO
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from django.core.files.storage import FileSystemStorage
-from django.core.mail import send_mail
+
+# Django core
 from django.conf import settings
-import random, string, os, json
-from django.db.models import Count, Sum, Q, F, Prefetch
+from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.core.mail import EmailMessage, send_mail, EmailMultiAlternatives
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import Coalesce
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template, render_to_string
+from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
-from django.db.models.functions import TruncDay, Coalesce 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.views.decorators.http import require_GET
-from datetime import datetime
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.core.exceptions import ValidationError
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.db import transaction
-from django.views.decorators.http import require_POST
-from django.http import HttpResponse
-from django.contrib.auth.decorators import user_passes_test
-from django.db import transaction
-from django.db.models import Sum, Count, F, Q, Avg
-from django.db.models.functions import TruncDay, Coalesce
-from django.utils import timezone
-from datetime import timedelta
+from django.views.decorators.http import require_GET, require_POST
+
+# Django contrib
+from django.contrib import messages
+from django.contrib.staticfiles import finders
+
+# Project-level
+from .decorators import admin_login_required
+from .models import *
+
+
 
 @admin_login_required
 def index(request):
@@ -1505,6 +1510,8 @@ def toggle_user_status(request, user_id):
 @admin_login_required
 def display_orders(request):
     orders = Order_Master.objects.all().order_by('-order_date')
+    for order in orders:
+        order.cancel_if_processing_timeout()
     return render(request, 'display_orders.html', {'orders': orders})
 
 @admin_login_required
@@ -1626,37 +1633,64 @@ def display_cart(request, user_id=None):
     
     return render(request, 'display_cart.html', context)
 
-
 @admin_login_required
-def display_wishlist(request):
-    # Get all users with wishlists and their items
-    users_with_wishlists = User.objects.filter(
-        wishlist__isnull=False
-    ).distinct().prefetch_related(
-        Prefetch(
-            'wishlist_set',
-            queryset=Wishlist.objects.select_related('product_id').order_by('-added_at'),
-            to_attr='wishlist_items'
-        )
-    ).annotate(wishlist_count=Count('wishlist'))
-    
-    # Prepare data for template
-    wishlist_data = []
-    for user in users_with_wishlists:
-        wishlist_data.append({
-            'user': user,
-            'items': user.wishlist_items,
-            'count': user.wishlist_count,
-            
-           
-        })
-    
-    context = {
-        'wishlist_data': wishlist_data,
-        'show_all': True
-    }
-    
-    return render(request, 'display_wishlist.html', context)
+def display_wishlist(request, user_id=None):
+
+    try:
+        if user_id:
+            # Show specific user's wishlist
+            user = get_object_or_404(User, id=user_id)
+            wishlist_items = Wishlist.objects.filter(
+                user_id=user
+            ).select_related(
+                'product_id',
+                'product_id__brand_id',
+                'product_id__subcategory_id'
+            ).order_by('-added_at')
+
+            wishlist_data = [{
+                'user': user,
+                'items': wishlist_items,
+                'count': wishlist_items.count(),
+                'last_updated': wishlist_items.first().added_at if wishlist_items.exists() else None
+            }]
+            show_all = False
+        else:
+            # Show all users' wishlists
+            wishlist_data = []
+            users_with_wishlists = User.objects.filter(
+                id__in=Wishlist.objects.values_list('user_id', flat=True).distinct()
+            )
+
+            for user in users_with_wishlists:
+                items = Wishlist.objects.filter(
+                    user_id=user
+                ).select_related(
+                    'product_id',
+                    'product_id__brand_id',
+                    'product_id__subcategory_id'
+                ).order_by('-added_at')
+
+                if items.exists():
+                    wishlist_data.append({
+                        'user': user,
+                        'items': items,
+                        'count': items.count(),
+                        'last_updated': items.first().added_at
+                    })
+            show_all = True
+
+        context = {
+            'wishlist_data': wishlist_data,
+            'show_all': show_all,
+            'title': 'All Wishlists' if not user_id else f"Wishlist for {user.get_full_name() or user.email}"
+        }
+
+        return render(request, 'display_wishlist.html', context)
+
+    except Exception as e:
+        messages.error(request, f"Error loading wishlist(s): {str(e)}")
+        return redirect('display_user')
 
 @admin_login_required
 def display_user_wishlist(request, user_id):
@@ -1681,9 +1715,111 @@ def display_user_wishlist(request, user_id):
     
     return render(request, 'display_wishlist.html', context)
 
-# ============================ Payment and Reports Views =============================
+# ============================ Invoice and Payment Views =============================
+# INVOICE VIEWS
+@admin_login_required
+def display_invoice_list(request):
+    """
+    Fetches successful orders and displays them in a list.
+    """
+    successful_orders = Order_Master.objects.filter(
+        status__in=['shipped', 'delivered']
+    ).select_related('user_id').order_by('-order_date')
 
+    context = {
+        'orders': successful_orders
+    }
+    return render(request, 'display_invoice.html', context)
+
+def _get_invoice_context(order_id):
+    """
+    Gathers all data for an invoice.
+    """
+    order = get_object_or_404(Order_Master, id=order_id)
+    address = Order_Address.objects.filter(order_id=order).first()
+    order_items = Order_Details.objects.filter(order_id=order)
+
+    total_gst = Decimal('0.00')
+    subtotal_before_tax = Decimal('0.00')
+
+    for item in order_items:
+        if item.unit_price < 1000:
+            item.base_price = (item.unit_price / Decimal('1.05'))
+            item.gst_rate = 5
+        else:
+            item.base_price = (item.unit_price / Decimal('1.12'))
+            item.gst_rate = 12
+        
+        gst_per_unit = item.unit_price - item.base_price
+        item.total_gst_on_item = gst_per_unit * item.quantity
+        total_gst += item.total_gst_on_item
+        subtotal_before_tax += item.base_price * item.quantity
+
+    return {
+        'order': order,
+        'order_items': order_items,
+        'address': address,
+        'total_gst': total_gst,
+        'subtotal_before_tax': subtotal_before_tax,
+    }
+
+def view_invoice_modal(request, order_id):
+    """
+    Renders the HTML for the invoice modal.
+    """
+    context = _get_invoice_context(order_id)
+    return render(request, 'partials/invoice_details_content.html', context)
+
+# Send to user functionality
+def public_invoice(request, uuid):
+    """
+    Publicly accessible invoice page via UUID link.
+    No admin login required.
+    """
+    order = get_object_or_404(Order_Master, invoice_uuid=uuid)
+    context = _get_invoice_context(order.id)
+    return render(request, 'public_invoice.html', context)
+
+@admin_login_required
+def send_invoice_email(request, order_id):
+    """
+    Sends invoice email with link to download/view.
+    """
+    order = get_object_or_404(Order_Master, id=order_id)
+    context = _get_invoice_context(order.id)
+
+    # Generate public invoice link
+    invoice_url = request.build_absolute_uri(
+        reverse('invoice_page', args=[order.invoice_uuid])
+    )
+
+    # Render email template
+    subject = f"Your Invoice #{order.order_number} - VibeDrobe"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient = [order.user_id.email]
+
+    html_content = render_to_string(
+        'Emails/invoice_email.html',
+        {
+            'order': order,
+            'address': context['address'],
+            'invoice_url': invoice_url,
+        }
+    )
+
+    msg = EmailMultiAlternatives(subject, "", from_email, recipient)
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+    return JsonResponse({"success": True, "message": "Invoice email sent successfully!"})
+
+
+# PAYMENT VIEWS
+@admin_login_required
 def payment_management(request):
+    # Auto-fail stuck pending payments (e.g., older than 30 minutes)
+    Payment.auto_fail_pending_payments(minutes=30)
+    
     # Get filter parameters
     status_filter = request.GET.get('status', 'all')
     search_query = request.GET.get('search', '')
@@ -1712,49 +1848,68 @@ def payment_management(request):
     }
     return render(request, 'display_payment.html', context)
 
+@admin_login_required
 def payment_details_content(request, payment_id):
     payment = get_object_or_404(Payment, id=payment_id)
+
+    # --- ADDED LOGIC ---
+    # These lines create the variables your template needs to show the correct buttons.
+    # .lower() is used to make the check case-insensitive (e.g., 'COD' or 'cod' will both work).
     
+    can_mark_completed = payment.payment_method.lower() == 'cod' and payment.status.lower() == 'pending'
+    can_mark_refunded = payment.payment_method.lower() != 'cod' and payment.status.lower() == 'refund_initiated'
+    
+    # The context now includes the boolean variables for the template `if` statements.
     context = {
         'payment': payment,
+        'can_mark_completed': can_mark_completed,
+        'can_mark_refunded': can_mark_refunded,
     }
+    
     return render(request, 'partials/payment_details_content.html', context)
 
+@admin_login_required
 def update_payment_status(request, payment_id):
-    if request.method == 'POST':
-        payment = get_object_or_404(Payment, id=payment_id)
-        
-        new_status = request.POST.get('payment_status')
-        refund_amount = request.POST.get('refund_amount', '')
-        refund_reason = request.POST.get('refund_reason', '')
-        failure_reason = request.POST.get('failure_reason', '')
-        
-        # Update payment status
-        payment.status = new_status
-        
-        # Handle refund if applicable
-        if new_status == 'refunded' and refund_amount:
-            payment.refund_amount = refund_amount
-            if refund_reason:
-                payment.refund_reason = refund_reason
-        
-        # Handle failure reason
-        if new_status == 'failed' and failure_reason:
-            payment.failure_reason = failure_reason
-        
-        payment.save()
-        
-        # Also update the main order status if needed
-        if new_status in ['failed', 'refunded']:
-            payment.order_id.status = 'cancelled'
-            payment.order_id.save()
-        
-        messages.success(request, f'Payment status for #{payment.payment_id} updated successfully!')
-        return redirect('payment_management')
-    
-    messages.error(request, 'Invalid request method.')
-    return redirect('payment_management')
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('display_payment')
 
+    payment = get_object_or_404(Payment, id=payment_id)
+    new_status = request.POST.get('payment_status')
+
+    try:
+        if new_status == 'completed' and payment.payment_method.lower() == 'cod':
+            payment.status = 'completed'
+            payment.save()
+            
+            if payment.order_id.status == 'processing':
+                payment.order_id.status = 'confirmed'
+                payment.order_id.save()
+            
+            messages.success(request, f'Payment for Order #{payment.order_id.order_number} marked as completed.')
+
+        elif new_status == 'refunded' and payment.status == 'refund_initiated':
+            refund_reason = request.POST.get('refund_reason', 'Refund processed by admin.')
+            payment.status = 'refunded'
+            payment.refund_amount = payment.amount
+            payment.refund_reason = refund_reason
+            payment.save()
+
+            if payment.order_id.status != 'cancelled':
+                payment.order_id.status = 'cancelled'
+                payment.order_id.save()
+
+            messages.success(request, f'Refund for Order #{payment.order_id.order_number} has been confirmed.')
+        
+        else:
+            messages.warning(request, 'Invalid status update action for this payment.')
+
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+
+    return redirect('display_payment')
+
+# ============================ Reports Views =============================
 def report_FBT(request):
     return render(request, 'report_FBT.html')
 

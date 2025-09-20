@@ -1,0 +1,28 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Welcome to VibeDrobe!{% endblock %}
+
+{% block content %}
+<div class="greeting">
+    <h2>🎉 Welcome to the VibeDrobe Family!</h2>
+    <p>Hi {{ user.first_name|default:user.username }}, thank you for joining us. We're thrilled to have you on board.</p>
+</div>
+
+<div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    <h3 style="color: #2c3e50; margin-bottom: 15px;">Get Started</h3>
+    <p style="color: #6c757d; font-size: 16px;">
+        Your account has been created successfully. You can now explore our latest collections, manage your orders, and much more.
+    </p>
+    <a href="http://{{ domain }}/shop" class="cta-button" style="color: #2c3e50;">Start Shopping Now</a>
+</div>
+
+<div style="margin-top: 30px;">
+    <p style="color: #6c757d; font-size: 16px;">
+        If you have any questions, don't hesitate to reach out to our support team.
+    </p>
+    <p style="color: #6c757d; font-size: 16px;">
+        Happy Shopping! <br>
+        <strong>The VibeDrobe Team</strong>
+    </p>
+</div>
+{% endblock %}

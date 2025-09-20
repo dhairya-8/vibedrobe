@@ -59,9 +59,13 @@
       </div>
     </div>
 
+    <!-- Action Loader -->
+    {% include 'partials/action_loader.html' %}
+
     <!-- Integrating header -->
     {% include 'header.html' %}
 
+    <!-- Integrating alert messages -->
     {% include 'alerts.html' %}
 
     <!-- Page Content Block -->
@@ -90,6 +94,22 @@
         if (preloader) {
           preloader.classList.add('hidden') // Add the 'hidden' class to trigger the fade-out
         }
+      })
+    </script>
+
+    <!-- Action Loader Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('form.show-loader-on-submit')
+        const loader = document.getElementById('action-loader')
+      
+        forms.forEach((form) => {
+          form.addEventListener('submit', function () {
+            if (loader) {
+              loader.classList.add('active')
+            }
+          })
+        })
       })
     </script>
   </body>

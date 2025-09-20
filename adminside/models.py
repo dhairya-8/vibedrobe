@@ -1,9 +1,13 @@
+# Standard library
+import random, string, uuid
+from datetime import timedelta
+
+# Django core
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser
-from django.contrib.auth.hashers import make_password, check_password
-import random
-import string
+
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -245,6 +249,8 @@ class Wishlist(models.Model):
         return self.product_id.variants.filter(stock_quantity__gt=0).exists()
     
 class Order_Master(models.Model):
+    # For invoice 
+    invoice_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     
@@ -298,6 +304,30 @@ class Order_Master(models.Model):
             self.status = status_mapping[shipping_status]
             self.save()
     
+    def cancel_if_processing_timeout(self):
+        """
+        Cancels the order if it has been in 'processing' status for more than 30 minutes.
+        """
+        if self.status == 'processing':
+            time_elapsed = timezone.now() - self.order_date
+            if time_elapsed > timedelta(minutes=30):
+                self.status = 'cancelled'
+                self.save()
+                return True
+        return False
+
+    @classmethod
+    def auto_cancel_processing_orders(cls):
+        """
+        Class method to bulk cancel all orders stuck in 'processing' for more than 30 minutes.
+        """
+        threshold = timezone.now() - timedelta(minutes=30)
+        stuck_orders = cls.objects.filter(status='processing', order_date__lt=threshold)
+        for order in stuck_orders:
+            order.status = 'cancelled'
+            order.save()
+        return stuck_orders.count()
+
     def __str__(self):
         return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"
     
@@ -337,13 +367,62 @@ class Payment(models.Model):
     gateway_order_id = models.CharField(max_length=100, null=True)
     gateway_payment_id = models.CharField(max_length=100, null=True)
     gateway_signature= models.CharField(max_length=200, null=True)
-    status= models.CharField(max_length=20, null=False, blank=False)
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),                # Payment initiated, awaiting completion
+        ('authorized', 'Authorized'),          # Payment authorized, not yet captured (rare for Razorpay)
+        ('captured', 'Captured'),              # Payment captured (successful, used for some gateways)
+        ('completed', 'Completed'),            # Payment completed (your main success state)
+        ('failed', 'Failed'),                  # Payment failed (gateway or user cancelled)
+        ('refund_initiated', 'Refund Initiated'), # Refund started (on order cancel)
+        ('refunded', 'Refunded'),              # Refund completed
+        ('cancelled', 'Cancelled'),            # Payment cancelled by user/gateway
+    ]
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     failure_reason = models.TextField(max_length=300, null=True)
     refund_amount = models.DecimalField(decimal_places=2,max_digits=10, default=0)
     refund_reason = models.TextField(max_length=300, null=True)
     transaction_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def fail_if_pending_timeout(self, minutes=30):
+        """
+        Mark payment as failed if pending for more than `minutes`.
+        Only applies to online/UPI payments, not COD.
+        """
+        # Check if payment is pending AND payment method is not COD
+        if self.status == 'pending' and self.payment_method != 'cod':
+            time_elapsed = timezone.now() - self.transaction_date
+            if time_elapsed > timedelta(minutes=minutes):
+                self.status = 'failed'
+                self.failure_reason = f'Payment timed out after {minutes} minutes'
+                self.save()
+                # Update order status
+                self.order_id.status = 'cancelled'
+                self.order_id.save()
+                return True
+        return False
+
+    @classmethod
+    def auto_fail_pending_payments(cls, minutes=30):
+        """
+        Bulk mark all pending online/UPI payments as failed if timeout exceeded.
+        """
+        threshold = timezone.now() - timedelta(minutes=minutes)
+        # Filter out COD payments
+        stuck_payments = cls.objects.filter(
+            status='pending',
+            transaction_date__lt=threshold
+        ).exclude(payment_method='cod')
+        
+        for payment in stuck_payments:
+            payment.status = 'failed'
+            payment.failure_reason = f'Payment timed out after {minutes} minutes'
+            payment.save()
+            # Update order status
+            payment.order_id.status = 'cancelled'
+            payment.order_id.save()
+        return stuck_payments.count()
 
     def __str__(self):
         return f"Payment#{self.payment_id}: {self.status} (${self.amount})"

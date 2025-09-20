@@ -87,6 +87,13 @@ urlpatterns = [
     path('payment_details_content/<int:payment_id>/', payment_details_content, name='payment_details_content'),
     path('update_payment_status/<int:payment_id>/', update_payment_status, name='update_payment_status'),
     
+    # Invoice URLs
+    path('display_invoice/', display_invoice_list, name='display_invoice'),
+    path('invoice/view/html/<int:order_id>/', view_invoice_modal, name='view_invoice_html'),
+    
+    path('invoice/<uuid:uuid>/', public_invoice, name='invoice_page'),
+    path('invoice/send/<int:order_id>/', send_invoice_email, name='send_invoice_email'),
+    
     # Report URLs
     path('report_FBT/',report_FBT,name='report_FBT'),
     path('report_customer/',report_customer,name='report_customer'),

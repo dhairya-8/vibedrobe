@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -150,7 +150,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'info.vibedrobe@gmail.com'
 EMAIL_HOST_PASSWORD = 'gscr umrv eqjd fbxk'
 DEFAULT_FROM_EMAIL = 'VibeDrobe Fashion <noreply@vibedrobe.com>'
-CONTACT_EMAIL = 'info.vibedrobe@gmail.com'  # Where contact form submissions should go
+CONTACT_EMAIL = 'info.vibedrobe@gmail.com'
 
 # Import local settings if they exist (for development)
 try:

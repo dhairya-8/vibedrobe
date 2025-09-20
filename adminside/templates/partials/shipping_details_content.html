@@ -61,7 +61,7 @@
             {% if shipping.shipping_status == 'delivered' %}bg-success
             {% elif shipping.shipping_status == 'shipped' %}bg-info
             {% else %}bg-warning{% endif %}">
-            {{ shipping.get_shipping_status_display }}
+            {{ shipping.get_shipping_status_display|default:"Not updated" }}
           </span>
         </div>
         <div class="card-body">
@@ -142,7 +142,7 @@
             </div>
             <div class="row mb-2">
               <div class="col-5"><strong>Address Type:</strong></div>
-              <div class="col-7">{{ address.get_address_type_display }}</div>
+              <div class="col-7">{{ address.address_type_display }}</div>
             </div>
           {% endwith %}
         </div>
