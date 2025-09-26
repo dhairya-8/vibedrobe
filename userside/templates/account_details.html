@@ -268,7 +268,7 @@
           <h5 class="modal-title">Deactivate Account</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="post" action="{% url 'deactivate_account' %}">
+        <form method="post" action="{% url 'deactivate_account' %}" class="show-loader-on-submit">
           {% csrf_token %}
           <div class="modal-body">
             <p>Are you sure you want to deactivate your account? You have to contact support for reactivation!</p>

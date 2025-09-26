@@ -3,11 +3,11 @@ import random, string, uuid
 from datetime import timedelta
 
 # Django core
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser
-
+from django.db.models import F
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -248,88 +248,91 @@ class Wishlist(models.Model):
     def in_stock(self):
         return self.product_id.variants.filter(stock_quantity__gt=0).exists()
     
+
 class Order_Master(models.Model):
     # For invoice 
     invoice_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    order_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
+    # Link to user
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE) 
     
     STATUS_CHOICES = [
-        ('processing', 'Processing'), # grey
-        ('confirmed', 'Confirmed'), # yellow
-        ('shipped', 'Shipped'), # blue
-        ('delivered', 'Delivered'), # green
-        ('cancelled', 'Cancelled'), # red
+        ('processing', 'Processing'),
+        ('confirmed', 'Confirmed'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     ]
     
-    status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
-    mode_of_payment = models.CharField(max_length=30, null=False, blank=False, choices=[
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='processing')
+    mode_of_payment = models.CharField(max_length=30, choices=[
         ('cod', 'Cash on Delivery'),
         ('card', 'Card Payment'),
         ('upi', 'UPI Payment'),
     ], default='cod')
-    subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
+    
+    subtotal = models.DecimalField(decimal_places=2, max_digits=10)
     tax_amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
     shipping_charge = models.DecimalField(decimal_places=2, max_digits=10, default=0)
-    total_amount = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
+    total_amount = models.DecimalField(decimal_places=2, max_digits=10)
+    
     order_date = models.DateTimeField(auto_now_add=True)
-    expected_delivery = models.DateField(auto_now_add=True)
+    expected_delivery = models.DateField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.order_number:
-            # Example: ORD-20230712-0001
-            date_str = timezone.now().strftime('%Y%m%d')
-            last_order = Order_Master.objects.filter(order_number__contains=date_str).last()
-            if last_order:
-                last_num = int(last_order.order_number.split('-')[-1])
-                new_num = last_num + 1
-            else:
-                new_num = 1
-            self.order_number = f"ORD-{date_str}-{new_num:04d}"
+        # Save the object first to ensure it has a primary key (id)
         super().save(*args, **kwargs)
-        
-    def update_status_based_on_shipping(self, shipping_status):
+        if not self.order_number:
+            date_str = self.created_at.strftime('%Y%m%d')
+            # Use the guaranteed unique primary key for the sequence part
+            self.order_number = f"ORD-{date_str}-{self.id}"
+            # Save again just to update the order_number field
+            super(Order_Master, self).save(update_fields=['order_number'])
+
+    def cancel_and_restock(self):
         """
-        Update order status based on shipping status changes
+        Atomically cancels the order and restocks all associated items.
+        This is the single source of truth for cancellation.
         """
-        status_mapping = {
-            'confirm': 'confirmed',
-            'shipped': 'shipped', 
-            'delivered': 'delivered'
-        }
-        
-        if shipping_status in status_mapping:
-            self.status = status_mapping[shipping_status]
-            self.save()
-    
-    def cancel_if_processing_timeout(self):
-        """
-        Cancels the order if it has been in 'processing' status for more than 30 minutes.
-        """
-        if self.status == 'processing':
-            time_elapsed = timezone.now() - self.order_date
-            if time_elapsed > timedelta(minutes=30):
+        if self.status != 'cancelled':
+            with transaction.atomic():
+                # Set status to cancelled
                 self.status = 'cancelled'
-                self.save()
-                return True
-        return False
+                self.save(update_fields=['status'])
+                
+                # Restore stock for each item in the order using F() expressions
+                for detail in self.order_details_set.all():
+                    variant = detail.product_variant_id
+                    # F() expression prevents race conditions on stock updates
+                    variant.stock_quantity = F('stock_quantity') + detail.quantity
+                    variant.save(update_fields=['stock_quantity'])
 
     @classmethod
-    def auto_cancel_processing_orders(cls):
+    def auto_cancel_lapsed_orders(cls, minutes=15):
         """
-        Class method to bulk cancel all orders stuck in 'processing' for more than 30 minutes.
+        Class method to bulk cancel orders stuck in 'processing'.
+        This method is now much simpler as it uses the instance method.
         """
-        threshold = timezone.now() - timedelta(minutes=30)
-        stuck_orders = cls.objects.filter(status='processing', order_date__lt=threshold)
+        threshold = timezone.now() - timedelta(minutes=minutes)
+        
+        # Find orders that need to be cancelled
+        stuck_orders = cls.objects.filter(
+            status='processing', 
+            created_at__lt=threshold
+        )
+
+        orders_cancelled_count = 0
         for order in stuck_orders:
-            order.status = 'cancelled'
-            order.save()
-        return stuck_orders.count()
+            order.cancel_and_restock() # Use the centralized method
+            orders_cancelled_count += 1
+            
+        return orders_cancelled_count
 
     def __str__(self):
-        return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"
+        return f"Order#{self.order_number or self.id}: {self.total_amount} ({self.status})"
     
 class Order_Details(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.PROTECT)

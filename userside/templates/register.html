@@ -92,7 +92,7 @@
             <!-- Registration part - Simplified to 4 fields -->
             <div class="tab-pane fade" id="tab-item-register" role="tabpanel" aria-labelledby="register-tab">
                 <div class="register-form">
-                    <form action="{% url 'login_register' %}" method="post" name="register-form"
+                    <form action="{% url 'login_register' %}" method="post" name="register-form" class="show-loader-on-submit"
                         class="needs-validation" novalidate>
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ next_url }}">

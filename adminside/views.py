@@ -1510,8 +1510,6 @@ def toggle_user_status(request, user_id):
 @admin_login_required
 def display_orders(request):
     orders = Order_Master.objects.all().order_by('-order_date')
-    for order in orders:
-        order.cancel_if_processing_timeout()
     return render(request, 'display_orders.html', {'orders': orders})
 
 @admin_login_required

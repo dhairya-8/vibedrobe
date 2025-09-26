@@ -342,7 +342,7 @@ def order_detail(request, order_id):
         payment = order.payment_set.first()
         # Auto-fail pending payments after 30 minutes
         if payment and hasattr(payment, 'fail_if_pending_timeout'):
-            payment.fail_if_pending_timeout(minutes=30)
+            payment.fail_if_pending_timeout(minutes=15)
 
         order_address = Order_Address.objects.filter(order_id=order)
         
@@ -1624,7 +1624,7 @@ def quick_add_to_cart(request, product_id):
     return redirect(f"{shop_url}?open_cart_drawer=true")
 
 
-# ============================= ORDER PROCESSING =============================
+# ============================= CHECKOUT & ORDER PROCESSING =============================
 
 
 def get_cart_totals(cart_items):
@@ -1673,94 +1673,6 @@ def get_cart_totals(cart_items):
     }
 
 
-def send_order_confirmation_email(order, order_details, order_address):
-    """
-    Send professional order confirmation email with invoice
-    """
-    try:
-        # Email subject
-        subject = f'Order Confirmation - {order.order_number} | VibeDrobe'
-        
-        # From email (use your configured email)
-        from_email = settings.DEFAULT_FROM_EMAIL
-        
-        # To email (customer's email)
-        to_email = [order.user_id.email]
-        
-        # Context for email template
-        context = {
-            'order': order,
-            'order_details': order_details,
-            'order_address': order_address,
-            'company_name': 'VibeDrobe',
-            'support_email': 'support@vibedrobe.com',
-            'website_url': 'https://www.vibedrobe.com',
-        }
-        
-        # Render HTML email template
-        html_content = render_to_string('emails/order_confirmation.html', context)
-        
-        # Create plain text version (fallback)
-        plain_text_content = f"""
-Thank you for your order!
-
-Hi {order_address.full_name},
-
-Your order has been confirmed and is being processed.
-
-Order Details:
-- Order Number: {order.order_number}
-- Date: {order.order_date.strftime('%d/%m/%Y')}
-- Total Amount: ₹{order.total_amount:.2f}
-- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
-
-Shipping Address:
-{order_address.full_name}
-{order_address.address_line_1}
-{order_address.address_line_2 if order_address.address_line_2 else ''}
-{order_address.city}, {order_address.state} - {order_address.pincode}
-Phone: {order_address.phone}
-
-Items Ordered:"""
-        
-        for item in order_details:
-            plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
-        
-        plain_text_content += f"""
-
-Subtotal: ₹{order.subtotal:.2f}
-GST: ₹{order.tax_amount:.2f}
-Shipping: ₹{order.shipping_charge:.2f}
-Total: ₹{order.total_amount:.2f}
-
-Thank you for choosing VibeDrobe!
-
-For support, contact us at support@vibedrobe.com
-"""
-        
-        # Create email message
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=plain_text_content,
-            from_email=from_email,
-            to=to_email,
-        )
-        
-        # Attach HTML content
-        email.attach_alternative(html_content, "text/html")
-        
-        # Send email
-        email.send(fail_silently=False)
-        
-        return True
-        
-    except Exception as e:
-        return False
-
-
-# ============================= CHECKOUT & PAYMENT VIEWS =============================
-
-
 @user_login_required
 def checkout(request):
     try:
@@ -1803,6 +1715,27 @@ def checkout(request):
             # Create order using transaction to ensure data consistency
             try:
                 with transaction.atomic():
+                    
+                    # ==================== NEW LOGIC START ====================
+                    # Before creating a new order, find and cancel any recent 'processing' orders
+                    # from this user to release stock and prevent duplicates.
+                    # We'll set a tight threshold, like 15 minutes.
+                    
+                    threshold = timezone.now() - timedelta(minutes=15)
+                    recent_processing_orders = Order_Master.objects.filter(
+                        user_id=user,
+                        status='processing',
+                        created_at__gte=threshold
+                    )
+
+                    if recent_processing_orders.exists():
+                        info(f"User {user.username} has {recent_processing_orders.count()} recent incomplete orders. Cancelling them before creating a new one.")
+                        for old_order in recent_processing_orders:
+                            # We use the cancel_and_restock method we created earlier.
+                            # This marks the order as 'cancelled' AND restocks the items.
+                            old_order.cancel_and_restock()
+                    # ===================== NEW LOGIC END =====================
+                    
                     # --- First, check stock for all items BEFORE creating the order ---
                     for cart_item in cart_items:
                         variant = cart_item.product_variant_id
@@ -1950,30 +1883,7 @@ def checkout(request):
         return redirect('cart')
 
 
-@user_login_required
-def orderconfirm(request, order_id):
-    try:
-        user_id = request.session.get('user_id')
-        user = User.objects.get(id=user_id)
-        
-        # Get the order with related data
-        order = get_object_or_404(Order_Master, id=order_id, user_id=user)
-        order_details = Order_Details.objects.filter(order_id=order)
-        order_address = Order_Address.objects.filter(order_id=order).first()
-        payment = Payment.objects.filter(order_id=order).first()
-        
-        context = {
-            'order': order,
-            'order_details': order_details,
-            'order_address': order_address,
-            'payment': payment,
-        }
-        
-        return render(request, 'orderconfirm.html', context)
-        
-    except Exception as e:
-        messages.error(request, "Order not found or you don't have permission to view this order.")
-        return redirect('homepage')
+# ============================= PAYMENT HANDLER & ORDER CONFIRMATION =============================
 
 
 def payment_handler(request):
@@ -2048,6 +1958,117 @@ def payment_handler(request):
             return redirect(reverse('checkout') + '?payment_status=failed')
     
     return redirect('checkout')
+
+
+def send_order_confirmation_email(order, order_details, order_address):
+    """
+    Send professional order confirmation email with invoice
+    """
+    try:
+        # Email subject
+        subject = f'Order Confirmation - {order.order_number} | VibeDrobe'
+        
+        # From email (use your configured email)
+        from_email = settings.DEFAULT_FROM_EMAIL
+        
+        # To email (customer's email)
+        to_email = [order.user_id.email]
+        
+        # Context for email template
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'company_name': 'VibeDrobe',
+            'support_email': 'support@vibedrobe.com',
+            'website_url': 'https://www.vibedrobe.com',
+        }
+        
+        # Render HTML email template
+        html_content = render_to_string('emails/order_confirmation.html', context)
+        
+        # Create plain text version (fallback)
+        plain_text_content = f"""
+Thank you for your order!
+
+Hi {order_address.full_name},
+
+Your order has been confirmed and is being processed.
+
+Order Details:
+- Order Number: {order.order_number}
+- Date: {order.order_date.strftime('%d/%m/%Y')}
+- Total Amount: ₹{order.total_amount:.2f}
+- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
+
+Shipping Address:
+{order_address.full_name}
+{order_address.address_line_1}
+{order_address.address_line_2 if order_address.address_line_2 else ''}
+{order_address.city}, {order_address.state} - {order_address.pincode}
+Phone: {order_address.phone}
+
+Items Ordered:"""
+        
+        for item in order_details:
+            plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
+        
+        plain_text_content += f"""
+
+Subtotal: ₹{order.subtotal:.2f}
+GST: ₹{order.tax_amount:.2f}
+Shipping: ₹{order.shipping_charge:.2f}
+Total: ₹{order.total_amount:.2f}
+
+Thank you for choosing VibeDrobe!
+
+For support, contact us at support@vibedrobe.com
+"""
+        
+        # Create email message
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_text_content,
+            from_email=from_email,
+            to=to_email,
+        )
+        
+        # Attach HTML content
+        email.attach_alternative(html_content, "text/html")
+        
+        # Send email
+        email.send(fail_silently=False)
+        
+        return True
+        
+    except Exception as e:
+        return False
+
+
+@user_login_required
+def orderconfirm(request, order_id):
+    try:
+        user_id = request.session.get('user_id')
+        user = User.objects.get(id=user_id)
+        
+        # Get the order with related data
+        order = get_object_or_404(Order_Master, id=order_id, user_id=user)
+        order_details = Order_Details.objects.filter(order_id=order)
+        order_address = Order_Address.objects.filter(order_id=order).first()
+        payment = Payment.objects.filter(order_id=order).first()
+        
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'payment': payment,
+        }
+        
+        return render(request, 'orderconfirm.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Order not found or you don't have permission to view this order.")
+        return redirect('homepage')
 
 
 # ============================= STATIC PAGES =============================
