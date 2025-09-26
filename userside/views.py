@@ -41,7 +41,86 @@ client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_S
 
 
 def homepage(request):
-   return render(request, 'homepage.html')
+    """
+    View for the homepage, fetching various product lists.
+    """
+    
+    # Fetch New Arrivals (latest 8 products)
+    # all_products = Product.objects.filter(is_active=True).order_by('id')[:8]
+    
+    # Fetch New Arrivals (latest 8 products)
+    new_arrivals = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
+
+    # Fetch Best Sellers (top 8 products by quantity sold)
+    # This query calculates the sum of quantities sold for each product.
+    best_seller_ids = Order_Details.objects.values('product_variant_id__product_id') \
+        .annotate(total_sold=Sum('quantity')) \
+        .order_by('-total_sold') \
+        .values_list('product_variant_id__product_id', flat=True)
+        
+    # Fetch the product objects for the best seller IDs
+    # Note: This creates a new query. For very large datasets, you might optimize.
+    best_sellers = Product.objects.filter(id__in=list(best_seller_ids)[:8])
+
+    # Fetch Top Rated products (top 8 by average rating)
+    top_rated = Product.objects.filter(is_active=True) \
+        .annotate(average_rating=Avg('review__rating')) \
+        .filter(average_rating__isnull=False) \
+        .order_by('-average_rating')[:8]
+
+    # Fetch Limited Edition products (carousel)
+    limited_edition = Product.objects.filter(product_tags__tag__iexact='Limited Edition', is_active=True)[:8]
+    if not limited_edition.exists():
+        # Fallback: get the 8 most expensive products if the tag doesn't exist or isn't used
+        limited_edition = Product.objects.filter(is_active=True).order_by('-price')[:8]
+
+    try:
+        ethnic_category = Category.objects.get(name__iexact="Ethnic Wear")
+    except Category.DoesNotExist:
+        ethnic_category = None
+
+    try:
+        tshirts_subcategory = Sub_Category.objects.get(name__iexact="T-Shirts")
+    except Sub_Category.DoesNotExist:
+        tshirts_subcategory = None
+        
+    try:
+        jackets_subcategory = Sub_Category.objects.get(name__iexact="Jacket")
+    except Sub_Category.DoesNotExist:
+        jackets_subcategory = None 
+        
+    # Calculate the minimum price for Women's T-Shirts
+    tshirts_min_price = None
+    if tshirts_subcategory:
+        price_agg = Product.objects.filter(
+            subcategory_id=tshirts_subcategory, 
+            gender='Female'
+        ).aggregate(min_price=Min('price'))
+        tshirts_min_price = price_agg.get('min_price')
+
+    # Calculate the minimum price for Men's Jackets
+    jackets_min_price = None
+    if jackets_subcategory:
+        price_agg = Product.objects.filter(
+            subcategory_id=jackets_subcategory, 
+            gender='Male'
+        ).aggregate(min_price=Min('price'))
+        jackets_min_price = price_agg.get('min_price')
+    
+    context = {
+        'all_products': new_arrivals, # Using new_arrivals for the 'All' tab for simplicity
+        'new_arrivals': new_arrivals,
+        'best_sellers': best_sellers,
+        'top_rated': top_rated,
+        'limited_edition_products': limited_edition,
+        'ethnic_category': ethnic_category,
+        'tshirts_subcategory': tshirts_subcategory,
+        'jackets_subcategory': jackets_subcategory,
+        'tshirts_min_price': tshirts_min_price,
+        'jackets_min_price': jackets_min_price,
+    }
+    
+    return render(request, 'homepage.html', context)
 
 def login_register_view(request):
     """Handle both login and registration in one view"""
@@ -638,6 +717,8 @@ def deactivate_account(request):
 
 
 def shop(request):
+    
+    keyword = request.GET.get('search-keyword', None)    
     # Get filter parameters
     category_id = request.GET.get('category')
     subcategory_id = request.GET.get('subcategory')
@@ -662,8 +743,20 @@ def shop(request):
         'subcategory_id',
         'brand_id'
     )
-    
-    # Rest of your view remains the same...
+    # STEP 2: Apply the search filter if a keyword exists
+    if keyword:
+        products = products.annotate(
+            relevance=Case(
+                When(name__icontains=keyword, then=Value(1)),
+                When(subcategory_id__name__icontains=keyword, then=Value(2)),
+                When(brand_id__name__icontains=keyword, then=Value(3)),
+                When(description__icontains=keyword, then=Value(4)), # This still gets scored...
+                default=Value(5),
+                output_field=IntegerField()
+            )
+        # ...but this line now EXCLUDES it from the results.
+        ).filter(relevance__lte=3).order_by('relevance')
+        
     # gender
     if gender:
         products = products.filter(gender=gender)
@@ -715,7 +808,16 @@ def shop(request):
         'date-old': 'created_at',
         'default': '-created_at'
     }
-    products = products.order_by(sort_options[sort])
+    
+    # If a search is active, we sort by relevance first, then by the user's choice.
+    if keyword:
+        # For default sort on a search page, relevance is all we need.
+        # For other sorts, we use relevance as the primary sorter.
+        if sort != 'default':
+             products = products.order_by('relevance', sort_options[sort])
+    else:
+        # Original sorting if no search is performed
+        products = products.order_by(sort_options[sort])
 
     # Brands data
     all_brands = Brand.objects.filter(is_active=True).annotate(
@@ -753,6 +855,10 @@ def shop(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
+        
+        # STEP 3: Add the keyword to the context
+        'keyword': keyword,
+        
         'categories_with_subcategories': categories_with_subcategories,
         'sizes': Size.objects.filter(is_active=True).order_by('sort_order'),
         'brands': all_brands,
@@ -920,6 +1026,17 @@ def product_detail(request, product_id):
             id__gt=product.id, is_active=True
         ).order_by('id').first()
         
+        # Get reviews for this product
+        reviews = Review.objects.filter(product_id=product).select_related('user_id')
+    
+        # Calculate average rating
+        average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    
+        # Get rating counts
+        rating_counts = {}
+        for rating in range(1, 6):
+            rating_counts[rating] = reviews.filter(rating=rating).count()
+        
         context = {
             'product': product,
             'in_wishlist': in_wishlist,
@@ -933,6 +1050,9 @@ def product_detail(request, product_id):
             'has_purchased': has_purchased,
             'prev_product': prev_product,
             'next_product': next_product,
+            'reviews': reviews,
+            'average_rating': average_rating,
+            'rating_counts': rating_counts,
         }
         
         return render(request, 'product_detail.html', context)

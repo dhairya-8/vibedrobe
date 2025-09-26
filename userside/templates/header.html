@@ -559,7 +559,7 @@
             <a href="{% url 'shop' %}" class="navigation__link">Shop</a>
           </li>
 
-          <li class="navigation__item">
+          {% comment %} <li class="navigation__item">
             <a href="#" class="navigation__link">Pages</a>
             <ul class="default-menu list-unstyled">
               <li class="sub-menu__item">
@@ -588,7 +588,7 @@
               </li>
             </ul>
             <!-- /.box-menu -->
-          </li>
+          </li> {% endcomment %}
           <li class="navigation__item">
             <a href="{% url 'aboutus' %}" class="navigation__link">About</a>
           </li>
@@ -614,7 +614,7 @@
           </div>
 
           <div class="search-popup js-hidden-content">
-            <form action="https://uomo-html.flexkitux.com/Demo1/search_result.html" method="GET" class="search-field container">
+            <form action="{% url 'shop' %}" method="GET" class="search-field container">
               <p class="text-uppercase text-secondary fw-medium mb-4">What are you looking for?</p>
               <div class="position-relative">
                 <input class="search-field__input search-popup__input w-100 fw-medium" type="text" name="search-keyword" placeholder="Search products" />

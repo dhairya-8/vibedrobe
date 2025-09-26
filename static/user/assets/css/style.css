@@ -22511,3 +22511,17 @@ body.coming-soon-page .header {
 .btn-video-player.playing svg.btn-pause {
   display: block;
 }
+
+.btn-link.default-underline,
+.btn-link.default-underline:hover,
+.btn-link.default-underline:focus {
+    color: inherit; /* or your desired color */
+    text-decoration: none;
+    border-bottom: 1px solid #0000000e; /* Re-add the underline from your theme */
+}
+
+.btn-link.default-underline.text-uppercase.fw-medium {
+    /* Add specific styles if needed */
+    color:initial;
+    text-decoration: none;
+}
