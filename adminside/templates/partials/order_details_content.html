@@ -1,0 +1,273 @@
+{% comment %}
+  Premium Order Details Page
+  - Elegant step tracker with premium icons
+  - Properly aligned labels & progress bar
+  - Highlighted total section
+{% endcomment %}
+
+<style>
+  /* Step Tracker Container */
+  .step-tracker {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 35px 0;
+  }
+
+  /* Background line */
+  .step-tracker::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+
+  /* Progress line */
+  .progress-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #4e73df, #1cc88a);
+    border-radius: 3px;
+    transform: translateY(-50%);
+    z-index: 2;
+    transition: width 0.5s ease;
+  }
+
+  .step-item {
+    position: relative;
+    z-index: 3;
+    text-align: center;
+    width: 25%;
+    color: #adb5bd;
+  }
+
+  /* Premium Circle Icons */
+  .step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    margin: 0 auto 12px;
+    font-size: 24px;
+    transition: all 0.4s ease;
+    color: #adb5bd;
+  }
+
+  /* Step labels */
+  .step-label {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+
+  /* Completed State */
+  .step-item.completed .step-icon {
+    border-color: #4e73df;
+    background: linear-gradient(135deg, #4e73df, #224abe);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(78,115,223,0.35);
+  }
+  .step-item.completed .step-label {
+    color: #212529;
+    font-weight: 600;
+  }
+
+  /* Delivered (final success step) */
+  .step-item.delivered.completed .step-icon {
+    background: linear-gradient(135deg, #1cc88a, #13855c);
+    border-color: #1cc88a;
+    box-shadow: 0 4px 14px rgba(28,200,138,0.4);
+  }
+
+  /* Highlight for Total Amount */
+  .highlight-total {
+    background-color: #d3f3de;
+    border: 1px solid #a5a6a7ff;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+  }
+</style>
+
+<div class="order-details-container">
+  <h4 class="border-bottom pb-2 mb-4">Order Details: #{{ order.order_number }}</h4>
+
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Status</h5>
+        </div>
+        <div class="card-body">
+          {% if order.status == 'cancelled' %}
+            <div class="text-center text-danger py-3">
+              <i class="fas fa-times-circle fa-3x mb-2"></i>
+              <h5 class="mb-0">Order Cancelled</h5>
+            </div>
+          {% else %}
+            <!-- Calculate progress width based on status -->
+            {% if order.status == "delivered" %}
+              <div class="step-tracker">
+                <div class="progress-line" style="width: 100%;"></div>
+            {% elif order.status == "shipped" %}
+              <div class="step-tracker">
+                <div class="progress-line" style="width: 75%;"></div>
+            {% elif order.status == "confirmed" %}
+              <div class="step-tracker">
+                <div class="progress-line" style="width: 33%;"></div>
+            {% else %}
+              <div class="step-tracker">
+                <div class="progress-line" style="width: 0%;"></div>
+            {% endif %}
+
+                <div class="step-item processing completed">
+                  <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                  <div class="step-label">Processing</div>
+                </div>
+
+                <div class="step-item confirmed {% if order.status in 'confirmed shipped delivered' %}completed{% endif %}">
+                  <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                  <div class="step-label">Confirmed</div>
+                </div>
+
+                <div class="step-item shipped {% if order.status in 'shipped delivered' %}completed{% endif %}">
+                  <div class="step-icon"><i class="fas fa-shipping-fast"></i></div>
+                  <div class="step-label">Shipped</div>
+                </div>
+
+                <div class="step-item delivered {% if order.status == 'delivered' %}completed{% endif %}">
+                  <div class="step-icon"><i class="fas fa-box-open"></i></div>
+                  <div class="step-label">Delivered</div>
+                </div>
+              </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Order Information -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2"><div class="col-5"><strong>Order Number:</strong></div><div class="col-7">{{ order.order_number }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Order Date:</strong></div><div class="col-7">{{ order.order_date|date:"Y-m-d H:i" }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Payment Mode:</strong></div><div class="col-7">{{ order.get_mode_of_payment_display }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Customer:</strong></div><div class="col-7">{{ order.user_id.get_full_name|default:order.user_id.username }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Email:</strong></div><div class="col-7">{{ order.user_id.email }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Expected Delivery:</strong></div><div class="col-7">{{ order.expected_delivery|date:"Y-m-d" }}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Summary</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-2"><div class="col-5"><strong>Subtotal:</strong></div><div class="col-7">₹{{ order.subtotal }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Tax Amount:</strong></div><div class="col-7">₹{{ order.tax_amount }}</div></div>
+          <div class="row mb-2"><div class="col-5"><strong>Shipping Charge:</strong></div><div class="col-7">₹{{ order.shipping_charge }}</div></div>
+          <div class="highlight-total">
+            <div class="row fw-bold fs-5">
+              <div class="col-5">Total Amount:</div>
+              <div class="col-7 text-end">₹{{ order.total_amount }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping Address -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Shipping Address</h5>
+        </div>
+        <div class="card-body">
+          {% if shipping_address %}
+            <div class="row mb-2"><div class="col-5"><strong>Full Name:</strong></div><div class="col-7">{{ shipping_address.full_name }}</div></div>
+            <div class="row mb-2"><div class="col-5"><strong>Phone:</strong></div><div class="col-7">{{ shipping_address.phone }}</div></div>
+            <div class="row mb-2"><div class="col-5"><strong>Address:</strong></div><div class="col-7">{{ shipping_address.address_line_1 }}<br>{% if shipping_address.address_line_2 %}{{ shipping_address.address_line_2 }}<br>{% endif %}{{ shipping_address.city }}, {{ shipping_address.state }}<br>{{ shipping_address.pincode }}</div></div>
+          {% else %}
+            <p class="text-muted">No shipping address found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Billing Address -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Billing Address</h5>
+        </div>
+        <div class="card-body">
+          {% if billing_address %}
+            <div class="row mb-2"><div class="col-5"><strong>Full Name:</strong></div><div class="col-7">{{ billing_address.full_name }}</div></div>
+            <div class="row mb-2"><div class="col-5"><strong>Phone:</strong></div><div class="col-7">{{ billing_address.phone }}</div></div>
+            <div class="row mb-2"><div class="col-5"><strong>Address:</strong></div><div class="col-7">{{ billing_address.address_line_1 }}<br>{% if billing_address.address_line_2 %}{{ billing_address.address_line_2 }}<br>{% endif %}{{ billing_address.city }}, {{ billing_address.state }}<br>{{ billing_address.pincode }}</div></div>
+          {% else %}
+            <p class="text-muted">No billing address found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Items -->
+  <div class="row mt-2">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="card-title mb-0">Order Items</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-bordered mb-0 order-details-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in items %}
+                  <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.product_sku }}</td>
+                    <td>₹{{ item.unit_price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ item.total_price }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

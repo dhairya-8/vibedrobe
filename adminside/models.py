@@ -1,9 +1,13 @@
-from django.db import models
+# Standard library
+import random, string, uuid
+from datetime import timedelta
+
+# Django core
+from django.db import models, transaction
 from django.utils import timezone
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser
-from django.contrib.auth.hashers import make_password, check_password
-import random
-import string
+from django.db.models import F
 
 # Models for admin and user 
 class Admin(models.Model):
@@ -98,7 +102,6 @@ class User_Address(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
-    sort_order = models.IntegerField(null=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -108,7 +111,6 @@ class Sub_Category(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE,related_name='subcategories')
     name = models.CharField(max_length=50, unique=True,null=False, blank=False)
     is_active = models.BooleanField(default=True)
-    sort_order = models.IntegerField(null=False, default=0)
     
     def __str__(self):
         return f"SubCategory: {self.name} > {self.category_id.name}"
@@ -246,48 +248,91 @@ class Wishlist(models.Model):
     def in_stock(self):
         return self.product_id.variants.filter(stock_quantity__gt=0).exists()
     
+
 class Order_Master(models.Model):
-    order_number = models.CharField(max_length=20, unique=True,null=False, blank=False)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    # For invoice 
+    invoice_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    order_number = models.CharField(max_length=30, unique=True, null=True, blank=True)
+    # Link to user
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE) 
     
     STATUS_CHOICES = [
-        ('processing', 'Processing'), # grey
-        ('confirmed', 'Confirmed'), # yellow
-        ('shipped', 'Shipped'), # blue
-        ('delivered', 'Delivered'), # green
-        ('cancelled', 'Cancelled'), # red
+        ('processing', 'Processing'),
+        ('confirmed', 'Confirmed'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     ]
     
-    status = models.CharField(max_length=25, null=False, blank=False, choices=STATUS_CHOICES, default='processing')
-    mode_of_payment = models.CharField(max_length=30, null=False, blank=False, choices=[
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='processing')
+    mode_of_payment = models.CharField(max_length=30, choices=[
         ('cod', 'Cash on Delivery'),
         ('card', 'Card Payment'),
         ('upi', 'UPI Payment'),
     ], default='cod')
-    subtotal = models.DecimalField(decimal_places=2, max_digits=10, null=False, blank=False)
+    
+    subtotal = models.DecimalField(decimal_places=2, max_digits=10)
     tax_amount = models.DecimalField(decimal_places=2, max_digits=10, default=0)
     shipping_charge = models.DecimalField(decimal_places=2, max_digits=10, default=0)
-    total_amount = models.DecimalField(decimal_places=2,max_digits=10, null=False, blank=False)
+    total_amount = models.DecimalField(decimal_places=2, max_digits=10)
+    
     order_date = models.DateTimeField(auto_now_add=True)
-    expected_delivery = models.DateField(auto_now_add=True)
+    expected_delivery = models.DateField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        if not self.order_number:
-            # Example: ORD-20230712-0001
-            date_str = timezone.now().strftime('%Y%m%d')
-            last_order = Order_Master.objects.filter(order_number__contains=date_str).last()
-            if last_order:
-                last_num = int(last_order.order_number.split('-')[-1])
-                new_num = last_num + 1
-            else:
-                new_num = 1
-            self.order_number = f"ORD-{date_str}-{new_num:04d}"
+        # Save the object first to ensure it has a primary key (id)
         super().save(*args, **kwargs)
-    
+        if not self.order_number:
+            date_str = self.created_at.strftime('%Y%m%d')
+            # Use the guaranteed unique primary key for the sequence part
+            self.order_number = f"ORD-{date_str}-{self.id}"
+            # Save again just to update the order_number field
+            super(Order_Master, self).save(update_fields=['order_number'])
+
+    def cancel_and_restock(self):
+        """
+        Atomically cancels the order and restocks all associated items.
+        This is the single source of truth for cancellation.
+        """
+        if self.status != 'cancelled':
+            with transaction.atomic():
+                # Set status to cancelled
+                self.status = 'cancelled'
+                self.save(update_fields=['status'])
+                
+                # Restore stock for each item in the order using F() expressions
+                for detail in self.order_details_set.all():
+                    variant = detail.product_variant_id
+                    # F() expression prevents race conditions on stock updates
+                    variant.stock_quantity = F('stock_quantity') + detail.quantity
+                    variant.save(update_fields=['stock_quantity'])
+
+    @classmethod
+    def auto_cancel_lapsed_orders(cls, minutes=15):
+        """
+        Class method to bulk cancel orders stuck in 'processing'.
+        This method is now much simpler as it uses the instance method.
+        """
+        threshold = timezone.now() - timedelta(minutes=minutes)
+        
+        # Find orders that need to be cancelled
+        stuck_orders = cls.objects.filter(
+            status='processing', 
+            created_at__lt=threshold
+        )
+
+        orders_cancelled_count = 0
+        for order in stuck_orders:
+            order.cancel_and_restock() # Use the centralized method
+            orders_cancelled_count += 1
+            
+        return orders_cancelled_count
+
     def __str__(self):
-        return f"Order#{self.order_number}: ${self.total_amount} ({self.status})"
+        return f"Order#{self.order_number or self.id}: {self.total_amount} ({self.status})"
     
 class Order_Details(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.PROTECT)
@@ -325,13 +370,62 @@ class Payment(models.Model):
     gateway_order_id = models.CharField(max_length=100, null=True)
     gateway_payment_id = models.CharField(max_length=100, null=True)
     gateway_signature= models.CharField(max_length=200, null=True)
-    status= models.CharField(max_length=20, null=False, blank=False)
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),                # Payment initiated, awaiting completion
+        ('authorized', 'Authorized'),          # Payment authorized, not yet captured (rare for Razorpay)
+        ('captured', 'Captured'),              # Payment captured (successful, used for some gateways)
+        ('completed', 'Completed'),            # Payment completed (your main success state)
+        ('failed', 'Failed'),                  # Payment failed (gateway or user cancelled)
+        ('refund_initiated', 'Refund Initiated'), # Refund started (on order cancel)
+        ('refunded', 'Refunded'),              # Refund completed
+        ('cancelled', 'Cancelled'),            # Payment cancelled by user/gateway
+    ]
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     failure_reason = models.TextField(max_length=300, null=True)
     refund_amount = models.DecimalField(decimal_places=2,max_digits=10, default=0)
     refund_reason = models.TextField(max_length=300, null=True)
     transaction_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def fail_if_pending_timeout(self, minutes=30):
+        """
+        Mark payment as failed if pending for more than `minutes`.
+        Only applies to online/UPI payments, not COD.
+        """
+        # Check if payment is pending AND payment method is not COD
+        if self.status == 'pending' and self.payment_method != 'cod':
+            time_elapsed = timezone.now() - self.transaction_date
+            if time_elapsed > timedelta(minutes=minutes):
+                self.status = 'failed'
+                self.failure_reason = f'Payment timed out after {minutes} minutes'
+                self.save()
+                # Update order status
+                self.order_id.status = 'cancelled'
+                self.order_id.save()
+                return True
+        return False
+
+    @classmethod
+    def auto_fail_pending_payments(cls, minutes=30):
+        """
+        Bulk mark all pending online/UPI payments as failed if timeout exceeded.
+        """
+        threshold = timezone.now() - timedelta(minutes=minutes)
+        # Filter out COD payments
+        stuck_payments = cls.objects.filter(
+            status='pending',
+            transaction_date__lt=threshold
+        ).exclude(payment_method='cod')
+        
+        for payment in stuck_payments:
+            payment.status = 'failed'
+            payment.failure_reason = f'Payment timed out after {minutes} minutes'
+            payment.save()
+            # Update order status
+            payment.order_id.status = 'cancelled'
+            payment.order_id.save()
+        return stuck_payments.count()
 
     def __str__(self):
         return f"Payment#{self.payment_id}: {self.status} (${self.amount})"

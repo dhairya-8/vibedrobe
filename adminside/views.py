@@ -1,31 +1,39 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from .models import *
-from .decorators import admin_login_required
+# Standard library
+import os
+import json
+import random
+import string
+from io import BytesIO
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from django.core.files.storage import FileSystemStorage
-from django.core.mail import send_mail
+
+# Django core
 from django.conf import settings
-import random, string, os, json
-from django.db.models import Count, Sum, Q, F, Prefetch, Max
-from django.utils import timezone
-from datetime import timedelta
+from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
+from django.core.mail import EmailMessage, send_mail, EmailMultiAlternatives
 from django.core.paginator import Paginator
-from django.views.decorators.http import require_GET
-from datetime import datetime
+from django.db import transaction
+from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import Coalesce
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template, render_to_string
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.core.exceptions import ValidationError
-from django.http import HttpResponse
-from django.db import transaction
-from django.views.decorators.http import require_POST
-from django.http import HttpResponse
-import csv
-import xlwt
-from django.db.models import Sum, Count, F, Q, Avg
-from django.db.models.functions import Coalesce
-from django.utils import timezone
-from datetime import timedelta
+from django.views.decorators.http import require_GET, require_POST
+
+# Django contrib
+from django.contrib import messages
+from django.contrib.staticfiles import finders
+
+# Project-level
+from .decorators import admin_login_required
+from .models import *
+
+
 
 @admin_login_required
 def index(request):
@@ -219,10 +227,14 @@ def login(request):
     return render(request, 'login.html')
  
 def logout(request):
-      request.session.flush()
-      print("Admin logout successfully !")
-      messages.info(request, 'You have been successfully logged out.')
-      return redirect('login')
+    # Clear only admin-specific session keys
+    for key in ['admin_id', 'admin_username', 'admin_email', 'admin_name', 'admin_role']:
+        if key in request.session:
+            del request.session[key]
+
+    print("Admin logout successfully !")
+    messages.info(request, 'You have been successfully logged out.')
+    return redirect('login')
 
 def generate_random_password(length=12):
     """Generate a random temporary password"""
@@ -403,7 +415,6 @@ def edit_category(request, id):
         
         if request.method == 'POST':
             category.name = request.POST.get('name', '').strip()
-            category.sort_order = request.POST.get('sort_order', 0)
             category.is_active = 'is_active' in request.POST  # Checkbox handling
             category.save()
             
@@ -418,7 +429,15 @@ def edit_category(request, id):
 
 @admin_login_required
 def display_category(request):
-    categories = Category.objects.all().order_by('sort_order')
+    """
+    Displays all categories, annotated with the count of distinct products
+    linked through their subcategories.
+    """
+    # CORRECTED: Use 'subcategories' (plural) to match the related_name in the model.
+    categories = Category.objects.annotate(
+        product_count=Count('subcategories__product', distinct=True)
+    ).order_by('-id')
+    
     return render(request, 'display_category.html', {'categories': categories})
  
 @admin_login_required
@@ -473,7 +492,6 @@ def edit_subcategory(request, id):
         if request.method == 'POST':
             subcategory.category_id = Category.objects.get(id=request.POST.get('category_id'))
             subcategory.name = request.POST.get('name', '').strip()
-            subcategory.sort_order = request.POST.get('sort_order', 0)
             subcategory.save()
             messages.success(request, "SubCategory updated successfully!")
             return redirect('display_subcategory')
@@ -492,7 +510,12 @@ def edit_subcategory(request, id):
 
 @admin_login_required
 def display_subcategory(request):
-    subcategories = Sub_Category.objects.select_related('category_id').all()
+    """
+    Displays all subcategories, annotated with the count of distinct products.
+    """
+    subcategories = Sub_Category.objects.select_related('category_id').annotate(
+        product_count=Count('product', distinct=True)).order_by('-id')
+    
     return render(request, 'display_subcategory.html', {'subcategories': subcategories})
 
 @admin_login_required
@@ -552,7 +575,8 @@ def edit_brand(request, id):
 
 @admin_login_required
 def display_brand(request):
-    brands = Brand.objects.all()
+    # Annotate each brand with the count of associated products
+    brands = Brand.objects.annotate(product_count=Count('product'))
     return render(request, 'display_brand.html', {'brands': brands})
 
 @admin_login_required
@@ -615,7 +639,11 @@ def edit_size(request, id):
 
 @admin_login_required
 def display_size(request):
-    sizes = Size.objects.all().order_by('sort_order')
+    # Annotate each size with the count of associated product variants
+    sizes = Size.objects.annotate(
+        variant_count=Count('product_variants', distinct=True)
+    ).order_by('sort_order')
+    
     return render(request, 'display_size.html', {'sizes': sizes})
 
 @admin_login_required
@@ -678,7 +706,10 @@ def edit_material(request, id):
 
 @admin_login_required
 def display_material(request):
-    materials = Material.objects.all()
+    # Annotate each material with the count of associated products
+    materials = Material.objects.annotate(
+        product_count=Count('product', distinct=True)).order_by('-id')
+    
     return render(request, 'display_material.html', {'materials': materials})
 
 @admin_login_required
@@ -1491,7 +1522,7 @@ def order_details_content(request, order_id):
         'billing_address': order.order_address_set.first(),
         'items': order.order_details_set.all()
     }
-    return render(request, 'order_details_content.html', context)
+    return render(request, 'partials/order_details_content.html', context)
 
 @admin_login_required
 def shipping_management(request):
@@ -1556,14 +1587,8 @@ def update_shipping_status(request, order_id):
         
         shipping.save()
         
-        # Also update the main order status if needed
-        if new_status == 'delivered':
-            order.status = 'delivered'
-            order.save()
-        elif new_status == 'shipped':
-            if order.status != 'delivered':  # Only update if not already delivered
-                order.status = 'shipped'
-                order.save()
+        # Update the main order status based on shipping status
+        order.update_status_based_on_shipping(new_status)
         
         messages.success(request, f'Shipping status for order #{order.order_number} updated successfully!')
         return redirect('shipping_management')
@@ -1606,37 +1631,64 @@ def display_cart(request, user_id=None):
     
     return render(request, 'display_cart.html', context)
 
-
 @admin_login_required
-def display_wishlist(request):
-    # Get all users with wishlists and their items
-    users_with_wishlists = User.objects.filter(
-        wishlist__isnull=False
-    ).distinct().prefetch_related(
-        Prefetch(
-            'wishlist_set',
-            queryset=Wishlist.objects.select_related('product_id').order_by('-added_at'),
-            to_attr='wishlist_items'
-        )
-    ).annotate(wishlist_count=Count('wishlist'))
-    
-    # Prepare data for template
-    wishlist_data = []
-    for user in users_with_wishlists:
-        wishlist_data.append({
-            'user': user,
-            'items': user.wishlist_items,
-            'count': user.wishlist_count,
-            
-           
-        })
-    
-    context = {
-        'wishlist_data': wishlist_data,
-        'show_all': True
-    }
-    
-    return render(request, 'display_wishlist.html', context)
+def display_wishlist(request, user_id=None):
+
+    try:
+        if user_id:
+            # Show specific user's wishlist
+            user = get_object_or_404(User, id=user_id)
+            wishlist_items = Wishlist.objects.filter(
+                user_id=user
+            ).select_related(
+                'product_id',
+                'product_id__brand_id',
+                'product_id__subcategory_id'
+            ).order_by('-added_at')
+
+            wishlist_data = [{
+                'user': user,
+                'items': wishlist_items,
+                'count': wishlist_items.count(),
+                'last_updated': wishlist_items.first().added_at if wishlist_items.exists() else None
+            }]
+            show_all = False
+        else:
+            # Show all users' wishlists
+            wishlist_data = []
+            users_with_wishlists = User.objects.filter(
+                id__in=Wishlist.objects.values_list('user_id', flat=True).distinct()
+            )
+
+            for user in users_with_wishlists:
+                items = Wishlist.objects.filter(
+                    user_id=user
+                ).select_related(
+                    'product_id',
+                    'product_id__brand_id',
+                    'product_id__subcategory_id'
+                ).order_by('-added_at')
+
+                if items.exists():
+                    wishlist_data.append({
+                        'user': user,
+                        'items': items,
+                        'count': items.count(),
+                        'last_updated': items.first().added_at
+                    })
+            show_all = True
+
+        context = {
+            'wishlist_data': wishlist_data,
+            'show_all': show_all,
+            'title': 'All Wishlists' if not user_id else f"Wishlist for {user.get_full_name() or user.email}"
+        }
+
+        return render(request, 'display_wishlist.html', context)
+
+    except Exception as e:
+        messages.error(request, f"Error loading wishlist(s): {str(e)}")
+        return redirect('display_user')
 
 @admin_login_required
 def display_user_wishlist(request, user_id):
@@ -1661,9 +1713,111 @@ def display_user_wishlist(request, user_id):
     
     return render(request, 'display_wishlist.html', context)
 
-# ============================ Payment and Reports Views =============================
+# ============================ Invoice and Payment Views =============================
+# INVOICE VIEWS
+@admin_login_required
+def display_invoice_list(request):
+    """
+    Fetches successful orders and displays them in a list.
+    """
+    successful_orders = Order_Master.objects.filter(
+        status__in=['shipped', 'delivered']
+    ).select_related('user_id').order_by('-order_date')
 
+    context = {
+        'orders': successful_orders
+    }
+    return render(request, 'display_invoice.html', context)
+
+def _get_invoice_context(order_id):
+    """
+    Gathers all data for an invoice.
+    """
+    order = get_object_or_404(Order_Master, id=order_id)
+    address = Order_Address.objects.filter(order_id=order).first()
+    order_items = Order_Details.objects.filter(order_id=order)
+
+    total_gst = Decimal('0.00')
+    subtotal_before_tax = Decimal('0.00')
+
+    for item in order_items:
+        if item.unit_price < 1000:
+            item.base_price = (item.unit_price / Decimal('1.05'))
+            item.gst_rate = 5
+        else:
+            item.base_price = (item.unit_price / Decimal('1.12'))
+            item.gst_rate = 12
+        
+        gst_per_unit = item.unit_price - item.base_price
+        item.total_gst_on_item = gst_per_unit * item.quantity
+        total_gst += item.total_gst_on_item
+        subtotal_before_tax += item.base_price * item.quantity
+
+    return {
+        'order': order,
+        'order_items': order_items,
+        'address': address,
+        'total_gst': total_gst,
+        'subtotal_before_tax': subtotal_before_tax,
+    }
+
+def view_invoice_modal(request, order_id):
+    """
+    Renders the HTML for the invoice modal.
+    """
+    context = _get_invoice_context(order_id)
+    return render(request, 'partials/invoice_details_content.html', context)
+
+# Send to user functionality
+def public_invoice(request, uuid):
+    """
+    Publicly accessible invoice page via UUID link.
+    No admin login required.
+    """
+    order = get_object_or_404(Order_Master, invoice_uuid=uuid)
+    context = _get_invoice_context(order.id)
+    return render(request, 'public_invoice.html', context)
+
+@admin_login_required
+def send_invoice_email(request, order_id):
+    """
+    Sends invoice email with link to download/view.
+    """
+    order = get_object_or_404(Order_Master, id=order_id)
+    context = _get_invoice_context(order.id)
+
+    # Generate public invoice link
+    invoice_url = request.build_absolute_uri(
+        reverse('invoice_page', args=[order.invoice_uuid])
+    )
+
+    # Render email template
+    subject = f"Your Invoice #{order.order_number} - VibeDrobe"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient = [order.user_id.email]
+
+    html_content = render_to_string(
+        'Emails/invoice_email.html',
+        {
+            'order': order,
+            'address': context['address'],
+            'invoice_url': invoice_url,
+        }
+    )
+
+    msg = EmailMultiAlternatives(subject, "", from_email, recipient)
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+    return JsonResponse({"success": True, "message": "Invoice email sent successfully!"})
+
+
+# PAYMENT VIEWS
+@admin_login_required
 def payment_management(request):
+    # Auto-fail stuck pending payments (e.g., older than 30 minutes)
+    Payment.auto_fail_pending_payments(minutes=30)
+    
     # Get filter parameters
     status_filter = request.GET.get('status', 'all')
     search_query = request.GET.get('search', '')
@@ -1692,210 +1846,73 @@ def payment_management(request):
     }
     return render(request, 'display_payment.html', context)
 
+@admin_login_required
 def payment_details_content(request, payment_id):
     payment = get_object_or_404(Payment, id=payment_id)
+
+    # --- ADDED LOGIC ---
+    # These lines create the variables your template needs to show the correct buttons.
+    # .lower() is used to make the check case-insensitive (e.g., 'COD' or 'cod' will both work).
     
+    can_mark_completed = payment.payment_method.lower() == 'cod' and payment.status.lower() == 'pending'
+    can_mark_refunded = payment.payment_method.lower() != 'cod' and payment.status.lower() == 'refund_initiated'
+    
+    # The context now includes the boolean variables for the template `if` statements.
     context = {
         'payment': payment,
+        'can_mark_completed': can_mark_completed,
+        'can_mark_refunded': can_mark_refunded,
     }
+    
     return render(request, 'partials/payment_details_content.html', context)
 
+@admin_login_required
 def update_payment_status(request, payment_id):
-    if request.method == 'POST':
-        payment = get_object_or_404(Payment, id=payment_id)
-        
-        new_status = request.POST.get('payment_status')
-        refund_amount = request.POST.get('refund_amount', '')
-        refund_reason = request.POST.get('refund_reason', '')
-        failure_reason = request.POST.get('failure_reason', '')
-        
-        # Update payment status
-        payment.status = new_status
-        
-        # Handle refund if applicable
-        if new_status == 'refunded' and refund_amount:
-            payment.refund_amount = refund_amount
-            if refund_reason:
-                payment.refund_reason = refund_reason
-        
-        # Handle failure reason
-        if new_status == 'failed' and failure_reason:
-            payment.failure_reason = failure_reason
-        
-        payment.save()
-        
-        # Also update the main order status if needed
-        if new_status in ['failed', 'refunded']:
-            payment.order_id.status = 'cancelled'
-            payment.order_id.save()
-        
-        messages.success(request, f'Payment status for #{payment.payment_id} updated successfully!')
-        return redirect('payment_management')
-    
-    messages.error(request, 'Invalid request method.')
-    return redirect('payment_management')
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('display_payment')
 
+    payment = get_object_or_404(Payment, id=payment_id)
+    new_status = request.POST.get('payment_status')
+
+    try:
+        if new_status == 'completed' and payment.payment_method.lower() == 'cod':
+            payment.status = 'completed'
+            payment.save()
+            
+            if payment.order_id.status == 'processing':
+                payment.order_id.status = 'confirmed'
+                payment.order_id.save()
+            
+            messages.success(request, f'Payment for Order #{payment.order_id.order_number} marked as completed.')
+
+        elif new_status == 'refunded' and payment.status == 'refund_initiated':
+            refund_reason = request.POST.get('refund_reason', 'Refund processed by admin.')
+            payment.status = 'refunded'
+            payment.refund_amount = payment.amount
+            payment.refund_reason = refund_reason
+            payment.save()
+
+            if payment.order_id.status != 'cancelled':
+                payment.order_id.status = 'cancelled'
+                payment.order_id.save()
+
+            messages.success(request, f'Refund for Order #{payment.order_id.order_number} has been confirmed.')
+        
+        else:
+            messages.warning(request, 'Invalid status update action for this payment.')
+
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+
+    return redirect('display_payment')
+
+# ============================ Reports Views =============================
 def report_FBT(request):
     return render(request, 'report_FBT.html')
 
-@admin_login_required
 def report_customer(request):
-    customers = get_customer_data()
-    
-    # Check if export was requested
-    export_format = request.GET.get('export')
-    if export_format:
-        return export_customer_report(customers, export_format)
-    
-    context = {
-        'customers': customers
-    }
-    return render(request, 'report_customer.html', context)
-
-def get_customer_data():
-    """Helper function to get customer data"""
-    return User.objects.annotate(
-        total_orders=Count('order_master'),
-        total_spent=Sum('order_master__total_amount'),
-        last_order_date=Max('order_master__order_date')
-    ).order_by('-total_spent')
-
-def export_customer_report(customers, export_format):
-    """Export customer report in the requested format"""
-    if export_format == 'csv':
-        return export_csv(customers)
-    elif export_format == 'excel':
-        return export_excel(customers)
-    elif export_format == 'pdf':
-        return export_pdf(customers)
-    else:
-        # Default to CSV if format is not recognized
-        return export_csv(customers)
-
-def export_csv(customers):
-    """Export customer data as CSV"""
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="customer_report.csv"'
-    
-    writer = csv.writer(response)
-    # Write header row
-    writer.writerow(['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date'])
-    
-    # Write data rows
-    for customer in customers:
-        writer.writerow([
-            customer.id,
-            f"{customer.first_name} {customer.last_name}",
-            customer.email,
-            customer.total_orders or 0,
-            customer.total_spent or 0,
-            customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
-        ])
-    
-    return response
-
-def export_excel(customers):
-    """Export customer data as Excel"""
-    response = HttpResponse(content_type='application/ms-excel')
-    response['Content-Disposition'] = 'attachment; filename="customer_report.xls"'
-    
-    wb = xlwt.Workbook(encoding='utf-8')
-    ws = wb.add_sheet('Customer Report')
-    
-    # Sheet header, first row
-    row_num = 0
-    font_style = xlwt.XFStyle()
-    font_style.font.bold = True
-    
-    columns = ['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date']
-    
-    for col_num, column_title in enumerate(columns):
-        ws.write(row_num, col_num, column_title, font_style)
-    
-    # Sheet body, remaining rows
-    font_style = xlwt.XFStyle()
-    
-    for customer in customers:
-        row_num += 1
-        ws.write(row_num, 0, customer.id, font_style)
-        ws.write(row_num, 1, f"{customer.first_name} {customer.last_name}", font_style)
-        ws.write(row_num, 2, customer.email, font_style)
-        ws.write(row_num, 3, customer.total_orders or 0, font_style)
-        ws.write(row_num, 4, float(customer.total_spent or 0), font_style)
-        ws.write(row_num, 5, customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders', font_style)
-    
-    wb.save(response)
-    return response
-
-def export_pdf(customers):
-    """Export customer data as PDF"""
-    # For PDF export, we'll use reportlab
-    try:
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.pagesizes import letter
-        from reportlab.lib.units import inch
-        
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="customer_report.pdf"'
-        
-        # Create the PDF object, using the response object as its "file."
-        p = canvas.Canvas(response, pagesize=letter)
-        width, height = letter
-        
-        # Draw title
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(1 * inch, height - 1 * inch, "Customer Activity Report")
-        
-        # Draw headers
-        p.setFont("Helvetica-Bold", 10)
-        headers = ["ID", "Customer Name", "Email", "Orders", "Total Spent", "Last Order"]
-        col_widths = [0.5 * inch, 1.5 * inch, 2 * inch, 0.7 * inch, 1 * inch, 1 * inch]
-        
-        y = height - 1.5 * inch
-        x = 0.5 * inch
-        
-        for i, header in enumerate(headers):
-            p.drawString(x, y, header)
-            x += col_widths[i]
-        
-        # Draw data rows
-        p.setFont("Helvetica", 9)
-        y -= 0.25 * inch
-        row_height = 0.2 * inch
-        
-        for customer in customers:
-            if y < 1 * inch:  # Add new page if needed
-                p.showPage()
-                p.setFont("Helvetica", 9)
-                y = height - 1 * inch
-            
-            x = 0.5 * inch
-            fields = [
-                str(customer.id),
-                f"{customer.first_name} {customer.last_name}",
-                customer.email,
-                str(customer.total_orders or 0),
-                f"₹{customer.total_spent or 0:.2f}",
-                customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
-            ]
-            
-            for i, field in enumerate(fields):
-                # Truncate long text
-                if len(field) > 25:
-                    field = field[:22] + "..."
-                p.drawString(x, y, field)
-                x += col_widths[i]
-            
-            y -= row_height
-        
-        # Close the PDF object cleanly, and we're done.
-        p.showPage()
-        p.save()
-        return response
-        
-    except ImportError:
-        # Fallback to CSV if reportlab is not installed
-        return export_csv(customers)
+    return render(request, 'report_customer.html')
 
 def report_sales(request):
     return render(request, 'report_sales.html')

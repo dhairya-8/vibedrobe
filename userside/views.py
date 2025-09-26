@@ -1,218 +1,44 @@
-import re, time, random, string
+# Standard library
+import re
+import time
+import random
+import string
 from decimal import Decimal
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login as auth_login
-from django.contrib.auth import logout as auth_logout
-from django.contrib import messages
-from django.utils import timezone
-from django.core.paginator import Paginator
-from django.db.models import Min, Max, Count, Prefetch, Sum, Avg, Q, Case, When, Value, IntegerField 
-from django.db import IntegrityError, transaction
-from django.views.decorators.http import require_POST
-from django.urls import reverse
-from django.core.mail import send_mail, BadHeaderError, EmailMultiAlternatives
-from django.template.loader import render_to_string
+
+# Django core
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.core.mail import BadHeaderError, EmailMultiAlternatives, send_mail
+from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Max, Min, Prefetch
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import strip_tags
+from django.views.decorators.http import require_POST
+
+# Project-level
 from .decorators import user_login_required
 from .utils import *
 from adminside.models import *
+
+# Third-party
 import razorpay
 
+
+# Get the User model
+User = get_user_model()
 
 # Initialize Razorpay client
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 
-def search_results(request):
-    keyword = request.GET.get('search-keyword', '') # Get the keyword, default to empty string
-    products = []
-
-    if keyword:
-        # The query logic remains the same
-        query = Q(name__icontains=keyword) | \
-                Q(description__icontains=keyword) | \
-                Q(brand_id__name__icontains=keyword) | \
-                Q(subcategory_id__name__icontains=keyword)
-        
-        products = Product.objects.filter(query, is_active=True).distinct()
-
-    # Create a context dictionary to pass data to the template
-    context = {
-        'products': products,
-        'keyword': keyword,
-        'product_count': products.count() # A count of the results is useful
-    }
-    
-    # Render a new HTML page with the search results
-    return render(request, 'search_results.html', context)
-
-# ============================= UTILITY FUNCTIONS =============================
-
-def validate_user_data(form_data):
-    """Validate only the 4 required fields during registration"""
-    errors = {}
-    
-    # Username validation
-    if not form_data['username']:
-        errors['username'] = 'Username is required'
-    elif len(form_data['username']) < 4:
-        errors['username'] = 'Username must be at least 4 characters'
-    elif User.objects.filter(username=form_data['username']).exists():
-        errors['username'] = 'Username already taken'
-    
-    # Email validation
-    if not form_data['email']:
-        errors['email'] = 'Email is required'
-    elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', form_data['email']):
-        errors['email'] = 'Enter a valid email address'
-    elif User.objects.filter(email=form_data['email']).exists():
-        errors['email'] = 'Email already registered'
-    
-    # Password validation
-    if not form_data['password']:
-        errors['password'] = 'Password is required'
-    elif len(form_data['password']) < 8:
-        errors['password'] = 'Password must be at least 8 characters'
-    
-    # First name validation
-    if not form_data['first_name']:
-        errors['first_name'] = 'First name is required'
-    
-    return errors
-
-
-def get_cart_totals(cart_items):
-    """Helper function to calculate cart totals"""
-    cart_total = Decimal('0')
-    total_gst = Decimal('0')
-    total_base_price = Decimal('0')
-    shipping_charge = Decimal('69')  # Fixed shipping charge
-
-    for item in cart_items:
-        gst_inclusive_price = item.price_at_time
-        quantity = Decimal(item.quantity)
-        
-        # Calculate base price and GST based on product price
-        if gst_inclusive_price >= Decimal('1000'):
-            # For items >= ₹1000 (12% GST)
-            base_price = gst_inclusive_price / Decimal('1.12')
-            gst_amount = gst_inclusive_price - base_price
-        else:
-            # For items < ₹1000 (5% GST)
-            base_price = gst_inclusive_price / Decimal('1.05')
-            gst_amount = gst_inclusive_price - base_price
-        
-        # Calculate totals for this item
-        item_base_total = base_price * quantity
-        item_gst_total = gst_amount * quantity
-        item_total = gst_inclusive_price * quantity
-        
-        # Add to cart totals
-        total_base_price += item_base_total
-        total_gst += item_gst_total
-        cart_total += item_total
-    
-    # Round values to 2 decimal places
-    total_base_price = total_base_price.quantize(Decimal('0.00'))
-    total_gst = total_gst.quantize(Decimal('0.00'))
-    cart_total = cart_total.quantize(Decimal('0.00'))
-    grand_total = cart_total + shipping_charge
-    
-    return {
-        'base_price_total': total_base_price,
-        'cart_total': cart_total,
-        'total_gst': total_gst,
-        'shipping_charge': shipping_charge,
-        'grand_total': grand_total,
-    }
-
-
-def send_order_confirmation_email(order, order_details, order_address):
-    """
-    Send professional order confirmation email with invoice
-    """
-    try:
-        # Email subject
-        subject = f'Order Confirmation - {order.order_number} | VibeDrobe'
-        
-        # From email (use your configured email)
-        from_email = settings.DEFAULT_FROM_EMAIL
-        
-        # To email (customer's email)
-        to_email = [order.user_id.email]
-        
-        # Context for email template
-        context = {
-            'order': order,
-            'order_details': order_details,
-            'order_address': order_address,
-            'company_name': 'VibeDrobe',
-            'support_email': 'support@vibedrobe.com',
-            'website_url': 'https://www.vibedrobe.com',
-        }
-        
-        # Render HTML email template
-        html_content = render_to_string('emails/order_confirmation.html', context)
-        
-        # Create plain text version (fallback)
-        plain_text_content = f"""
-Thank you for your order!
-
-Hi {order_address.full_name},
-
-Your order has been confirmed and is being processed.
-
-Order Details:
-- Order Number: {order.order_number}
-- Date: {order.order_date.strftime('%d/%m/%Y')}
-- Total Amount: ₹{order.total_amount:.2f}
-- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
-
-Shipping Address:
-{order_address.full_name}
-{order_address.address_line_1}
-{order_address.address_line_2 if order_address.address_line_2 else ''}
-{order_address.city}, {order_address.state} - {order_address.pincode}
-Phone: {order_address.phone}
-
-Items Ordered:"""
-        
-        for item in order_details:
-            plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
-        
-        plain_text_content += f"""
-
-Subtotal: ₹{order.subtotal:.2f}
-GST: ₹{order.tax_amount:.2f}
-Shipping: ₹{order.shipping_charge:.2f}
-Total: ₹{order.total_amount:.2f}
-
-Thank you for choosing VibeDrobe!
-
-For support, contact us at support@vibedrobe.com
-"""
-        
-        # Create email message
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=plain_text_content,
-            from_email=from_email,
-            to=to_email,
-        )
-        
-        # Attach HTML content
-        email.attach_alternative(html_content, "text/html")
-        
-        # Send email
-        email.send(fail_silently=False)
-        
-        return True
-        
-    except Exception as e:
-        return False
-
 
 # ============================= AUTHENTICATION VIEWS =============================
+
 
 def homepage(request):
     """
@@ -299,54 +125,54 @@ def homepage(request):
 def login_register_view(request):
     """Handle both login and registration in one view"""
     active_tab = request.GET.get('tab', 'login')
-    
-    # Handle login form submission
+
+    # -------------------------------
+    # LOGIN LOGIC
+    # -------------------------------
     if request.method == 'POST' and 'login_email' in request.POST:
         email = request.POST.get('login_email')
         password = request.POST.get('login_password')
         remember_me = request.POST.get('remember', 'off') == 'on'
-        
+
         try:
             user = User.objects.get(email=email)
-            
-            # Check if account is deactivated
+
             if not user.is_active:
-                messages.error(request, 'Account is deactivated. Please contact support to reactivate.')
+                messages.error(request, 'Account is deactivated. Please contact support.')
                 return render(request, 'register.html', {
                     'login_form_data': {'email': email},
                     'active_tab': 'login'
                 })
-            
+
             if user.check_password(password):
-                # Check again in case the account was deactivated between query and login
-                if not user.is_active:
-                    messages.error(request, 'Account is currently deactivated')
-                    return redirect('login_register')
-                
-                # Set session data
+                # update last login time
+                user.last_login = timezone.now()
+                user.save(update_fields=['last_login'])
+
+                # Set user-specific session keys
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
                 request.session['user_name'] = user.username
-                
+
                 # Remember me functionality
                 request.session.set_expiry(1209600 if remember_me else 0)
-                
-                # Use Django's login() for session management
-                auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                
+
                 messages.success(request, 'Login successful!')
                 return redirect('homepage')
             else:
                 messages.error(request, 'Incorrect password')
+
         except User.DoesNotExist:
             messages.error(request, 'Email not registered')
-        
+
         return render(request, 'register.html', {
             'login_form_data': {'email': email},
             'active_tab': 'login'
         })
-    
-    # Handle registration form submission (existing code remains same)
+
+    # -------------------------------
+    # REGISTRATION LOGIC (Updated with Email)
+    # -------------------------------
     elif request.method == 'POST' and 'register_email' in request.POST:
         form_data = {
             'username': request.POST.get('register_username'),
@@ -354,56 +180,78 @@ def login_register_view(request):
             'password': request.POST.get('register_password'),
             'first_name': request.POST.get('first_name'),
         }
-        
+
         errors = validate_user_data(form_data)
-        
+
         if not errors:
             try:
-                # Create user with minimal fields
                 user = User.objects.create(
                     email=form_data['email'],
                     username=form_data['username'],
                     first_name=form_data['first_name'],
-                    is_active=True,  # Ensure new accounts are active
-                    # Other fields will use their defaults
+                    is_active=True,
                 )
                 user.set_password(form_data['password'])
                 user.save()
-                
-                # Auto-login after registration
+
+                # --- 📧 SEND WELCOME EMAIL ---
+                try:
+                    # Build the base URL directly from the request object
+                    base_url = f"{request.scheme}://{request.get_host()}"
+
+                    subject = 'Welcome to VibeDrobe! 🎉'
+                    context = {
+                        'user': user,
+                        'base_url': base_url, # Pass the full base URL
+                    }
+                    html_message = render_to_string('emails/welcome_email.html', context)
+                    plain_message = strip_tags(html_message)
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    to_email = user.email
+
+                    send_mail(subject, plain_message, from_email, [to_email], html_message=html_message)
+                except Exception as e:
+                    # Log email sending error but don't crash registration
+                    print(f"ERROR: Could not send welcome email to {user.email}. Reason: {e}")
+                # --- END OF EMAIL LOGIC ---
+
+                # auto-login after registration
                 request.session['user_id'] = user.id
                 request.session['user_email'] = user.email
-                request.session['user_name'] = user.first_name
-                auth_login(request, user)
-                
-                messages.success(request, 'Registration successful! Please complete your profile.')
-                success(f"Welcome {user.first_name}!", detailed=True)
+                request.session['user_name'] = user.username
+                request.session.set_expiry(0)  # default browser session
+
+                # Updated success message
+                messages.success(request, 'Registration successful! A welcome email has been sent to your inbox.')
                 return redirect('account_details')
-                
+
             except Exception as e:
                 messages.error(request, f'Registration failed: {str(e)}')
                 print(f"Registration error: {str(e)}")
+
         else:
             for field, error in errors.items():
                 messages.error(request, f"{field}: {error}")
-        
+
         return render(request, 'register.html', {
             'register_errors': errors,
             'register_form_data': form_data,
             'active_tab': 'register',
         })
-    
-    # GET request
+
+    # -------------------------------
+    # GET request (Unchanged)
+    # -------------------------------
     return render(request, 'register.html', {'active_tab': active_tab})
 
-
 def user_logout(request):
-    """Logout clears session and uses Django's logout"""
-    auth_logout(request)
-    request.session.flush()
+    """Logout clears only user-specific session keys"""
+    for key in ['user_id', 'user_email', 'user_name']:
+        if key in request.session:
+            del request.session[key]
+
     messages.success(request, 'You have been logged out')
     return redirect('homepage')
-
 
 def forgotpassword(request):
     if request.method == 'POST':
@@ -411,23 +259,36 @@ def forgotpassword(request):
         try:
             user = User.objects.get(email=email)
             
-            # Generate a random reset token
+            # Your original logic for token generation
             reset_token = ''.join(random.choices(string.ascii_letters + string.digits, k=50))
             
-            # Store the token in the user's session or a temporary model
+            # Your original logic for storing token in session
             request.session['reset_token'] = reset_token
             request.session['reset_email'] = email
+            request.session.set_expiry(900)  # Token valid for 15 mins
             
-            # Send email with reset link (in a real app, you'd use a proper email template)
+            # Your original logic for creating the reset link
             reset_link = f"{request.scheme}://{request.get_host()}/reset-password/{reset_token}/"
             
+            # --- START: Themed Email Sending Logic ---
+            subject = 'Password Reset Request - VibeDrobe'
+            context = {
+                'user': user,
+                'reset_link': reset_link,
+            }
+            # Renders the HTML template you created
+            html_message = render_to_string('emails/password_reset_email.html', context)
+            # Creates a plain text version for email clients that don't support HTML
+            plain_message = strip_tags(html_message)
+            
             send_mail(
-                'Password Reset Request - VibeDrobe',
-                f'Hello {user.username},\n\nYou requested a password reset. Click the link below to reset your password:\n\n{reset_link}\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nVibeDrobe Team',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+                subject=subject,
+                message=plain_message, # Plain text version
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                html_message=html_message # HTML version
             )
+            # --- END: Themed Email Sending Logic ---
             
             messages.success(request, 'Password reset email sent. Please check your inbox.')
             return redirect('login_register')
@@ -436,7 +297,6 @@ def forgotpassword(request):
             messages.error(request, 'No account found with this email address.')
     
     return render(request, 'forgotpassword.html')
-
 
 def reset_password(request, token):
     # Check if token matches what's in the session
@@ -474,6 +334,39 @@ def reset_password(request, token):
 
 
 # ============================= ACCOUNT MANAGEMENT VIEWS =============================
+
+
+def validate_user_data(form_data):
+    """Validate only the 4 required fields during registration"""
+    errors = {}
+    
+    # Username validation
+    if not form_data['username']:
+        errors['username'] = 'Username is required'
+    elif len(form_data['username']) < 4:
+        errors['username'] = 'Username must be at least 4 characters'
+    elif User.objects.filter(username=form_data['username']).exists():
+        errors['username'] = 'Username already taken'
+    
+    # Email validation
+    if not form_data['email']:
+        errors['email'] = 'Email is required'
+    elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', form_data['email']):
+        errors['email'] = 'Enter a valid email address'
+    elif User.objects.filter(email=form_data['email']).exists():
+        errors['email'] = 'Email already registered'
+    
+    # Password validation
+    if not form_data['password']:
+        errors['password'] = 'Password is required'
+    elif len(form_data['password']) < 8:
+        errors['password'] = 'Password must be at least 8 characters'
+    
+    # First name validation
+    if not form_data['first_name']:
+        errors['first_name'] = 'First name is required'
+    
+    return errors
 
 @user_login_required
 def account_dashboard(request):
@@ -525,6 +418,11 @@ def order_detail(request, order_id):
             return redirect('account_orders')
             
         order = Order_Master.objects.get(id=order_id, user_id=user_id_session)
+        payment = order.payment_set.first()
+        # Auto-fail pending payments after 30 minutes
+        if payment and hasattr(payment, 'fail_if_pending_timeout'):
+            payment.fail_if_pending_timeout(minutes=15)
+
         order_address = Order_Address.objects.filter(order_id=order)
         
         context = {
@@ -546,6 +444,57 @@ def order_detail(request, order_id):
         messages.error(request, 'Failed to load order details. Please try again.')
         return redirect('account_orders')
 
+
+@user_login_required
+@require_POST
+def cancel_order(request, order_id):
+    try:
+        user_id_session = request.session.get('user_id')
+        order = get_object_or_404(Order_Master, id=order_id, user_id_id=user_id_session)
+
+        if order.status in ['processing', 'confirmed']:
+            # [IMPROVEMENT] Use a transaction to ensure data integrity
+            with transaction.atomic():
+                # --- Restock Inventory ---
+                order_items = order.order_details_set.all()
+                for item in order_items:
+                    variant = item.product_variant_id
+                    
+                    # --- [FIX] Check if the variant still exists ---
+                    if variant:
+                        variant.stock_quantity += item.quantity
+                        variant.save()
+                    else:
+                        # This variant was likely deleted. Log this serious issue.
+                        error(f"Cannot restock item for Order #{order.order_number}. Product Variant ID {item.product_variant_id_id} not found.")
+                        # We will still cancel the order but the admin needs to know about the stock discrepancy.
+                
+                # --- Handle Refund for Prepaid Orders ---
+                if order.mode_of_payment != 'cod':
+                    try:
+                        payment = Payment.objects.get(order_id=order)
+                        payment.status = 'refund_initiated'
+                        payment.refund_amount = order.total_amount
+                        payment.refund_reason = 'Order cancelled by customer.'
+                        payment.save()
+                    except Payment.DoesNotExist:
+                        error(f'Payment record not found for prepaid order {order.order_number} during cancellation.')
+                        
+                # --- Update Order Status ---
+                order.status = 'cancelled'
+                order.save()
+            
+            messages.success(request, f"Order #{order.order_number} has been successfully cancelled.")
+
+        else:
+            messages.error(request, "This order cannot be cancelled as it has already been shipped.")
+
+    except Exception as e:
+        error(f'Error cancelling order: {str(e)}', detailed=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+
+    return redirect('account_orders')
+    
 
 @user_login_required
 def account_addresses(request):
@@ -659,69 +608,113 @@ def set_default_address(request, address_id):
 
 @user_login_required
 def account_details(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, "Please login to continue")
+        return redirect('login_register')
+
+    try:
+        user = User.objects.get(id=user_id)  # fetch from DB using session
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('homepage')
+
     if request.method == 'POST':
-        if request.POST.get('form_type') == 'profile':
-            # Handle profile update
-            user = request.user
-            user.first_name = request.POST.get('first_name')
-            user.last_name = request.POST.get('last_name')
-            user.contact = request.POST.get('contact')
-            user.date_of_birth = request.POST.get('date_of_birth')
-            user.gender = request.POST.get('gender')
-            
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'profile':
+            # Profile update
+            user.first_name = request.POST.get('first_name', user.first_name)
+            user.last_name = request.POST.get('last_name', user.last_name)
+            user.contact = request.POST.get('contact', user.contact)
+            user.date_of_birth = request.POST.get('date_of_birth', user.date_of_birth)
+            user.gender = request.POST.get('gender', user.gender)
+
             if 'profile_image' in request.FILES:
                 user.profile_image = request.FILES['profile_image']
-            
+                
+            elif request.POST.get('clear_image') == '1':
+                user.profile_image.delete(save=False)
+                user.profile_image = None
+
             user.save()
             messages.success(request, 'Profile updated successfully!')
-            
-        elif request.POST.get('form_type') == 'password':
-            # Handle password change
+
+        elif form_type == 'password':
+            # Password change
             current_password = request.POST.get('current_password')
             new_password1 = request.POST.get('new_password1')
             new_password2 = request.POST.get('new_password2')
-            
-            if not request.user.check_password(current_password):
+
+            if not user.check_password(current_password):
                 messages.error(request, 'Current password is incorrect')
             elif new_password1 != new_password2:
                 messages.error(request, 'New passwords do not match')
             elif len(new_password1) < 8:
                 messages.error(request, 'Password must be at least 8 characters')
             else:
-                request.user.set_password(new_password1)
-                request.user.save()
-                
-                # Re-login the user to maintain session
-                from django.contrib.auth import login
-                login(request, request.user)
-                
+                user.set_password(new_password1)
+                user.save()
                 messages.success(request, 'Password changed successfully!')
                 return redirect('account_details')
-        
+
         return redirect('account_details')
-    
-    return render(request, 'account_details.html')
+
+    return render(request, 'account_details.html', {"user": user})
 
 
 @user_login_required
 def deactivate_account(request):
     if request.method == 'POST':
         password = request.POST.get('password')
-        if request.user.check_password(password):
-            request.user.is_active = False
-            request.user.save()
-            
-            auth_logout(request)
-            
-            messages.success(request, 'Account deactivated successfully')
-            return redirect('homepage')
-        else:
-            messages.error(request, 'Incorrect password')
-            return redirect('account_details')
+        try:
+            # get current user from session
+            user_id = request.session.get('user_id')
+            user = User.objects.get(id=user_id)
+
+            if user.check_password(password):
+                user.is_active = False
+                user.save()
+
+                # --- 📧 SEND DEACTIVATION CONFIRMATION EMAIL ---
+                try:
+                    subject = 'Your VibeDrobe Account Has Been Deactivated'
+                    context = {'user': user}
+                    html_message = render_to_string('emails/account_deactivated_email.html', context)
+                    plain_message = strip_tags(html_message)
+                    
+                    send_mail(
+                        subject=subject,
+                        message=plain_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                        html_message=html_message
+                    )
+                except Exception as e:
+                    # Log email error, but don't stop the deactivation process
+                    print(f"ERROR: Could not send deactivation email to {user.email}. Reason: {e}")
+                # --- END OF EMAIL LOGIC ---
+
+                # clear only user session keys
+                for key in ['user_id', 'user_email', 'user_name']:
+                    if key in request.session:
+                        del request.session[key]
+
+                messages.success(request, 'Account deactivated successfully. A confirmation email has been sent.')
+                return redirect('homepage')
+            else:
+                messages.error(request, 'Incorrect password')
+                return redirect('account_details')
+
+        except User.DoesNotExist:
+            messages.error(request, 'User not found. Please log in again.')
+            return redirect('login_register')
+
     return redirect('account_details')
 
 
 # ============================= PRODUCT VIEWS =============================
+
 
 def shop(request):
     
@@ -1080,7 +1073,216 @@ def check_variant_stock(request, variant_id):
     })
 
 
+# ============================= WISHLIST VIEWS =============================
+
+
+@user_login_required
+def wishlist(request):
+    """Display user's wishlist"""
+    try:
+        user_id = request.session['user_id']
+        wishlist_items = Wishlist.objects.filter(
+            user_id=user_id
+        ).select_related(
+            'product_id__brand_id'
+        ).prefetch_related(
+            'product_id__variants'
+        ).order_by('-added_at')
+        
+        context = {
+            'wishlist_items': wishlist_items,
+            'wishlist_count': wishlist_items.count()
+        }
+        return render(request, 'wishlist.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Error loading your wishlist")
+        return redirect('homepage')
+
+
+@user_login_required
+def add_to_wishlist(request, product_id):
+    """Add or remove item from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            is_active=True
+        )
+        
+        # Check if already in wishlist
+        wishlist_item = Wishlist.objects.filter(
+            user_id=user_id,
+            product_id=product
+        ).first()
+        
+        if wishlist_item:
+            # Item exists, so remove it
+            wishlist_item.delete()
+            messages.success(request, "Removed from wishlist!")
+        else:
+            # Add to wishlist
+            Wishlist.objects.create(
+                user_id_id=user_id,
+                product_id=product
+            )
+            messages.success(request, "Added to wishlist!")
+            
+        return redirect('product_detail', product_id=product_id)
+        
+    except Exception as e:
+        messages.error(request, "Error updating wishlist")
+        return redirect('product_detail', product_id=product_id)
+
+
+@user_login_required
+def add_to_wishlist_quick_view(request, product_id):
+    """Add or remove item from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            is_active=True
+        )
+        
+        # Check if already in wishlist
+        wishlist_item = Wishlist.objects.filter(
+            user_id=user_id,
+            product_id=product
+        ).first()
+        
+        if wishlist_item:
+            wishlist_item.delete()
+            messages.success(request, "Removed from wishlist!")
+        else:
+            Wishlist.objects.create(
+                user_id_id=user_id,
+                product_id=product
+            )
+            messages.success(request, "Added to wishlist!")
+            
+        return redirect('wishlist')
+        
+    except Exception as e:
+        messages.error(request, "Error updating wishlist")
+        return redirect('shop')
+
+
+@user_login_required
+def remove_from_wishlist(request, item_id):
+    """Remove item from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        item = get_object_or_404(
+            Wishlist,
+            id=item_id,
+            user_id=user_id
+        )
+        product_name = item.product_id.name
+        item.delete()
+        messages.success(request, f"Removed {product_name} from wishlist")
+        return redirect('wishlist')
+        
+    except Exception as e:
+        messages.error(request, "Error removing from wishlist")
+        return redirect('wishlist')
+
+@user_login_required
+def empty_wishlist(request):
+    """Remove all items from wishlist"""
+    try:
+        user_id = request.session['user_id']
+        # Get all wishlist items for the user
+        wishlist_items = Wishlist.objects.filter(user_id=user_id)
+        
+        if wishlist_items.exists():
+            count = wishlist_items.count()
+            wishlist_items.delete()
+            messages.success(request, f"Removed all {count} items from your wishlist")
+        else:
+            messages.info(request, "Your wishlist is already empty")
+            
+        return redirect('wishlist')
+        
+    except Exception as e:
+        messages.error(request, "Error emptying wishlist")
+        return redirect('wishlist')
+    
+
+@user_login_required
+def move_to_cart(request, item_id):
+    """Move wishlist item to cart"""
+    try:
+        user_id = request.session['user_id']
+        wishlist_item = get_object_or_404(
+            Wishlist,
+            id=item_id,
+            user_id=user_id
+        )
+        
+        # Get the first available variant of the product
+        variant = wishlist_item.product_id.variants.first()
+        
+        if not variant:
+            messages.warning(request, "This product is not available in any size")
+            return redirect('wishlist')
+        
+        # Check stock
+        if variant.stock_quantity < 1:
+            messages.warning(request, "This item is currently out of stock")
+            return redirect('wishlist')
+        
+        # Add to cart
+        cart, created = Cart.objects.get_or_create(user_id_id=user_id)
+        cart_item, item_created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'quantity': 1,
+                'price_at_time': variant.product_id.price + (variant.additional_price or 0)
+            }
+        )
+        
+        if not item_created:
+            cart_item.quantity += 1
+            cart_item.save()
+        
+        # Remove from wishlist
+        wishlist_item.delete()
+        messages.success(request, "Item moved to cart successfully!")
+        return redirect('cart')
+        
+    except Exception as e:
+        print(f"Error moving to cart: {str(e)}")
+        messages.error(request, "Error moving item to cart")
+        return redirect('wishlist')
+    
+@user_login_required
+def quick_add_to_wishlist(request, product_id):
+    try:
+        user = User.objects.get(id=request.session['user_id'])
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        
+        # Check if product is already in wishlist
+        if Wishlist.objects.filter(user_id=user, product_id=product).exists():
+            messages.info(request, f"{product.name} is already in your wishlist 💖")
+        else:
+            Wishlist.objects.create(user_id=user, product_id=product)
+            messages.success(request, f"✓ {product.name} added to wishlist!")
+            
+    except IntegrityError:
+        messages.error(request, "Couldn't add to wishlist. Please try again.")
+    except Exception as e:
+        messages.error(request, "An unexpected error occurred.")
+        error(f"Quick add to wishlist error: {str(e)}")
+           
+    return redirect('shop')
+
+
 # ============================= CART VIEWS =============================
+
 
 @user_login_required
 @require_POST
@@ -1330,9 +1532,10 @@ def update_cart_item_drawer(request):
 
 @user_login_required
 def remove_cart_item_drawer(request, product_id, variant_id):
-    if request.user.is_authenticated:
+    user_id = request.session.get('user_id')
+    if user_id:
         try:
-            cart = Cart.objects.get(user_id=request.user.id)
+            cart = Cart.objects.get(user_id=user_id)
             item = Cart_Items.objects.get(
                 cart_id=cart,
                 product_variant_id__product_id=product_id,
@@ -1505,8 +1708,9 @@ def quick_add_to_cart(request, product_id):
             messages.warning(request, f"Sorry, {product.name} is out of stock.")
             return redirect('shop')
         
+        user = User.objects.get(id=request.session['user_id'])
         # Get or create user's cart
-        cart, created = Cart.objects.get_or_create(user_id=request.user)
+        cart, created = Cart.objects.get_or_create(user_id=user)
         
         # Check if item already exists in cart
         cart_item, created = Cart_Items.objects.get_or_create(
@@ -1533,304 +1737,67 @@ def quick_add_to_cart(request, product_id):
         
     except Exception as e:
         messages.error(request, "Couldn't add item to cart. Please try again.")
-        # Log the error here in production
-    
+        error(f"Quick add from grid error: {str(e)}")
+           
     # Redirect back to shop with parameter to open cart drawer
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
 
-@user_login_required
-def quick_add_to_cart_home(request, product_id):
-    try:
-        product = get_object_or_404(Product, id=product_id, is_active=True)
-        variant = product.variants.filter(is_active=True).first()
+
+# ============================= CHECKOUT & ORDER PROCESSING =============================
+
+
+def get_cart_totals(cart_items):
+    """Helper function to calculate cart totals"""
+    cart_total = Decimal('0')
+    total_gst = Decimal('0')
+    total_base_price = Decimal('0')
+    shipping_charge = Decimal('69')  # Fixed shipping charge
+
+    for item in cart_items:
+        gst_inclusive_price = item.price_at_time
+        quantity = Decimal(item.quantity)
         
-        if not variant:
-            messages.error(request, "This product is currently unavailable.")
-            return redirect('homepage')
-        
-        if variant.stock_quantity <= 0:
-            messages.warning(request, f"Sorry, {product.name} is out of stock.")
-            return redirect('homepage')
-        
-        # Get or create user's cart
-        cart, created = Cart.objects.get_or_create(user_id=request.user)
-        
-        # Check if item already exists in cart
-        cart_item, created = Cart_Items.objects.get_or_create(
-            cart_id=cart,
-            product_variant_id=variant,
-            defaults={
-                'price_at_time': product.price + (variant.additional_price or 0),
-                'quantity': 1
-            }
-        )
-        
-        if not created:
-            # If item exists and we can add more
-            new_quantity = cart_item.quantity + 1
-            if new_quantity <= variant.stock_quantity:
-                cart_item.quantity = new_quantity
-                cart_item.save()
-                messages.success(request, f"Added one more {product.name} to your cart. Total: {new_quantity}")
-            else:
-                messages.warning(request, 
-                    f"You already have {cart_item.quantity} in cart. Only {variant.stock_quantity} available.")
+        # Calculate base price and GST based on product price
+        if gst_inclusive_price >= Decimal('1000'):
+            # For items >= ₹1000 (12% GST)
+            base_price = gst_inclusive_price / Decimal('1.12')
+            gst_amount = gst_inclusive_price - base_price
         else:
-            messages.success(request, f"✓ {product.name} added to cart!")
+            # For items < ₹1000 (5% GST)
+            base_price = gst_inclusive_price / Decimal('1.05')
+            gst_amount = gst_inclusive_price - base_price
         
-    except Exception as e:
-        messages.error(request, "Couldn't add item to cart. Please try again.")
-        # Log the error here in production
+        # Calculate totals for this item
+        item_base_total = base_price * quantity
+        item_gst_total = gst_amount * quantity
+        item_total = gst_inclusive_price * quantity
+        
+        # Add to cart totals
+        total_base_price += item_base_total
+        total_gst += item_gst_total
+        cart_total += item_total
     
-    # Redirect back to homepage with parameter to open cart drawer
-    homepage_url = reverse('homepage')
-    return redirect(f"{homepage_url}?open_cart_drawer=true")
-
-
-# ============================= WISHLIST VIEWS =============================
-
-@user_login_required
-def wishlist(request):
-    """Display user's wishlist"""
-    try:
-        user_id = request.session['user_id']
-        wishlist_items = Wishlist.objects.filter(
-            user_id=user_id
-        ).select_related(
-            'product_id__brand_id'
-        ).prefetch_related(
-            'product_id__variants'
-        ).order_by('-added_at')
-        
-        context = {
-            'wishlist_items': wishlist_items,
-            'wishlist_count': wishlist_items.count()
-        }
-        return render(request, 'wishlist.html', context)
-        
-    except Exception as e:
-        messages.error(request, "Error loading your wishlist")
-        return redirect('homepage')
-
-
-@user_login_required
-def add_to_wishlist(request, product_id):
-    """Add or remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        product = get_object_or_404(
-            Product,
-            id=product_id,
-            is_active=True
-        )
-        
-        # Check if already in wishlist
-        wishlist_item = Wishlist.objects.filter(
-            user_id=user_id,
-            product_id=product
-        ).first()
-        
-        if wishlist_item:
-            # Item exists, so remove it
-            wishlist_item.delete()
-            messages.success(request, "Removed from wishlist!")
-        else:
-            # Add to wishlist
-            Wishlist.objects.create(
-                user_id_id=user_id,
-                product_id=product
-            )
-            messages.success(request, "Added to wishlist!")
-            
-        return redirect('product_detail', product_id=product_id)
-        
-    except Exception as e:
-        messages.error(request, "Error updating wishlist")
-        return redirect('product_detail', product_id=product_id)
-
-
-@user_login_required
-def add_to_wishlist_quick_view(request, product_id):
-    """Add or remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        product = get_object_or_404(
-            Product,
-            id=product_id,
-            is_active=True
-        )
-        
-        # Check if already in wishlist
-        wishlist_item = Wishlist.objects.filter(
-            user_id=user_id,
-            product_id=product
-        ).first()
-        
-        if wishlist_item:
-            wishlist_item.delete()
-            messages.success(request, "Removed from wishlist!")
-        else:
-            Wishlist.objects.create(
-                user_id_id=user_id,
-                product_id=product
-            )
-            messages.success(request, "Added to wishlist!")
-            
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error updating wishlist")
-        return redirect('shop')
-
-
-@user_login_required
-def remove_from_wishlist(request, item_id):
-    """Remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        item = get_object_or_404(
-            Wishlist,
-            id=item_id,
-            user_id=user_id
-        )
-        product_name = item.product_id.name
-        item.delete()
-        messages.success(request, f"Removed {product_name} from wishlist")
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error removing from wishlist")
-        return redirect('wishlist')
-
-@user_login_required
-def empty_wishlist(request):
-    """Remove all items from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        # Get all wishlist items for the user
-        wishlist_items = Wishlist.objects.filter(user_id=user_id)
-        
-        if wishlist_items.exists():
-            count = wishlist_items.count()
-            wishlist_items.delete()
-            messages.success(request, f"Removed all {count} items from your wishlist")
-        else:
-            messages.info(request, "Your wishlist is already empty")
-            
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error emptying wishlist")
-        return redirect('wishlist')
+    # Round values to 2 decimal places
+    total_base_price = total_base_price.quantize(Decimal('0.00'))
+    total_gst = total_gst.quantize(Decimal('0.00'))
+    cart_total = cart_total.quantize(Decimal('0.00'))
+    grand_total = cart_total + shipping_charge
     
+    return {
+        'base_price_total': total_base_price,
+        'cart_total': cart_total,
+        'total_gst': total_gst,
+        'shipping_charge': shipping_charge,
+        'grand_total': grand_total,
+    }
 
-@user_login_required
-def move_to_cart(request, item_id):
-    """Move wishlist item to cart"""
-    try:
-        user_id = request.session['user_id']
-        wishlist_item = get_object_or_404(
-            Wishlist,
-            id=item_id,
-            user_id=user_id
-        )
-        
-        # Get the first available variant of the product
-        variant = wishlist_item.product_id.variants.first()
-        
-        if not variant:
-            messages.warning(request, "This product is not available in any size")
-            return redirect('wishlist')
-        
-        # Check stock
-        if variant.stock_quantity < 1:
-            messages.warning(request, "This item is currently out of stock")
-            return redirect('wishlist')
-        
-        # Add to cart
-        cart, created = Cart.objects.get_or_create(user_id_id=user_id)
-        cart_item, item_created = Cart_Items.objects.get_or_create(
-            cart_id=cart,
-            product_variant_id=variant,
-            defaults={
-                'quantity': 1,
-                'price_at_time': variant.product_id.price + (variant.additional_price or 0)
-            }
-        )
-        
-        if not item_created:
-            cart_item.quantity += 1
-            cart_item.save()
-        
-        # Remove from wishlist
-        wishlist_item.delete()
-        messages.success(request, "Item moved to cart successfully!")
-        return redirect('cart')
-        
-    except Exception as e:
-        print(f"Error moving to cart: {str(e)}")
-        messages.error(request, "Error moving item to cart")
-        return redirect('wishlist')
-    
-@user_login_required
-def quick_add_to_wishlist(request, product_id):
-    try:
-        product = get_object_or_404(Product, id=product_id, is_active=True)
-        
-        # Check if product is already in wishlist
-        if Wishlist.objects.filter(user_id=request.user, product_id=product).exists():
-            messages.info(request, f"{product.name} is already in your wishlist 💖")
-        else:
-            Wishlist.objects.create(user_id=request.user, product_id=product)
-            messages.success(request, f"✓ {product.name} added to wishlist!")
-            
-    except IntegrityError:
-        messages.error(request, "Couldn't add to wishlist. Please try again.")
-    except Exception as e:
-        messages.error(request, "An unexpected error occurred.")
-        # Log the error here in production
-    
-    return redirect('shop')
-
-@user_login_required
-def quick_add_to_wishlist_home(request, product_id):
-    try:
-        print(f"Wishlist request received for product ID: {product_id}")  # Debug
-        print(f"User: {request.user}")  # Debug
-        
-        product = get_object_or_404(Product, id=product_id, is_active=True)
-        print(f"Product found: {product.name}")  # Debug
-        
-        # Check if product is already in wishlist
-        wishlist_exists = Wishlist.objects.filter(user_id=request.user, product_id=product).exists()
-        print(f"Wishlist exists: {wishlist_exists}")  # Debug
-        
-        if wishlist_exists:
-            messages.info(request, f"{product.name} is already in your wishlist 💖")
-            print("Product already in wishlist")  # Debug
-        else:
-            Wishlist.objects.create(user_id=request.user, product_id=product)
-            messages.success(request, f"✓ {product.name} added to wishlist!")
-            print("Product added to wishlist")  # Debug
-            
-    except IntegrityError as e:
-        print(f"IntegrityError: {e}")  # Debug
-        messages.error(request, "Couldn't add to wishlist. Please try again.")
-    except Exception as e:
-        print(f"Exception: {e}")  # Debug
-        messages.error(request, "An unexpected error occurred.")
-        # Log the error here in production
-    
-    return redirect('homepage')
-
-# ============================= CHECKOUT & PAYMENT VIEWS =============================
 
 @user_login_required
 def checkout(request):
     try:
         user_id = request.session.get('user_id')
-        user = request.user
+        user = User.objects.get(id=user_id)
         
         # Get user's cart
         cart_obj, created = Cart.objects.get_or_create(user_id_id=user_id)
@@ -1868,6 +1835,34 @@ def checkout(request):
             # Create order using transaction to ensure data consistency
             try:
                 with transaction.atomic():
+                    
+                    # ==================== NEW LOGIC START ====================
+                    # Before creating a new order, find and cancel any recent 'processing' orders
+                    # from this user to release stock and prevent duplicates.
+                    # We'll set a tight threshold, like 15 minutes.
+                    
+                    threshold = timezone.now() - timedelta(minutes=15)
+                    recent_processing_orders = Order_Master.objects.filter(
+                        user_id=user,
+                        status='processing',
+                        created_at__gte=threshold
+                    )
+
+                    if recent_processing_orders.exists():
+                        info(f"User {user.username} has {recent_processing_orders.count()} recent incomplete orders. Cancelling them before creating a new one.")
+                        for old_order in recent_processing_orders:
+                            # We use the cancel_and_restock method we created earlier.
+                            # This marks the order as 'cancelled' AND restocks the items.
+                            old_order.cancel_and_restock()
+                    # ===================== NEW LOGIC END =====================
+                    
+                    # --- First, check stock for all items BEFORE creating the order ---
+                    for cart_item in cart_items:
+                        variant = cart_item.product_variant_id
+                        if variant.stock_quantity < cart_item.quantity:
+                            messages.error(request, f"Sorry, we don't have enough stock for {variant.product_id.name}. Only {variant.stock_quantity} left.")
+                            return redirect('cart')
+                        
                     # Create order master
                     order = Order_Master(
                         user_id=user,
@@ -1907,6 +1902,11 @@ def checkout(request):
                             product_sku=cart_item.product_variant_id.sku,
                         )
                         order_details_list.append(order_detail)
+                        
+                        # --- [CORRECTED] Decrement the stock for the purchased variant ---
+                        variant = cart_item.product_variant_id
+                        variant.stock_quantity -= cart_item.quantity
+                        variant.save()
                     
                     # Handle different payment methods
                     if payment_method == 'cod':
@@ -2003,30 +2003,7 @@ def checkout(request):
         return redirect('cart')
 
 
-@user_login_required
-def orderconfirm(request, order_id):
-    try:
-        user_id = request.session.get('user_id')
-        user = request.user
-        
-        # Get the order with related data
-        order = get_object_or_404(Order_Master, id=order_id, user_id=user)
-        order_details = Order_Details.objects.filter(order_id=order)
-        order_address = Order_Address.objects.filter(order_id=order).first()
-        payment = Payment.objects.filter(order_id=order).first()
-        
-        context = {
-            'order': order,
-            'order_details': order_details,
-            'order_address': order_address,
-            'payment': payment,
-        }
-        
-        return render(request, 'orderconfirm.html', context)
-        
-    except Exception as e:
-        messages.error(request, "Order not found or you don't have permission to view this order.")
-        return redirect('homepage')
+# ============================= PAYMENT HANDLER & ORDER CONFIRMATION =============================
 
 
 def payment_handler(request):
@@ -2103,6 +2080,117 @@ def payment_handler(request):
     return redirect('checkout')
 
 
+def send_order_confirmation_email(order, order_details, order_address):
+    """
+    Send professional order confirmation email with invoice
+    """
+    try:
+        # Email subject
+        subject = f'Order Confirmation - {order.order_number} | VibeDrobe'
+        
+        # From email (use your configured email)
+        from_email = settings.DEFAULT_FROM_EMAIL
+        
+        # To email (customer's email)
+        to_email = [order.user_id.email]
+        
+        # Context for email template
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'company_name': 'VibeDrobe',
+            'support_email': 'support@vibedrobe.com',
+            'website_url': 'https://www.vibedrobe.com',
+        }
+        
+        # Render HTML email template
+        html_content = render_to_string('emails/order_confirmation.html', context)
+        
+        # Create plain text version (fallback)
+        plain_text_content = f"""
+Thank you for your order!
+
+Hi {order_address.full_name},
+
+Your order has been confirmed and is being processed.
+
+Order Details:
+- Order Number: {order.order_number}
+- Date: {order.order_date.strftime('%d/%m/%Y')}
+- Total Amount: ₹{order.total_amount:.2f}
+- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
+
+Shipping Address:
+{order_address.full_name}
+{order_address.address_line_1}
+{order_address.address_line_2 if order_address.address_line_2 else ''}
+{order_address.city}, {order_address.state} - {order_address.pincode}
+Phone: {order_address.phone}
+
+Items Ordered:"""
+        
+        for item in order_details:
+            plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
+        
+        plain_text_content += f"""
+
+Subtotal: ₹{order.subtotal:.2f}
+GST: ₹{order.tax_amount:.2f}
+Shipping: ₹{order.shipping_charge:.2f}
+Total: ₹{order.total_amount:.2f}
+
+Thank you for choosing VibeDrobe!
+
+For support, contact us at support@vibedrobe.com
+"""
+        
+        # Create email message
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_text_content,
+            from_email=from_email,
+            to=to_email,
+        )
+        
+        # Attach HTML content
+        email.attach_alternative(html_content, "text/html")
+        
+        # Send email
+        email.send(fail_silently=False)
+        
+        return True
+        
+    except Exception as e:
+        return False
+
+
+@user_login_required
+def orderconfirm(request, order_id):
+    try:
+        user_id = request.session.get('user_id')
+        user = User.objects.get(id=user_id)
+        
+        # Get the order with related data
+        order = get_object_or_404(Order_Master, id=order_id, user_id=user)
+        order_details = Order_Details.objects.filter(order_id=order)
+        order_address = Order_Address.objects.filter(order_id=order).first()
+        payment = Payment.objects.filter(order_id=order).first()
+        
+        context = {
+            'order': order,
+            'order_details': order_details,
+            'order_address': order_address,
+            'payment': payment,
+        }
+        
+        return render(request, 'orderconfirm.html', context)
+        
+    except Exception as e:
+        messages.error(request, "Order not found or you don't have permission to view this order.")
+        return redirect('homepage')
+
+
 # ============================= STATIC PAGES =============================
 
 def contactus(request):
@@ -2167,7 +2255,6 @@ def contactus(request):
             return render(request, 'contactus.html')
     
     return render(request, 'contactus.html')
-
 
 def aboutus(request):
    return render(request, 'aboutus.html')
