@@ -68,9 +68,10 @@
                   <div class="status-filter">
                     <div class="btn-group" role="group">
                       <a href="?status=all{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">All</a>
-                      <a href="?status=success{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'success' %}active{% endif %}">Success</a>
+                      <a href="?status=completed{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'completed' %}active{% endif %}">Success</a>
                       <a href="?status=failed{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'failed' %}active{% endif %}">Failed</a>
                       <a href="?status=pending{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+                      <a href="?status=refund_initiated{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'refund_initiated' %}active{% endif %}">Refund Initiated</a>
                       <a href="?status=refunded{% if search_query %}&search={{ search_query }}{% endif %}" class="btn btn-outline-primary {% if status_filter == 'refunded' %}active{% endif %}">Refunded</a>
                     </div>
                   </div>
@@ -81,7 +82,7 @@
                     <thead class="table-light">
                       <tr>
                         <th>Payment ID</th>
-                        <th>Order #</th>
+                        <th>Order #ID</th>
                         <th>Customer</th>
                         <th>Amount</th>
                         <th>Payment Method</th>
@@ -175,56 +176,35 @@
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
 
   <script>
-    // Initialize datatable
     document.addEventListener('DOMContentLoaded', function () {
       new DataTable('#paymentsTable', {
         responsive: true,
         dom: '<"top"f>rt<"bottom"lip><"clear">',
-        pageLength: 10
-      })
+        pageLength: 10,
+        order: [[6, 'desc']]
+      });
     
-      // Auto-dismiss alerts
-      setTimeout(function () {
-        let alerts = document.querySelectorAll('.alert-auto-dismiss')
-        alerts.forEach((alert) => {
-          alert.style.transition = 'opacity 0.3s, height 0.3s, padding 0.3s, margin 0.3'
-          alert.style.opacity = '0'
-          setTimeout(() => alert.remove(), 300)
-        })
-      }, 3000)
-    
-      // Payment details modal
+      // This logic to LOAD the modal content remains necessary
       document.querySelectorAll('.view-payment-details').forEach((button) => {
         button.addEventListener('click', function () {
-          const paymentId = this.getAttribute('data-payment-id')
-          const modalContent = document.getElementById('paymentContent')
-    
-          // Show loading spinner
-          modalContent.innerHTML = `
-                    <div class="text-center">
-                      <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
-                  `
-    
-          // Fetch payment details via AJAX
+          const paymentId = this.getAttribute('data-payment-id');
+          const modalContent = document.getElementById('paymentContent');
+          modalContent.innerHTML = `<div class="text-center p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+          
           fetch(`/adminside/payment_details_content/${paymentId}/`)
             .then((response) => response.text())
             .then((html) => {
-              modalContent.innerHTML = html
+              modalContent.innerHTML = html;
             })
             .catch((error) => {
-              modalContent.innerHTML = `
-            <div class="alert alert-danger">
-                Error loading details: ${error.message}
-                <br>Please check console for details.
-            </div>
-        `
-              console.error('Error:', error)
-            })
-        })
-      })
-    })
+              modalContent.innerHTML = `<div class="alert alert-danger">Error loading details. Please try again.</div>`;
+              console.error('Error:', error);
+            });
+        });
+      });
+
+      // The form submission listener has been REMOVED.
+      // The browser now handles the form submission directly.
+    });
   </script>
 {% endblock %}

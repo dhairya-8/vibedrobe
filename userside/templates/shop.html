@@ -591,23 +591,23 @@
                                 <div class="pc__img-wrapper pc__img-wrapper_wide3" style="padding-bottom: 25%; position: relative;">
                                     <div class="product-gallery swiper h-100 w-100" style="position: absolute; top: 0; left: 0;">
                                         <div class="swiper-wrapper h-100">
-                                            
 
+                                            <!-- Base Image -->
                                             <div class="swiper-slide h-100">
-  <a href="{% url 'product_detail' product.id %}">
-    {% if product.base_image %}
-      <img loading="lazy" 
-           src="{{ product.base_image.url }}" 
-           class="pc__img w-100 h-100 object-fit-contain"
-           alt="{{ product.name|default:'Product Image' }}">
-    {% else %}
-      <img loading="lazy" 
-           src="{% static 'user/assets/images/shop/no-image-available.jpg' %}" 
-           class="pc__img w-100 h-100 object-fit-contain" 
-           alt="No image available">
-    {% endif %}
-  </a>
-</div>
+                                              <a href="{% url 'product_detail' product.id %}">
+                                              {% if product.base_image %}
+                                              <img loading="lazy" 
+                                                src="{{ product.base_image.url }}" 
+                                                 class="pc__img w-100 h-100 object-fit-contain" 
+                                                  alt="{{ product.name|default:'Product Image' }}">
+                                              {% else %}
+                                              <img loading="lazy" 
+                                                src="{% static 'user/assets/images/shop/no-image-available.jpg' %}" 
+                                                class="pc__img w-100 h-100 object-fit-contain" 
+                                                alt="No image available">
+                                              {% endif %}
+                                              </a>
+                                            </div>
                                             
                                             <!-- Gallery Images -->
                                             {% for gallery_image in product.product_gallery_set.all|dictsort:"image_order" %}

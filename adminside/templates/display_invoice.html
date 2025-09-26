@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+  Invoice Management | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
+  <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
+  <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+  <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+<style>
+  /* --- (Keep all your existing screen styles) --- */
+  .modal-lg {
+    max-width: 80%;
+  }
+  .payment-badge {
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+    text-transform: capitalize;
+  }
+  
+  /* --- NEW & IMPROVED PRINT STYLES --- */
+  @media print {
+    /* --- (Keep all your existing print styles) --- */
+    body > * {
+      display: none !important;
+    }
+    .modal, .modal-dialog, .modal-content, .modal-body {
+      display: block !important;
+      visibility: visible !important;
+    }
+    .modal {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: auto !important;
+      overflow: visible !important;
+      background-color: #fff !important;
+    }
+    .modal-dialog {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      transform: none !important;
+    }
+    .modal-content {
+      border: 0 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    .modal-body {
+      padding: 0 !important;
+    }
+    .modal-header, 
+    .modal-footer, 
+    #printableInvoice + .d-flex.justify-content-end {
+      display: none !important;
+    }
+    .bg-black {
+      background-color: #000 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* --- ADD THESE NEW STYLES --- */
+    /* This creates a flex container for the address blocks */
+    .address-container-print {
+      display: flex !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      align-items: flex-start !important; /* Aligns items to the top */
+    }
+
+    /* This styles the individual address columns */
+    .address-column-print {
+      width: 32% !important; /* A little less than 1/3 to prevent wrapping */
+    }
+
+    /* This stacks the items in the "Invoice to" block vertically */
+    .invoice-to-block > * {
+      display: block !important;
+    }
+    /* --- END OF NEW STYLES --- */
+
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  {% csrf_token %}
+  <div class="page-wrapper">
+    <div class="page-content">
+      <div class="container-xxl">
+        {% include 'custom_alerts.html' with position='inline' %}
+        <div class="row justify-content-center">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h4 class="card-title">Invoice Management</h4>
+                  </div>
+                </div> </div>
+              <div class="card-body pt-0">
+                <nav>
+                  <div class="nav nav-tabs" id="nav-tab"></div>
+                </nav>
+                <h4 class="card-title my-4 fs-15">Successful Orders</h4>
+
+                <div class="table-responsive">
+                  <table class="table" id="invoiceTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Order Date</th>
+                        <th>Amount</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in orders %}
+                        <tr>
+                          <td><strong>{{ order.order_number }}</strong></td>
+                          <td>{{ order.user_id.get_full_name|default:order.user_id.username }}</td>
+                          <td>{{ order.order_date|date:'Y-m-d H:i' }}</td>
+                          <td>₹{{ order.total_amount }}</td>
+                          <td>
+                            {% with order.payment_set.first as payment %}
+                              {% if payment %}
+                                <span class="badge payment-badge 
+                                  {% if payment.status == 'paid' or payment.status == 'captured' or payment.status == 'completed' %} bg-success-subtle text-success
+                                  {% elif payment.status == 'pending' %} bg-warning-subtle text-warning
+                                  {% else %} bg-danger-subtle text-danger {% endif %}">
+                                  {{ payment.status }}
+                                </span>
+                              {% else %}
+                                <span class="badge payment-badge bg-secondary-subtle text-secondary">N/A</span>
+                              {% endif %}
+                            {% endwith %}
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-primary view-invoice-btn" 
+                                    data-url="{% url 'view_invoice_html' order.id %}" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#invoiceModal">
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="6" class="text-center">No successful orders found.</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div> </div>
+      </div>
+      {% include 'footer.html' %}
+    </div>
+    </div>
+  <div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="invoiceModalLabel">Invoice Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="invoiceContent">
+          <div class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block script %}
+  <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
+  <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    
+    // 1. Initialize the datatable
+    if (document.getElementById('invoiceTable')) {
+        new DataTable('#invoiceTable', {
+        responsive: true,
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        pageLength: 10
+      });
+    }
+
+    // 2. AJAX logic for the "View Invoice" modal
+    document.querySelectorAll('.view-invoice-btn').forEach((button) => {
+      button.addEventListener('click', function () {
+        const modalContent = document.getElementById('invoiceContent');
+        const modalTitle = document.getElementById('invoiceModalLabel');
+        const url = this.getAttribute('data-url');
+        modalTitle.innerText = 'Loading Invoice...';
+        modalContent.innerHTML = `<div class="text-center p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+        fetch(url)
+          .then(response => {
+            if (!response.ok) { throw new Error('Network response was not ok'); }
+            return response.text();
+          })
+          .then(html => {
+            modalTitle.innerText = `Invoice Details`;
+            modalContent.innerHTML = html;
+          })
+          .catch(error => {
+            modalTitle.innerText = 'Error';
+            modalContent.innerHTML = `<div class="alert alert-danger m-3">Failed to load invoice details. Please try again later.</div>`;
+            console.error('Error fetching invoice:', error);
+          });
+      });
+    });
+
+    // 3. Logic to handle the print button click (delegated)
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.id === 'printInvoiceBtn') {
+            window.print();
+        }
+    });
+    
+  });
+
+  // 4. Logic to handle the send email button click (delegated)
+  document.addEventListener('click', function(event) {
+    // Check if the clicked element is the "send-email-btn"
+    if (event.target && event.target.id === 'send-email-btn') {
+      
+      // --- START: MODIFIED CODE ---
+
+      const sendButton = event.target; // Get the button element itself
+      const originalButtonHtml = sendButton.innerHTML; // Store its original content
+      const orderId = sendButton.getAttribute('data-order-id');
+      const statusMsg = document.getElementById('email-status-message');
+
+      // 1. Disable the button and show a sending state
+      sendButton.disabled = true;
+      sendButton.innerHTML = `
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Sending...
+      `;
+      // Clear previous status and show a new one
+      {% comment %} statusMsg.innerHTML = `<div class="alert alert-info">Sending email, please wait...</div>`; {% endcomment %}
+
+      // 2. Perform the fetch request
+      fetch(`/adminside/invoice/send/${orderId}/`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            statusMsg.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+          } else {
+            // Use the message from the server if available, otherwise a generic one
+            statusMsg.innerHTML = `<div class="alert alert-danger">${data.message || 'Failed to send email.'}</div>`;
+          }
+        })
+        .catch(() => {
+          statusMsg.innerHTML = `<div class="alert alert-danger">An error occurred while sending the email.</div>`;
+        })
+        .finally(() => {
+          // 3. This block runs after success or failure
+          // Re-enable the button and restore its original content after a short delay
+          // The delay gives the user time to see the success/failure message.
+          setTimeout(() => {
+            sendButton.disabled = false;
+            sendButton.innerHTML = originalButtonHtml;
+          }, 2000); // 2-second delay before the button reverts
+        });
+      
+      // --- END: MODIFIED CODE ---
+    }
+  });
+
+</script>
+
+{% endblock %}

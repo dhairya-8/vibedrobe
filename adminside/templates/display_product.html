@@ -330,178 +330,189 @@
 {% endblock %}
 
 {% block script %}
+  <!-- Vendor Scripts -->
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
   <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-    
-    // Auto-dismiss alerts
-    setTimeout(function() {
-      var alerts = document.querySelectorAll('.alert');
-      alerts.forEach(function(alert) {
-        var bsAlert = new bootstrap.Alert(alert);
-        bsAlert.close();
-      });
-    }, 5000);
+    document.addEventListener('DOMContentLoaded', function() {
 
-    // Debounce function for search input
-    function debounce(func, timeout = 300){
-      let timer;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, timeout);
-      };
-    }
+      /** -------------------------------
+       *  Bootstrap Initializations
+       * ------------------------------- */
+      function initTooltips() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+      }
+      initTooltips();
 
-    // Loading state
-    function showLoading() {
-      const container = document.getElementById('product-grid-container');
-      container.innerHTML = `
-        <div class="loading-overlay">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // Update products with AJAX
-    function updateProducts() {
-      showLoading();
-      
-      const form = document.getElementById('filter-form');
-      const formData = new FormData(form);
-      const params = new URLSearchParams(formData).toString();
-      const url = `${window.location.pathname}?${params}`;
-      
-      // Update browser URL without reload
-      history.pushState({}, '', url);
-      
-      // Update clear button state
-      updateClearButtonState();
-      
-      fetch(url, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-      .then(response => response.text())
-      .then(html => {
-        document.getElementById('product-grid-container').innerHTML = html;
-        // Reinitialize tooltips
-        tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
+      // Auto-dismiss alerts after 5s
+      setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(alert => {
+          new bootstrap.Alert(alert).close();
         });
-      })
-      .catch(error => console.error('Error:', error));
-    }
+      }, 5000);
 
-    // Update clear button disabled state
-    function updateClearButtonState() {
-      const searchTerm = document.getElementById('live-search').value;
-      const category = document.getElementById('category-filter').value;
-      const brand = document.getElementById('brand-filter').value;
-      const clearBtn = document.getElementById('clear-filters-btn');
-      
-      if (searchTerm || category || brand) {
-        clearBtn.disabled = false;
-      } else {
-        clearBtn.disabled = true;
+      /** -------------------------------
+       *  Helpers
+       * ------------------------------- */
+      function debounce(func, timeout = 300) {
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => func.apply(this, args), timeout);
+        };
       }
-    }
 
-    // Instant search with debounce
-    document.getElementById('live-search').addEventListener('input', 
-      debounce(function() {
-        updateProducts();
-      })
-    );
+      function showLoading() {
+        const container = document.getElementById('product-grid-container');
+        container.innerHTML = `
+          <div class="loading-overlay">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>`;
+      }
 
-    // Filter dropdown changes
-    document.getElementById('category-filter').addEventListener('change', updateProducts);
-    document.getElementById('brand-filter').addEventListener('change', updateProducts);
+      function updateClearButtonState() {
+        const searchTerm = document.getElementById('live-search').value;
+        const category = document.getElementById('category-filter').value;
+        const brand = document.getElementById('brand-filter').value;
+        const clearBtn = document.getElementById('clear-filters-btn');
+        clearBtn.disabled = !(searchTerm || category || brand);
+      }
 
-    // Clear filters button
-    document.getElementById('clear-filters-btn').addEventListener('click', function() {
-      document.getElementById('live-search').value = '';
-      document.getElementById('category-filter').value = '';
-      document.getElementById('brand-filter').value = '';
-      updateProducts();
-    });
-
-    // Handle pagination clicks via event delegation
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('.page-link') && !e.target.closest('.page-link').classList.contains('active')) {
-        e.preventDefault();
+      /** -------------------------------
+       *  Product Grid AJAX Updates
+       * ------------------------------- */
+      function updateProducts() {
         showLoading();
-        const url = e.target.closest('.page-link').href;
-        fetch(url, {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+
+        const form = document.getElementById('filter-form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        // Update browser URL without reload
+        history.pushState({}, '', url);
+
+        // Update clear button state
+        updateClearButtonState();
+
+        // Fetch filtered products
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(res => res.text())
+          .then(html => {
+            document.getElementById('product-grid-container').innerHTML = html;
+            initTooltips(); // reinit tooltips for new content
+          })
+          .catch(err => console.error('Error:', err));
+      }
+
+      /** -------------------------------
+       *  Search, Filters, and Clear
+       * ------------------------------- */
+      document.getElementById('live-search')
+        .addEventListener('input', debounce(updateProducts));
+
+      document.getElementById('category-filter')
+        .addEventListener('change', updateProducts);
+
+      document.getElementById('brand-filter')
+        .addEventListener('change', updateProducts);
+
+      document.getElementById('clear-filters-btn')
+        .addEventListener('click', () => {
+          document.getElementById('live-search').value = '';
+          document.getElementById('category-filter').value = '';
+          document.getElementById('brand-filter').value = '';
+          updateProducts();
+        });
+
+      updateClearButtonState();
+
+      /** -------------------------------
+       *  Pagination (AJAX)
+       * ------------------------------- */
+      document.addEventListener('click', function(e) {
+        const pageLink = e.target.closest('.page-link');
+        if (pageLink && !pageLink.classList.contains('active')) {
+          e.preventDefault();
+          showLoading();
+          fetch(pageLink.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+              document.getElementById('product-grid-container').innerHTML = html;
+            })
+            .catch(err => console.error('Error:', err));
+        }
+      });
+
+      /** -------------------------------
+       *  Product Detail Modal (AJAX)
+       * ------------------------------- */
+      document.addEventListener('click', function(e) {
+        // Skip if delete button clicked (handled separately)
+        if (e.target.closest('.delete-product-btn')) return;
+
+        const imgContainer = e.target.closest('.product-img-container');
+        if (imgContainer && !e.target.closest('.product-actions')) {
+          const productCard = imgContainer.closest('.product-card');
+          const productId = productCard?.dataset.productId;
+
+          if (!productId) {
+            console.error('Product ID not found');
+            return;
           }
-        })
-        .then(response => response.text())
-        .then(html => {
-          document.getElementById('product-grid-container').innerHTML = html;
-        })
-        .catch(error => console.error('Error:', error));
-      }
-    });
 
-    // Initialize clear button state
-    updateClearButtonState();
-  });
-</script>
-<script>
-    document.addEventListener('click', function(e) {
-  if (e.target.closest('.product-img-container')) {
-    const productCard = e.target.closest('.product-card');
-    const productId = productCard.dataset.productId;
-    
-    if (!productId || productId === 'undefined') {
-      console.error('Product ID not found');
-      return;
-    }
+          const modal = new bootstrap.Modal(document.getElementById('productDetailModal'));
+          modal.show();
 
-    const modal = new bootstrap.Modal(document.getElementById('productDetailModal'));
-    modal.show();
-    
-    // Show loading spinner
-    document.getElementById('productDetailContent').innerHTML = `
-      <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    `;
-    
-    // Load product details via AJAX
-    fetch(`/adminside/product_detail_modal/${productId}/detail/`, {
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Network response was not ok');
-      return response.text();
-    })
-    .then(html => {
-      document.getElementById('productDetailContent').innerHTML = html;
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('productDetailContent').innerHTML = `
-        <div class="alert alert-danger">Error loading product details</div>
-      `;
+          const content = document.getElementById('productDetailContent');
+          content.innerHTML = `
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>`;
+
+          fetch(`/adminside/product_detail_modal/${productId}/detail/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => {
+              if (!res.ok) throw new Error('Network response was not ok');
+              return res.text();
+            })
+            .then(html => { content.innerHTML = html; })
+            .catch(err => {
+              console.error('Error:', err);
+              content.innerHTML = `<div class="alert alert-danger">Error loading product details</div>`;
+            });
+        }
+      });
+
+      /** -------------------------------
+       *  Delete Product Modal
+       * ------------------------------- */
+      const productGridContainer = document.getElementById('product-grid-container');
+      productGridContainer.addEventListener('click', function(e) {
+        const deleteButton = e.target.closest('.delete-product-btn');
+        if (!deleteButton) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const productName = deleteButton.getAttribute('data-product-name');
+        const deleteUrl = deleteButton.getAttribute('data-delete-url');
+
+        const modalProductName = document.getElementById('modal-product-name');
+        const deleteForm = document.getElementById('deleteProductForm');
+
+        if (modalProductName) modalProductName.textContent = productName;
+        if (deleteForm) deleteForm.action = deleteUrl;
+
+        new bootstrap.Modal(document.getElementById('deleteProductModal')).show();
+      });
+
     });
-  }
-});
   </script>
 {% endblock %}

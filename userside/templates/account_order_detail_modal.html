@@ -1,142 +1,267 @@
-<div class="modal-header">
-    <h5 class="modal-title">Order #{{ order.order_number }}</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+<div class="modal-dialog modal-xl noir-modal">
+<div class="modal-content">
 <div class="modal-body">
-    <!-- Order Summary -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <p><strong>Order Date:</strong> {{ order.order_date|date:"F j, Y" }}</p>
-            <p><strong>Status:</strong> 
-                <span class="order-status order-status--{{ order.status|lower }}">
-                    {{ order.get_status_display }}
-                </span>
-            </p>
-        </div>
-        <div class="col-md-4">
-            <p><strong>Subtotal:</strong> ₹{{ order.subtotal }}</p>
-            <p><strong>Shipping:</strong> ₹{{ order.shipping_charge }}</p>
-        </div>
-        <div class="col-md-4">
-            <p><strong>Tax:</strong> ₹{{ order.tax_amount }}</p>
-            <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
-        </div>
-    </div>
 
-    <!-- Order Items -->
-    <h6>Order Items</h6>
-    <div class="table-responsive mb-4">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in order_items %}
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <img src="{{ item.product_variant_id.product_id.base_image.url }}" 
-                                 class="order-product-img me-3" 
-                                 alt="{{ item.product_name }}">
-                            <div>
-                                <h6 class="mb-1">{{ item.product_name }}</h6>
-                                <small>SKU: {{ item.product_sku }}</small><br>
-                                <small>Size: {{ item.product_variant_id.size_id.name }}</small>
-                            </div>
-                        </div>
-                    </td>
-                    <td>₹{{ item.unit_price }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>₹{{ item.total_price }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Shipping Address -->
-    <h6>Shipping Address</h6>
-    <div class="card mb-4">
-        <div class="card-body">
-            <p class="mb-1"><strong>{{ shipping_address.full_name }}</strong></p>
-            <p class="mb-1">{{ shipping_address.address_line_1 }}</p>
-            {% if shipping_address.address_line_2 %}
-            <p class="mb-1">{{ shipping_address.address_line_2 }}</p>
-            {% endif %}
-            <p class="mb-1">{{ shipping_address.city }}, {{ shipping_address.state }} - {{ shipping_address.pincode }}</p>
-            <p class="mb-0">Phone: {{ shipping_address.phone }}</p>
+    <div class="order-sidebar">
+        <div class="sidebar-header">
+            <h2>Order Details</h2>
+            <p>Order #{{ order.order_number }}</p>
         </div>
-    </div>
 
-    <!-- Payment Information -->
-    <h6>Payment Information</h6>
-    <div class="card mb-4">
-        <div class="card-body">
-            <p class="mb-1"><strong>Method:</strong> {{ payment.payment_method }}</p>
-            <p class="mb-1"><strong>Status:</strong> {{ payment.status }}</p>
-            <p class="mb-0"><strong>Transaction ID:</strong> {{ payment.payment_id }}</p>
-        </div>
-    </div>
+        {% if order.status != 'cancelled' %}
+            {# --- This block only shows for non-cancelled orders --- #}
+            <ul class="tracking-stepper">
+                {% with order.status as status %}
+                <li class="tracking-step {% if status in 'processing,confirmed,shipped,delivered' %}completed{% endif %} {% if status == 'processing' %}active{% endif %}">
+                    <strong>Order Processing</strong>
+                    <small class="d-block">{{ order.order_date|date:"M j, Y" }}</small>
+                </li>
+                <li class="tracking-step {% if status in 'confirmed,shipped,delivered' %}completed{% endif %} {% if status == 'confirmed' %}active{% endif %}">
+                    <strong>Confirmed</strong>
+                </li>
+                <li class="tracking-step {% if status in 'shipped,delivered' %}completed{% endif %} {% if status == 'shipped' %}active{% endif %}">
+                    <strong>Shipped</strong>
+                </li>
+                <li class="tracking-step {% if status == 'delivered' %}completed{% endif %} {% if status == 'delivered' %}active{% endif %}">
+                    <strong>Delivered</strong>
+                </li>
+                {% endwith %}
+            </ul>
 
-    <!-- Tracking Information -->
-    <h6>Tracking Information</h6>
-    <div class="card">
-        <div class="card-body">
-            {% if shipping %}
-            <p class="mb-3"><strong>Courier:</strong> {{ shipping.shipping_partners_id.name }}</p>
-            <p class="mb-3"><strong>Tracking Number:</strong> {{ shipping.tracking_number|default:"Not available" }}</p>
-            
-            <div class="tracking-steps">
-                <div class="tracking-step {% if order.status != 'cancelled' %}active{% endif %}">
-                    <div class="tracking-badge">1</div>
-                    <div>
-                        <strong>ORDER PLACED</strong>
-                        <div class="text-muted small">{{ order.order_date|date:"M j, Y" }}</div>
-                    </div>
-                </div>
-                
-                <div class="tracking-step {% if order.status in 'confirmed,shipped,delivered' %}active{% endif %}">
-                    <div class="tracking-badge">2</div>
-                    <div>
-                        <strong>CONFIRMED</strong>
-                        {% if order.status in 'confirmed,shipped,delivered' %}
-                        <div class="text-muted small">{{ order.order_date|date:"M j, Y" }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="tracking-step {% if order.status in 'shipped,delivered' %}active{% endif %}">
-                    <div class="tracking-badge">3</div>
-                    <div>
-                        <strong>SHIPPED</strong>
-                        {% if shipping.shipped_date %}
-                        <div class="text-muted small">{{ shipping.shipped_date|date:"M j, Y" }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="tracking-step {% if order.status == 'delivered' %}active{% endif %}">
-                    <div class="tracking-badge">4</div>
-                    <div>
-                        <strong>DELIVERED</strong>
-                        {% if shipping.delivered_date %}
-                        <div class="text-muted small">{{ shipping.delivered_date|date:"M j, Y" }}</div>
-                        {% endif %}
-                    </div>
+            <div class="sidebar-details">
+                <h5>Shipping To</h5>
+                <p>{{ shipping_address.full_name }}<br>{{ shipping_address.address_line_1 }}<br>{{ shipping_address.city }}, {{ shipping_address.state }} {{ shipping_address.pincode }}</p>
+
+                <h5>Payment</h5>
+                <p>Paid ₹{{ order.total_amount }} via {{ payment.payment_method }}</p>
+            </div>
+        {% else %}
+            {# --- This block shows a clear message for cancelled orders --- #}
+            <div class="sidebar-details">
+                <div style="background-color: rgba(220, 53, 69, 0.1); color: #dc3545; padding: 2rem; border-radius: 8px; text-align: center; margin: 2rem 0;">
+                    <h4 style="margin-bottom: 0.5rem; color: #F0F0F0;">Order Cancelled</h4>
+                    <p style="margin-bottom: 0; color: var(--noir-text-secondary);">This order was cancelled and will not be fulfilled.</p>
                 </div>
             </div>
-            {% else %}
-            <p class="mb-0">Shipping information not available yet</p>
-            {% endif %}
+        {% endif %}
+
+        <div class="sidebar-footer">
+        {% if order.status in "processing,confirmed" %}
+            {# --- Actions for orders that can be cancelled --- #}
+            <form action="{% url 'cancel_order' order.id %}" method="POST" class="d-flex gap-3 w-100">
+                {% csrf_token %}
+                <button 
+                    type="submit" 
+                    class="btn btn-outline-danger flex-grow-1"
+                    onclick="return confirm('Are you sure you want to cancel this order? This action cannot be undone.')">
+                    Cancel Order
+                </button>
+                <a href="#" class="btn btn-light flex-grow-1" target="_blank">Download Invoice</a>
+            </form>
+
+        {% elif order.status in "shipped,delivered" %}
+            {# --- Actions for shipped/delivered orders (cannot be cancelled) --- #}
+            <div class="w-100">
+                <p class="text-secondary small mb-3 text-center">This order cannot be cancelled online. You can refuse the package at delivery if needed.</p>
+                <div class="d-flex gap-3">
+                     <button type="button" class="btn btn-outline-light flex-grow-1" data-bs-dismiss="modal">Close</button>
+                     <a href="#" class="btn btn-light flex-grow-1" target="_blank">Download Invoice</a>
+                </div>
+            </div>
+
+        {% elif order.status == 'cancelled' %}
+            {# --- Action for cancelled orders (only a close button) --- #}
+            <button type="button" class="btn btn-outline-light w-100" data-bs-dismiss="modal">Close</button>
+
+        {% endif %}
         </div>
     </div>
+
+    <div class="order-main-content">
+        <h3 class="main-content-header">Your Items ({{ order_items|length }})</h3>
+        
+        <div class="product-list">
+            {% for item in order_items %}
+            <div class="product-list-item">
+                
+                <img src="{{ item.product_variant_id.product_id.base_image.url }}" class="product-list-item-img" alt="{{ item.product_name }}">
+                <div class="product-item-details">
+                    <a href="{% url 'product_detail' item.product_variant_id.product_id.pk %}">
+                    <h4>{{ item.product_name|truncatechars:40 }}</h4>
+                    <p>Size: {{ item.product_variant_id.size_id.name }}</p>
+                    <p>Qty: {{ item.quantity }}</p>
+                    </a>
+                </div>
+                <div class="product-item-price">
+                    ₹{{ item.total_price }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    <a href="#" class="btn btn-primary" target="_blank">Print Invoice</a>
 </div>
+</div>
+
+<style>
+    /* ============================================
+        DESIGN 2.2: RESPONSIVE NOIR
+    ============================================ */
+
+    /* --- 1. Dark Theme Design Tokens --- */
+    :root {
+        --noir-bg-primary: #1C1D21; 
+        --noir-bg-secondary: #2C2D31; 
+        --noir-border-color: #404040;
+        --noir-accent: #D4AF37; 
+        --noir-text-primary: #F0F0F0;
+        --noir-text-secondary: #A9A9A9;
+        --noir-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        --font-serif: "Georgia", "Times New Roman", serif;
+    }
+
+    /* --- 2. Modal Core & Asymmetrical Layout --- */
+    .noir-modal .modal-content {
+        background: none; border: none;
+        box-shadow: var(--noir-shadow); border-radius: 12px;
+    }
+
+    .noir-modal .modal-body {
+        padding: 0; display: flex;
+        min-height: 550px;
+        max-height: 85vh; 
+        overflow: hidden;
+    }
+
+    /* Left Panel: Sidebar for Tracking & Info */
+    .order-sidebar {
+        width: 38%; min-width: 380px;
+        background-color: var(--noir-bg-primary); padding: 2.5rem;
+        display: flex; flex-direction: column;
+        animation: slideInLeft 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    /* Right Panel: Main Content for Items */
+    .order-main-content {
+        width: 62%;
+        background-color: var(--noir-bg-secondary); padding: 2.5rem;
+        overflow-y: auto; 
+        animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    .sidebar-header h2 {
+        font-family: var(--font-serif); font-weight: normal; font-size: 2.25rem;
+        color: var(--noir-text-primary); margin-bottom: 0.5rem;
+    }
+    .sidebar-header p {
+        color: var(--noir-text-secondary); font-size: 1rem; margin-bottom: 2.5rem;
+    }
+
+    /* --- 3. Vertical Tracking Stepper --- */
+    .tracking-stepper {
+        list-style: none; padding-left: 1rem; margin-bottom: 2.5rem; position: relative;
+    }
+    .tracking-stepper::before {
+        content: ''; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem;
+        width: 2px; background-color: var(--noir-border-color);
+    }
+    .tracking-step {
+        margin-bottom: 2rem; position: relative; padding-left: 2rem;
+    }
+    .tracking-step:last-child { margin-bottom: 0; }
+    .tracking-step::before {
+        content: ''; position: absolute; left: -7px; top: 5px; width: 16px; height: 16px;
+        border-radius: 50%; background-color: var(--noir-bg-primary);
+        border: 2px solid var(--noir-border-color); transition: all 0.4s ease;
+    }
+    .tracking-step strong {
+        color: var(--noir-text-secondary); font-weight: 500; transition: color 0.4s ease;
+    }
+    .tracking-step.completed::before, .tracking-step.active::before {
+        background-color: var(--noir-accent); border-color: var(--noir-accent);
+    }
+    .tracking-step.completed strong, .tracking-step.active strong {
+        color: var(--noir-text-primary);
+    }
+    .tracking-step.active::before {
+        transform: scale(1.2); box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+    }
+    .tracking-step small { color: var(--noir-text-secondary); }
+
+    /* --- 4. Sidebar Details & Footer --- */
+    .sidebar-details h5 {
+        font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;
+        color: var(--noir-text-secondary); margin-bottom: 0.75rem;
+    }
+    .sidebar-details p {
+        color: var(--noir-text-primary); line-height: 1.6; margin-bottom: 1.5rem;
+    }
+    .sidebar-footer {
+        margin-top: auto; padding-top: 1rem;
+        display: flex; gap: 1rem; width: 100%;
+    }
+
+    /* --- 5. Main Content Product List --- */
+    .main-content-header {
+        font-family: var(--font-serif); font-weight: normal; font-size: 1.75rem;
+        color: var(--noir-text-primary); border-bottom: 1px solid var(--noir-border-color);
+        padding-bottom: 1rem; margin-bottom: 1rem;
+    }
+    .product-list-item {
+        display: flex; gap: 1.5rem; padding: 1.5rem 0;
+        border-bottom: 1px solid var(--noir-border-color);
+    }
+    .product-list-item-img {
+        width: 90px; height: 115px; object-fit: cover; border-radius: 8px;
+    }
+    .product-item-details h4 {
+        font-weight: 500; font-size: 1.1rem;
+        color: var(--noir-text-primary); margin: 0 0 0.5rem 0;
+    }
+    .product-item-details p { color: var(--noir-text-secondary); margin: 0; }
+    .product-item-price {
+        margin-left: auto; text-align: right; font-weight: 500;
+        font-size: 1.1rem; color: var(--noir-text-primary);
+    }
+
+    /* --- 6. Animations --- */
+    @keyframes slideInLeft {
+        from { transform: translateX(-50px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    /* --- 7. Responsive Design (Mobile) --- */
+    @media (max-width: 991.98px) {
+        .noir-modal .modal-dialog {
+            max-width: none;
+            margin: 0.5rem;
+        }
+
+        .noir-modal .modal-body {
+            flex-direction: column; 
+            overflow-y: auto; 
+            min-height: auto;
+            max-height: 95vh;
+        }
+
+        .order-sidebar,
+        .order-main-content {
+            width: 100%; 
+            min-width: auto; 
+            padding: 1.5rem; 
+        }
+
+        .order-main-content {
+            overflow-y: visible;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.75rem;
+        }
+    }
+</style>

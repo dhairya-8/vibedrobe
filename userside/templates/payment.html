@@ -5,7 +5,6 @@
 {% endblock %}
 
 {% block css %}
-  <!-- Stylesheets -->
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
@@ -130,10 +129,54 @@
       text-align: center;
       margin: 20px 0;
     }
+
+    /* --- LOADER STYLES START --- */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: none; /* Hidden by default */
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(2px); /* Slight blur as requested */
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3; /* Light grey circle */
+      border-top: 8px solid #d4af37; /* Gold color from your button */
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+        color: #333;
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    /* --- LOADER STYLES END --- */
   </style>
 {% endblock %}
 
 {% block content %}
+<div class="loader-overlay" id="loader-overlay">
+    <div class="text-center">
+        <div class="loader"></div>
+        <p class="loader-text">Processing your payment... Please wait.</p>
+    </div>
+</div>
+
 <div class="payment-container">
   <div class="payment-header">
     <h2>Complete Your Payment</h2>
@@ -145,7 +188,7 @@
     <p>You will be redirected to Razorpay's secure payment gateway to complete your transaction.</p>
   </div>
   
-  {% if not razorpay_key_id or razorpay_key_id == "rzp_test_YOUR_TEST_KEY" %}
+  {% if razorpay_key_id or razorpay_key_id == "rzp_test_YOUR_TEST_KEY" %}
   <div class="test-mode-info">
     <h4>⚠️ Test Mode Instructions</h4>
     <p>Your Razorpay integration is in test mode. Please use these test credentials:</p>
@@ -161,22 +204,12 @@
   <div class="razorpay-container">
     <form action="{% url 'payment_handler' %}" method="POST" id="payment-form">
       {% csrf_token %}
-      <script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        data-key="{{ razorpay_key_id }}"
-        data-amount="{{ razorpay_amount }}"
-        data-currency="{{ razorpay_currency }}"
-        data-order_id="{{ razorpay_order_id }}"
-        data-buttontext="Pay Now - ₹{{ order.total_amount|floatformat:2 }}"
-        data-name="VibeDrobe"
-        data-description="Order #{{ order.order_number }}"
-        data-image="{% static 'img/logo.png' %}"
-        data-prefill.name="{{ request.user.get_full_name|default:request.user.username }}"
-        data-prefill.email="{{ request.user.email }}"
-        data-prefill.contact=""
-        data-theme.color="#F37254"
-      ></script>
+      <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+      <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+      <input type="hidden" name="razorpay_signature" id="razorpay_signature">
     </form>
+    
+    <button id="rzp-button1" class="btn-pay">Pay Now - ₹{{ order.total_amount|floatformat:2 }}</button>
   </div>
   
   <div class="text-center">
@@ -200,31 +233,69 @@
 {% endblock %}
 
 {% block script %}
-  <!-- JavaScript Files -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
   
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <script>
     $(document).ready(function() {
-      // Check if we have a payment status in URL parameters
+      // Check for failure status from previous attempts
       const urlParams = new URLSearchParams(window.location.search);
       const paymentStatus = urlParams.get('payment_status');
-      
-      if (paymentStatus === 'success') {
-        $('#payment-success').show();
-        setTimeout(function() {
-          window.location.href = "{% url 'orderconfirm' order.id %}";
-        }, 2000);
-      } else if (paymentStatus === 'failed') {
+      if (paymentStatus === 'failed') {
         $('#payment-failure').show();
       }
+
+      // 5. We switch from data-attributes to a manual JS setup for more control
+      var options = {
+          "key": "{{ razorpay_key_id }}",
+          "amount": "{{ razorpay_amount }}",
+          "currency": "{{ razorpay_currency }}",
+          "name": "VibeDrobe",
+          "description": "Order #{{ order.order_number }}",
+          "image": "{% static 'user/assets/images/favicon.png' %}",
+          "order_id": "{{ razorpay_order_id }}",
+          "handler": function (response){
+              // This function is the key. It runs ONLY on successful payment.
+              
+              // a. Show the loader immediately
+              $('#loader-overlay').css('display', 'flex');
+
+              // b. Populate the hidden form fields with data from Razorpay
+              document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+              document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+              document.getElementById('razorpay_signature').value = response.razorpay_signature;
+
+              // c. Submit the form to your backend
+              // The loader will stay visible while the backend processes everything
+              document.getElementById('payment-form').submit();
+          },
+          "prefill": {
+              "name": "{{ request.user.get_full_name|default:request.user.username }}",
+              "email": "{{ request.user.email }}",
+              "contact": ""
+          },
+          "theme": {
+              "color": "#a85151"
+          },
+          "modal": {
+              "ondismiss": function(){
+                  // This function runs when the user closes the payment window.
+                  // We do nothing here, so the loader is NOT shown for failed/cancelled payments.
+                  console.log('Razorpay modal closed');
+              }
+          }
+      };
       
-      // Enhance Razorpay button styling
-      setTimeout(function() {
-        $('.razorpay-payment-button').addClass('btn-pay');
-        $('.razorpay-payment-button').removeAttr('style');
-      }, 500);
+      var rzp1 = new Razorpay(options);
+
+      // 6. Attach the click event to our custom button
+      document.getElementById('rzp-button1').onclick = function(e){
+          rzp1.open();
+          e.preventDefault();
+      }
     });
   </script>
 {% endblock %}

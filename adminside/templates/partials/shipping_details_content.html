@@ -1,29 +1,40 @@
 <div class="shipping-details">
   <h4 class="border-bottom pb-2 mb-4">Shipping Details: Order #{{ order.order_number }}</h4>
   
+  <!-- Status Validation Alert -->
+  {% if order.status == 'cancelled' %}
+  <div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle"></i> This order has been cancelled. Shipping updates are not allowed.
+  </div>
+  {% elif order.status == 'delivered' and shipping.shipping_status != 'delivered' %}
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-circle"></i> Order status is marked as delivered, but shipping status doesn't match.
+  </div>
+  {% elif order.status == 'shipped' and shipping.shipping_status != 'shipped' %}
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-circle"></i> Order status is marked as shipped, but shipping status doesn't match.
+  </div>
+  {% endif %}
+  
   <div class="row">
     <!-- Order Information Card -->
     <div class="col-md-6 mb-4">
       <div class="card h-100">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Order Information</h5>
+          <span class="badge 
+            {% if order.status == 'delivered' %}bg-success
+            {% elif order.status == 'cancelled' %}bg-danger
+            {% elif order.status == 'shipped' %}bg-info
+            {% elif order.status == 'confirmed' %}bg-primary
+            {% else %}bg-warning{% endif %}">
+            {{ order.get_status_display }}
+          </span>
         </div>
         <div class="card-body">
           <div class="row mb-2">
             <div class="col-5"><strong>Order Number:</strong></div>
             <div class="col-7">{{ order.order_number }}</div>
-          </div>
-          <div class="row mb-2">
-            <div class="col-5"><strong>Order Status:</strong></div>
-            <div class="col-7">
-              <span class="badge 
-                {% if order.status == 'delivered' %}bg-success
-                {% elif order.status == 'cancelled' %}bg-danger
-                {% elif order.status == 'shipped' %}bg-info
-                {% else %}bg-warning{% endif %}">
-                {{ order.status|title }}
-              </span>
-            </div>
           </div>
           <div class="row mb-2">
             <div class="col-5"><strong>Order Date:</strong></div>
@@ -44,24 +55,19 @@
     <!-- Shipping Information Card -->
     <div class="col-md-6 mb-4">
       <div class="card h-100">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">Shipping Information</h5>
+          <span class="badge 
+            {% if shipping.shipping_status == 'delivered' %}bg-success
+            {% elif shipping.shipping_status == 'shipped' %}bg-info
+            {% else %}bg-warning{% endif %}">
+            {{ shipping.get_shipping_status_display|default:"Not updated" }}
+          </span>
         </div>
         <div class="card-body">
           <div class="row mb-2">
             <div class="col-5"><strong>Tracking Number:</strong></div>
             <div class="col-7">{{ shipping.tracking_number|default:"Not assigned" }}</div>
-          </div>
-          <div class="row mb-2">
-            <div class="col-5"><strong>Shipping Status:</strong></div>
-            <div class="col-7">
-              <span class="badge 
-                {% if shipping.shipping_status == 'delivered' %}bg-success
-                {% elif shipping.shipping_status == 'shipped' %}bg-info
-                {% else %}bg-warning{% endif %}">
-                {{ shipping.get_shipping_status_display }}
-              </span>
-            </div>
           </div>
           <div class="row mb-2">
             <div class="col-5"><strong>Expected Delivery:</strong></div>
@@ -136,7 +142,7 @@
             </div>
             <div class="row mb-2">
               <div class="col-5"><strong>Address Type:</strong></div>
-              <div class="col-7">{{ address.get_address_type_display }}</div>
+              <div class="col-7">{{ address.address_type_display }}</div>
             </div>
           {% endwith %}
         </div>
@@ -202,6 +208,7 @@
   </div>
 
   <!-- Shipping Management Form -->
+  {% if order.status != 'cancelled' %}
   <div class="row mt-4">
     <div class="col-12">
       <div class="card">
@@ -211,37 +218,85 @@
         <div class="card-body">
           <form id="shippingForm" method="post" action="{% url 'update_shipping_status' order.id %}">
             {% csrf_token %}
+            
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i> Updating shipping status will also update the order status automatically.
+            </div>
+            
             <div class="row mb-3">
               <div class="col-md-4">
                 <label for="shipping_status" class="form-label">Shipping Status</label>
-                <select class="form-select" id="shipping_status" name="shipping_status">
+                <select class="form-select" id="shipping_status" name="shipping_status" 
+                        {% if order.status == 'cancelled' %}disabled{% endif %}>
                   <option value="confirm" {% if shipping.shipping_status == 'confirm' %}selected{% endif %}>Confirm</option>
-                  <option value="shipped" {% if shipping.shipping_status == 'shipped' %}selected{% endif %}>Shipped</option>
-                  <option value="delivered" {% if shipping.shipping_status == 'delivered' %}selected{% endif %}>Delivered</option>
+                  <option value="shipped" {% if shipping.shipping_status == 'shipped' %}selected{% endif %} 
+                          {% if order.status == 'processing' %}disabled{% endif %}>Shipped</option>
+                  <option value="delivered" {% if shipping.shipping_status == 'delivered' %}selected{% endif %}
+                          {% if order.status in 'processing confirmed' %}disabled{% endif %}>Delivered</option>
                 </select>
+                <div class="form-text">
+                  {% if order.status == 'processing' %}
+                  Order must be confirmed before marking as shipped.
+                  {% elif order.status in 'processing confirmed' %}
+                  Order must be shipped before marking as delivered.
+                  {% endif %}
+                </div>
               </div>
               <div class="col-md-4">
                 <label for="tracking_number" class="form-label">Tracking Number</label>
                 <input type="text" class="form-control" id="tracking_number" name="tracking_number" 
-                       value="{{ shipping.tracking_number|default:'' }}" placeholder="Enter tracking number">
+                       value="{{ shipping.tracking_number|default:'' }}" placeholder="Enter tracking number"
+                       {% if order.status == 'cancelled' %}disabled{% endif %}>
               </div>
               <div class="col-md-4">
                 <label for="excepted_delivery" class="form-label">Expected Delivery Date</label>
                 <input type="date" class="form-control" id="excepted_delivery" name="excepted_delivery" 
-                       value="{{ shipping.excepted_delivery|date:'Y-m-d'|default:'' }}">
+                       value="{{ shipping.excepted_delivery|date:'Y-m-d'|default:'' }}"
+                       {% if order.status == 'cancelled' %}disabled{% endif %}>
               </div>
             </div>
             
             <div class="mb-3">
               <label for="delivery_notes" class="form-label">Delivery Notes</label>
               <textarea class="form-control" id="delivery_notes" name="delivery_notes" rows="3" 
-                        placeholder="Add any delivery notes or instructions">{{ shipping.delivery_notes|default:'' }}</textarea>
+                        placeholder="Add any delivery notes or instructions"
+                        {% if order.status == 'cancelled' %}disabled{% endif %}>{{ shipping.delivery_notes|default:'' }}</textarea>
             </div>
             
-            <button type="submit" class="btn btn-primary">Update Shipping</button>
+            <button type="submit" class="btn btn-primary" {% if order.status == 'cancelled' %}disabled{% endif %}>
+              Update Shipping
+            </button>
+            
+            {% if order.status == 'cancelled' %}
+            <div class="text-muted mt-2">
+              <i class="fas fa-ban"></i> Cannot update shipping for cancelled orders.
+            </div>
+            {% endif %}
           </form>
         </div>
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const shippingStatus = document.getElementById('shipping_status');
+    const trackingNumber = document.getElementById('tracking_number');
+    
+    if (shippingStatus && trackingNumber) {
+        shippingStatus.addEventListener('change', function() {
+            // Require tracking number for shipped status
+            if (this.value === 'shipped' || this.value === 'delivered') {
+                trackingNumber.setAttribute('required', 'required');
+            } else {
+                trackingNumber.removeAttribute('required');
+            }
+        });
+        
+        // Trigger change event on page load
+        shippingStatus.dispatchEvent(new Event('change'));
+    }
+});
+</script>
