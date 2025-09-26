@@ -1491,6 +1491,7 @@ def move_to_wishlist(request, item_id):
     
     return redirect('wishlist')
 
+
 @user_login_required
 def quick_add_to_cart(request, product_id):
     try:
@@ -1538,6 +1539,7 @@ def quick_add_to_cart(request, product_id):
     # Redirect back to shop with parameter to open cart drawer
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
+
 
 @user_login_required
 def quick_add_to_cart_home(request, product_id):
