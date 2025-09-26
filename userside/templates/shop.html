@@ -10,7 +10,19 @@
     <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
     <link rel="stylesheet" href="{% static 'user/assets/css/shop.css' %}" type="text/css">
     <style>
+/* In shop.html, inside the <style> block */
 
+.search-results-title {
+  font-size: 1.1rem; /* Slightly larger than normal text, but smaller than h3 */
+  font-weight: 500;  /* A medium weight, not too bold */
+  color: #6c757d;   /* Matches the secondary text color in your theme */
+  letter-spacing: 0.5px; /* Adds a bit of refinement */
+}
+
+.search-results-title span {
+  color: #212529; /* A standard dark color for the keyword itself */
+  font-weight: 600; /* Makes the keyword slightly bolder */
+}
         /* Fix for the "Clear" filter links */
 .btn-link.text-danger {
     text-decoration: none !important; /* Disables the default underline */
@@ -510,57 +522,63 @@
             <div class="mb-3 pb-2 pb-xl-3"></div>
 
             <!-- PRODUCT COUNT AND FILTER/SORT CONTROLS -->
-            <div class="d-flex justify-content-between mb-4 pb-md-2 flex-wrap">
-                <div class="d-flex align-items-center mb-2 mb-md-0">
-                    <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1" style="white-space: nowrap; display: inline-block !important;">
-                        <div style="display: inline-flex; align-items: center;">
-                            <a href="{% url 'homepage' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">Home</a>
-                            <span class="menu-link fw-medium px-2" style="color: #6c757d;">/</span>
-                            <a href="{% url 'shop' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">The Shop</a>
-                        </div>
-                    </div>
-                    
-                    <!-- Product Count Badge -->
-                    <span class="product-count-badge">
-                        <i class="fas fa-box product-count-icon"></i>
-                        Showing <span class="count-number">{{ products.paginator.count }}</span> products
-                    </span>
-                </div>
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-md-2 flex-wrap">
 
-                <div class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                    <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" 
-                            aria-label="Sort Items" 
-                            name="total-number" 
-                            id="sort-select">
-                        <option value="default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
-                        <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
-                        <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Best selling</option>
-                        <option value="a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
-                        <option value="z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
-                        <option value="price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
-                        <option value="price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
-                        <option value="date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
-                        <option value="date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
-                    </select>
+  <div class="d-flex align-items-center mb-2 mb-md-0">
+    {% if keyword %}
+      <h2 class="search-results-title mb-0">
+        Results for: <span>"{{ keyword }}"</span>
+      </h2>
+    {% else %}
+      <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1">
+        <div class="d-inline-flex align-items-center">
+          <a href="{% url 'homepage' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">Home</a>
+          <span class="menu-link fw-medium px-2">/</span>
+          <a href="{% url 'shop' %}" class="menu-link menu-link_us-s text-uppercase fw-medium">The Shop</a>
+        </div>
+      </div>
+    {% endif %}
 
-                    {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort %}
-                        <button class="btn btn-link text-danger text-decoration-none fs-6 ms-3 order-2 order-md-1" id="clear-all-filters">
-                            <i class="fas fa-times me-1"></i>Clear All
-                        </button>
-                    {% endif %}
+    <span class="product-count-badge">
+      <i class="fas fa-box product-count-icon"></i>
+      Showing <span class="count-number">{{ products.paginator.count }}</span> products
+    </span>
+  </div>
 
-                    <div class="shop-asc__seprator mx-3 bg-light d-none d-md-block order-md-0"></div>
+  <div class="d-flex align-items-center">
+    <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0" 
+            aria-label="Sort Items" 
+            name="total-number" 
+            id="sort-select">
+      <option value="default" {% if sort == 'default' %}selected{% endif %}>Default Sorting</option>
+      <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+      <option value="a-z" {% if sort == 'a-z' %}selected{% endif %}>Alphabetically, A-Z</option>
+      <option value="z-a" {% if sort == 'z-a' %}selected{% endif %}>Alphabetically, Z-A</option>
+      <option value="price-low" {% if sort == 'price-low' %}selected{% endif %}>Price, low to high</option>
+      <option value="price-high" {% if sort == 'price-high' %}selected{% endif %}>Price, high to low</option>
+      <option value="date-old" {% if sort == 'date-old' %}selected{% endif %}>Date, old to new</option>
+      <option value="date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
+    </select>
 
-                    <div class="shop-filter d-flex align-items-center order-0 order-md-3 d-lg-none">
-                        <button class="btn-link btn-link_f d-flex align-items-center ps-0 js-open-aside" data-aside="shopFilter">
-                            <svg class="d-inline-block align-middle me-2" width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <use href="#icon_filter" />
-                            </svg>
-                            <span class="text-uppercase fw-medium d-inline-block align-middle">Filter</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+    {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort or keyword %}
+      <button class="btn btn-link text-danger text-decoration-none fs-6 ms-3 order-2 order-md-1" id="clear-all-filters">
+        <i class="fas fa-times me-1"></i>Clear All
+      </button>
+    {% endif %}
+
+    <div class="shop-asc__seprator mx-3 bg-light d-none d-md-block order-md-0"></div>
+
+    <div class="shop-filter d-flex align-items-center order-0 order-md-3 d-lg-none">
+      <button class="btn-link btn-link_f d-flex align-items-center ps-0 js-open-aside" data-aside="shopFilter">
+        <svg class="d-inline-block align-middle me-2" width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <use href="#icon_filter" />
+        </svg>
+        <span class="text-uppercase fw-medium d-inline-block align-middle">Filter</span>
+      </button>
+    </div>
+  </div>
+
+</div>
 
             <!-- PRODUCT GRID -->
             <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4" id="products-grid">
@@ -574,14 +592,22 @@
                                     <div class="product-gallery swiper h-100 w-100" style="position: absolute; top: 0; left: 0;">
                                         <div class="swiper-wrapper h-100">
                                             
-                                            <!-- Base Image -->
+
                                             <div class="swiper-slide h-100">
-                                                <a href="{% url 'product_detail' product.id %}">
-                                                    <img loading="lazy" 
-                                                         src="{{ product.base_image.url }}" 
-                                                         class="pc__img w-100 h-100 object-fit-contain">
-                                                </a>
-                                            </div>
+  <a href="{% url 'product_detail' product.id %}">
+    {% if product.base_image %}
+      <img loading="lazy" 
+           src="{{ product.base_image.url }}" 
+           class="pc__img w-100 h-100 object-fit-contain"
+           alt="{{ product.name|default:'Product Image' }}">
+    {% else %}
+      <img loading="lazy" 
+           src="{% static 'user/assets/images/shop/no-image-available.jpg' %}" 
+           class="pc__img w-100 h-100 object-fit-contain" 
+           alt="No image available">
+    {% endif %}
+  </a>
+</div>
                                             
                                             <!-- Gallery Images -->
                                             {% for gallery_image in product.product_gallery_set.all|dictsort:"image_order" %}
@@ -734,7 +760,17 @@
                 }'>
                   <div class="swiper-wrapper">
                     <div class="swiper-slide product-single__image-item">
-                      <img loading="lazy" src="{{ product.base_image.url }}" alt="{{ product.name }}">
+                    {% if product.base_image %}
+      <img loading="lazy" 
+           src="{{ product.base_image.url }}" 
+           class="pc__img w-100 h-100 object-fit-contain"
+           alt="{{ product.name|default:'Product Image' }}">
+    {% else %}
+      <img loading="lazy" 
+           src="{% static 'user/assets/images/shop/no-image-available.jpg' %}" 
+           class="pc__img w-100 h-100 object-fit-contain" 
+           alt="No image available">
+    {% endif %}
                     </div>
                     <!-- Gallery Images -->
                     {% for gallery_image in product.ordered_gallery_images %}

@@ -22,7 +22,6 @@ urlpatterns = [
     path('cart/items/update/', update_cart_item, name='update_cart_item'),
     path('cart/items/remove/<int:product_id>/<int:variant_id>/', remove_cart_item, name='remove_cart_item'),
     path('remove-cart-item-drawer/<int:product_id>/<int:variant_id>/', remove_cart_item_drawer, name='remove_cart_item_drawer'),
-
     
     path('checkout/', checkout, name='checkout'),
     path('checkout/payment-handler/', payment_handler, name='payment_handler'),
@@ -74,4 +73,5 @@ urlpatterns = [
     # ==================== Static Pages ====================
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
+    
 ]

@@ -6,7 +6,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
-from django.db.models import Min, Max, Count, Prefetch, Sum, Avg
+from django.db.models import Min, Max, Count, Prefetch, Sum, Avg, Q, Case, When, Value, IntegerField 
 from django.db import IntegrityError, transaction
 from django.views.decorators.http import require_POST
 from django.urls import reverse
@@ -18,9 +18,33 @@ from .utils import *
 from adminside.models import *
 import razorpay
 
+
 # Initialize Razorpay client
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
+
+def search_results(request):
+    keyword = request.GET.get('search-keyword', '') # Get the keyword, default to empty string
+    products = []
+
+    if keyword:
+        # The query logic remains the same
+        query = Q(name__icontains=keyword) | \
+                Q(description__icontains=keyword) | \
+                Q(brand_id__name__icontains=keyword) | \
+                Q(subcategory_id__name__icontains=keyword)
+        
+        products = Product.objects.filter(query, is_active=True).distinct()
+
+    # Create a context dictionary to pass data to the template
+    context = {
+        'products': products,
+        'keyword': keyword,
+        'product_count': products.count() # A count of the results is useful
+    }
+    
+    # Render a new HTML page with the search results
+    return render(request, 'search_results.html', context)
 
 # ============================= UTILITY FUNCTIONS =============================
 
@@ -700,6 +724,8 @@ def deactivate_account(request):
 # ============================= PRODUCT VIEWS =============================
 
 def shop(request):
+    
+    keyword = request.GET.get('search-keyword', None)    
     # Get filter parameters
     category_id = request.GET.get('category')
     subcategory_id = request.GET.get('subcategory')
@@ -724,8 +750,20 @@ def shop(request):
         'subcategory_id',
         'brand_id'
     )
-    
-    # Rest of your view remains the same...
+    # STEP 2: Apply the search filter if a keyword exists
+    if keyword:
+        products = products.annotate(
+            relevance=Case(
+                When(name__icontains=keyword, then=Value(1)),
+                When(subcategory_id__name__icontains=keyword, then=Value(2)),
+                When(brand_id__name__icontains=keyword, then=Value(3)),
+                When(description__icontains=keyword, then=Value(4)), # This still gets scored...
+                default=Value(5),
+                output_field=IntegerField()
+            )
+        # ...but this line now EXCLUDES it from the results.
+        ).filter(relevance__lte=3).order_by('relevance')
+        
     # gender
     if gender:
         products = products.filter(gender=gender)
@@ -777,7 +815,16 @@ def shop(request):
         'date-old': 'created_at',
         'default': '-created_at'
     }
-    products = products.order_by(sort_options[sort])
+    
+    # If a search is active, we sort by relevance first, then by the user's choice.
+    if keyword:
+        # For default sort on a search page, relevance is all we need.
+        # For other sorts, we use relevance as the primary sorter.
+        if sort != 'default':
+             products = products.order_by('relevance', sort_options[sort])
+    else:
+        # Original sorting if no search is performed
+        products = products.order_by(sort_options[sort])
 
     # Brands data
     all_brands = Brand.objects.filter(is_active=True).annotate(
@@ -815,6 +862,10 @@ def shop(request):
     page_obj = paginator.get_page(page_number)
     
     context = {
+        
+        # STEP 3: Add the keyword to the context
+        'keyword': keyword,
+        
         'categories_with_subcategories': categories_with_subcategories,
         'sizes': Size.objects.filter(is_active=True).order_by('sort_order'),
         'brands': all_brands,
