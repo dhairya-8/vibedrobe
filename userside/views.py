@@ -12,9 +12,8 @@ from django.contrib.auth import get_user_model
 from django.core.mail import BadHeaderError, EmailMultiAlternatives, send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.views.decorators.http import require_POST
-from django.urls import reverse
-from django.core.mail import send_mail, BadHeaderError, EmailMultiAlternatives
+from django.db.models import Count, Max, Min, Prefetch, Sum, Avg, Case, When, Value, IntegerField
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -1286,20 +1285,20 @@ def quick_add_to_wishlist_home(request, product_id):
     try:
         user = User.objects.get(id=request.session['user_id'])
         product = get_object_or_404(Product, id=product_id, is_active=True)
-        
-        # Check if product is already in wishlist
+
+        #Check if product is already in wishlist
         if Wishlist.objects.filter(user_id=user, product_id=product).exists():
             messages.info(request, f"{product.name} is already in your wishlist 💖")
         else:
             Wishlist.objects.create(user_id=user, product_id=product)
             messages.success(request, f"✓ {product.name} added to wishlist!")
-            
+
     except IntegrityError:
         messages.error(request, "Couldn't add to wishlist. Please try again.")
     except Exception as e:
         messages.error(request, "An unexpected error occurred.")
         error(f"Quick add to wishlist error: {str(e)}")
-           
+
     return redirect('homepage')
 
 # ============================= CART VIEWS =============================
@@ -1715,7 +1714,6 @@ def move_to_wishlist(request, item_id):
     
     return redirect('wishlist')
 
-
 @user_login_required
 def quick_add_to_cart(request, product_id):
     try:
@@ -1765,7 +1763,6 @@ def quick_add_to_cart(request, product_id):
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
 
-
 @user_login_required
 def quick_add_to_cart_home(request, product_id):
     try:
@@ -1780,8 +1777,9 @@ def quick_add_to_cart_home(request, product_id):
             messages.warning(request, f"Sorry, {product.name} is out of stock.")
             return redirect('homepage')
         
+        user = User.objects.get(id=request.session['user_id'])
         # Get or create user's cart
-        cart, created = Cart.objects.get_or_create(user_id=request.user)
+        cart, created = Cart.objects.get_or_create(user_id=user)
         
         # Check if item already exists in cart
         cart_item, created = Cart_Items.objects.get_or_create(
@@ -1808,250 +1806,60 @@ def quick_add_to_cart_home(request, product_id):
         
     except Exception as e:
         messages.error(request, "Couldn't add item to cart. Please try again.")
-        # Log the error here in production
-    
-    # Redirect back to homepage with parameter to open cart drawer
+        error(f"Quick add from grid error: {str(e)}")
+           
+    # Redirect back to shop with parameter to open cart drawer
     homepage_url = reverse('homepage')
     return redirect(f"{homepage_url}?open_cart_drawer=true")
 
-
-# ============================= WISHLIST VIEWS =============================
-
-@user_login_required
-def wishlist(request):
-    """Display user's wishlist"""
-    try:
-        user_id = request.session['user_id']
-        wishlist_items = Wishlist.objects.filter(
-            user_id=user_id
-        ).select_related(
-            'product_id__brand_id'
-        ).prefetch_related(
-            'product_id__variants'
-        ).order_by('-added_at')
-        
-        context = {
-            'wishlist_items': wishlist_items,
-            'wishlist_count': wishlist_items.count()
-        }
-        return render(request, 'wishlist.html', context)
-        
-    except Exception as e:
-        messages.error(request, "Error loading your wishlist")
-        return redirect('homepage')
+# ============================= CHECKOUT & ORDER PROCESSING =============================
 
 
-@user_login_required
-def add_to_wishlist(request, product_id):
-    """Add or remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        product = get_object_or_404(
-            Product,
-            id=product_id,
-            is_active=True
-        )
+def get_cart_totals(cart_items):
+    """Helper function to calculate cart totals"""
+    cart_total = Decimal('0')
+    total_gst = Decimal('0')
+    total_base_price = Decimal('0')
+    shipping_charge = Decimal('69')  # Fixed shipping charge
+
+    for item in cart_items:
+        gst_inclusive_price = item.price_at_time
+        quantity = Decimal(item.quantity)
         
-        # Check if already in wishlist
-        wishlist_item = Wishlist.objects.filter(
-            user_id=user_id,
-            product_id=product
-        ).first()
-        
-        if wishlist_item:
-            # Item exists, so remove it
-            wishlist_item.delete()
-            messages.success(request, "Removed from wishlist!")
+        # Calculate base price and GST based on product price
+        if gst_inclusive_price >= Decimal('1000'):
+            # For items >= ₹1000 (12% GST)
+            base_price = gst_inclusive_price / Decimal('1.12')
+            gst_amount = gst_inclusive_price - base_price
         else:
-            # Add to wishlist
-            Wishlist.objects.create(
-                user_id_id=user_id,
-                product_id=product
-            )
-            messages.success(request, "Added to wishlist!")
-            
-        return redirect('product_detail', product_id=product_id)
+            # For items < ₹1000 (5% GST)
+            base_price = gst_inclusive_price / Decimal('1.05')
+            gst_amount = gst_inclusive_price - base_price
         
-    except Exception as e:
-        messages.error(request, "Error updating wishlist")
-        return redirect('product_detail', product_id=product_id)
-
-
-@user_login_required
-def add_to_wishlist_quick_view(request, product_id):
-    """Add or remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        product = get_object_or_404(
-            Product,
-            id=product_id,
-            is_active=True
-        )
+        # Calculate totals for this item
+        item_base_total = base_price * quantity
+        item_gst_total = gst_amount * quantity
+        item_total = gst_inclusive_price * quantity
         
-        # Check if already in wishlist
-        wishlist_item = Wishlist.objects.filter(
-            user_id=user_id,
-            product_id=product
-        ).first()
-        
-        if wishlist_item:
-            wishlist_item.delete()
-            messages.success(request, "Removed from wishlist!")
-        else:
-            Wishlist.objects.create(
-                user_id_id=user_id,
-                product_id=product
-            )
-            messages.success(request, "Added to wishlist!")
-            
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error updating wishlist")
-        return redirect('shop')
-
-
-@user_login_required
-def remove_from_wishlist(request, item_id):
-    """Remove item from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        item = get_object_or_404(
-            Wishlist,
-            id=item_id,
-            user_id=user_id
-        )
-        product_name = item.product_id.name
-        item.delete()
-        messages.success(request, f"Removed {product_name} from wishlist")
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error removing from wishlist")
-        return redirect('wishlist')
-
-@user_login_required
-def empty_wishlist(request):
-    """Remove all items from wishlist"""
-    try:
-        user_id = request.session['user_id']
-        # Get all wishlist items for the user
-        wishlist_items = Wishlist.objects.filter(user_id=user_id)
-        
-        if wishlist_items.exists():
-            count = wishlist_items.count()
-            wishlist_items.delete()
-            messages.success(request, f"Removed all {count} items from your wishlist")
-        else:
-            messages.info(request, "Your wishlist is already empty")
-            
-        return redirect('wishlist')
-        
-    except Exception as e:
-        messages.error(request, "Error emptying wishlist")
-        return redirect('wishlist')
+        # Add to cart totals
+        total_base_price += item_base_total
+        total_gst += item_gst_total
+        cart_total += item_total
     
-
-@user_login_required
-def move_to_cart(request, item_id):
-    """Move wishlist item to cart"""
-    try:
-        user_id = request.session['user_id']
-        wishlist_item = get_object_or_404(
-            Wishlist,
-            id=item_id,
-            user_id=user_id
-        )
-        
-        # Get the first available variant of the product
-        variant = wishlist_item.product_id.variants.first()
-        
-        if not variant:
-            messages.warning(request, "This product is not available in any size")
-            return redirect('wishlist')
-        
-        # Check stock
-        if variant.stock_quantity < 1:
-            messages.warning(request, "This item is currently out of stock")
-            return redirect('wishlist')
-        
-        # Add to cart
-        cart, created = Cart.objects.get_or_create(user_id_id=user_id)
-        cart_item, item_created = Cart_Items.objects.get_or_create(
-            cart_id=cart,
-            product_variant_id=variant,
-            defaults={
-                'quantity': 1,
-                'price_at_time': variant.product_id.price + (variant.additional_price or 0)
-            }
-        )
-        
-        if not item_created:
-            cart_item.quantity += 1
-            cart_item.save()
-        
-        # Remove from wishlist
-        wishlist_item.delete()
-        messages.success(request, "Item moved to cart successfully!")
-        return redirect('cart')
-        
-    except Exception as e:
-        print(f"Error moving to cart: {str(e)}")
-        messages.error(request, "Error moving item to cart")
-        return redirect('wishlist')
+    # Round values to 2 decimal places
+    total_base_price = total_base_price.quantize(Decimal('0.00'))
+    total_gst = total_gst.quantize(Decimal('0.00'))
+    cart_total = cart_total.quantize(Decimal('0.00'))
+    grand_total = cart_total + shipping_charge
     
-@user_login_required
-def quick_add_to_wishlist(request, product_id):
-    try:
-        product = get_object_or_404(Product, id=product_id, is_active=True)
-        
-        # Check if product is already in wishlist
-        if Wishlist.objects.filter(user_id=request.user, product_id=product).exists():
-            messages.info(request, f"{product.name} is already in your wishlist 💖")
-        else:
-            Wishlist.objects.create(user_id=request.user, product_id=product)
-            messages.success(request, f"✓ {product.name} added to wishlist!")
-            
-    except IntegrityError:
-        messages.error(request, "Couldn't add to wishlist. Please try again.")
-    except Exception as e:
-        messages.error(request, "An unexpected error occurred.")
-        # Log the error here in production
-    
-    return redirect('shop')
+    return {
+        'base_price_total': total_base_price,
+        'cart_total': cart_total,
+        'total_gst': total_gst,
+        'shipping_charge': shipping_charge,
+        'grand_total': grand_total,
+    }
 
-@user_login_required
-def quick_add_to_wishlist_home(request, product_id):
-    try:
-        print(f"Wishlist request received for product ID: {product_id}")  # Debug
-        print(f"User: {request.user}")  # Debug
-        
-        product = get_object_or_404(Product, id=product_id, is_active=True)
-        print(f"Product found: {product.name}")  # Debug
-        
-        # Check if product is already in wishlist
-        wishlist_exists = Wishlist.objects.filter(user_id=request.user, product_id=product).exists()
-        print(f"Wishlist exists: {wishlist_exists}")  # Debug
-        
-        if wishlist_exists:
-            messages.info(request, f"{product.name} is already in your wishlist 💖")
-            print("Product already in wishlist")  # Debug
-        else:
-            Wishlist.objects.create(user_id=request.user, product_id=product)
-            messages.success(request, f"✓ {product.name} added to wishlist!")
-            print("Product added to wishlist")  # Debug
-            
-    except IntegrityError as e:
-        print(f"IntegrityError: {e}")  # Debug
-        messages.error(request, "Couldn't add to wishlist. Please try again.")
-    except Exception as e:
-        print(f"Exception: {e}")  # Debug
-        messages.error(request, "An unexpected error occurred.")
-        # Log the error here in production
-    
-    return redirect('homepage')
-
-# ============================= CHECKOUT & PAYMENT VIEWS =============================
 
 @user_login_required
 def checkout(request):
