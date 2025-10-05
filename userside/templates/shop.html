@@ -526,9 +526,16 @@
 
   <div class="d-flex align-items-center mb-2 mb-md-0">
     {% if keyword %}
-      <h2 class="search-results-title mb-0">
-        Results for: <span>"{{ keyword }}"</span>
-      </h2>
+        <h2 class="search-results-title mb-0">
+            Results for: <span>"{{ keyword }}"</span>
+        </h2>
+    {% elif similar_product_ids %}  <h2 class="search-results-title mb-0">
+            Showing products visually similar to your upload
+        </h2>
+    {% elif image_search_status == 'no_results' %}
+        <h2 class="search-results-title mb-0">
+            Sorry, we couldn't find any close matches for your image.
+        </h2>
     {% else %}
       <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1">
         <div class="d-inline-flex align-items-center">

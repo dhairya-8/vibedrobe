@@ -345,7 +345,7 @@ class Order_Master(models.Model):
         if new_status and self.status != new_status:
             self.status = new_status
             self.save(update_fields=['status'])
-            
+
 class Order_Details(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.PROTECT)
     product_variant_id = models.ForeignKey(Product_Variants, on_delete=models.CASCADE)

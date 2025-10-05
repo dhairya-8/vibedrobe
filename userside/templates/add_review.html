@@ -1,0 +1,136 @@
+{% extends 'base1.html' %}
+{% load static %}
+{% block title %}
+  Review {{ product.name }} | VibeDrobe
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
+  <style>
+    /* ADD THIS NEW CSS */
+.product-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #f8f9fa; /* Light gray background to stand out slightly */
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem; /* Space between header and star rating */
+}
+
+.product-info-compact img {
+  width: 60px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.product-info-compact .product-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #212529; /* Primary text color */
+}
+
+    .star-rating {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .star-rating input[type="radio"] { display: none; }
+    .star-rating label {
+      font-size: 2.5rem;
+      color: #e0e0e0;
+      cursor: pointer;
+      transition: color 0.2s ease-in-out;
+      padding: 0 0.2rem;
+    }
+    .star-rating input[type="radio"]:checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+      color: #ffc107;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<main>
+  <div class="mb-4 pb-4"></div>
+  <section class="container">
+    <div class="mw-930">
+      <h2 class="text-center"><b>WRITE A REVIEW</b></h2>
+    </div>
+  </section>
+
+  <section class="page-section-light">
+    <div class="container">
+      <div class="review-form-container">
+        {% include 'alerts.html' %}
+
+        <form method="POST" class="needs-validation" novalidate>
+          {% csrf_token %}
+
+          <div class="product-info-compact">
+            {% if product.base_image %}
+              <img src="{{ product.base_image.url }}" alt="{{ product.name }}">
+            {% else %}
+              <img src="{% static 'user/assets/images/shop/no-image-available.jpg' %}" alt="No Image">
+            {% endif %}
+            <div>
+              <p class="text-secondary mb-1">You are reviewing:</p>
+              <h5 class="product-title mb-0">{{ product.name }}</h5>
+            </div>
+          </div>
+          <div class="form-group my-4">
+            <label class="form-label fs-6 fw-medium mb-2">Your Rating *</label>
+            <div class="star-rating">
+              <input type="radio" id="5-stars" name="rating" value="5" required /><label for="5-stars">★</label>
+              <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars">★</label>
+              <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars">★</label>
+              <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars">★</label>
+              <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star">★</label>
+            </div>
+            <div class="invalid-feedback">Please select a star rating.</div>
+          </div>
+
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="reviewTitle" name="title" placeholder="Review Title">
+            <label for="reviewTitle">Review Title (e.g., "Amazing Fit!", "Great Quality")</label>
+          </div>
+
+          <div class="form-floating mb-4">
+            <textarea class="form-control" placeholder="Write your review here" id="reviewComment" name="comment" style="height: 120px"></textarea>
+            <label for="reviewComment">Your Review (Optional)</label>
+          </div>
+          
+          <div class="d-flex justify-content-end gap-3">
+              <a href="{% url 'account_orders' %}" class="btn btn-outline-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary">Submit Review</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </section>
+  <div class="mb-5 pb-5"></div>
+</main>
+{% endblock %}
+
+{% block script %}
+  <script>
+    (function () {
+      'use strict'
+      var forms = document.querySelectorAll('.needs-validation')
+      Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+          }, false)
+        })
+    })()
+  </script>
+{% endblock %}
