@@ -16,7 +16,7 @@
     <div class="col-12 col-md-4 address-column-print invoice-to-block">
       <strong class="fs-14">Invoice To:</strong>
       <h5 class="my-1 fw-semibold fs-18">{{ address.full_name }}</h5>
-      <p class="text-muted mb-0">@{{ order.user_id.username }} | +{{ address.phone }}</p>
+      <p class="text-muted mb-0">@{{ order.user_id.username }} | +91 {{ address.phone }}</p>
     </div>
     <div class="col-12 col-md-4 address-column-print">
       <address class="fs-13">
@@ -24,7 +24,7 @@
         {{ address.full_name }}<br>
         {{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}<br>
         {{ address.city }}, {{ address.state }} {{ address.pincode }}<br>
-        <abbr title="Phone">P:</abbr> {{ address.phone }}
+        <abbr title="Phone">P:</abbr> +91 {{ address.phone }}
       </address>
     </div>
     <div class="col-12 col-md-4 address-column-print">
@@ -33,7 +33,7 @@
         {{ address.full_name }}<br>
         {{ address.address_line_1 }}{% if address.address_line_2 %}, {{ address.address_line_2 }}{% endif %}<br>
         {{ address.city }}, {{ address.state }} {{ address.pincode }}<br>
-        <abbr title="Phone">P:</abbr> {{ address.phone }}
+        <abbr title="Phone">P:</abbr> +91 {{ address.phone }}
       </address>
     </div>
   </div>

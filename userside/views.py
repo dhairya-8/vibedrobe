@@ -4,7 +4,6 @@ import time
 import json
 import random
 import string
-import os
 import numpy as np
 from decimal import Decimal
 
@@ -18,7 +17,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Min, Prefetch, Sum, Avg, Case, When, Value, IntegerField
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -26,7 +25,7 @@ from django.views.decorators.http import require_POST
 
 from django.core.files.storage import FileSystemStorage
 from sklearn.metrics.pairwise import cosine_similarity
-from adminside.management.commands.generate_features import extract_features # And command
+from adminside.management.commands.generate_features import extract_features
 
 # Project-level
 from .decorators import user_login_required
@@ -722,6 +721,8 @@ def deactivate_account(request):
 
 
 # ============================= PRODUCT VIEWS =============================
+
+
 def image_search_view(request):
     if request.method == 'POST' and request.FILES.get('query_img'):
         SIMILARITY_THRESHOLD = 0.65 
@@ -1363,6 +1364,7 @@ def quick_add_to_wishlist_home(request, product_id):
 
     return redirect('homepage')
 
+
 # ============================= CART VIEWS =============================
 
 
@@ -1941,6 +1943,8 @@ def add_fbt_to_cart(request):
         if 'main_product_id' in locals():
             return redirect('product_detail', product_id=main_product_id)
         return redirect('homepage')
+
+
 # ============================= CHECKOUT & ORDER PROCESSING =============================
 
 
@@ -2446,7 +2450,7 @@ def add_review(request, order_id, product_id):
     }
     return render(request, 'add_review.html', context)
 
-@require_POST  # Ensures this view only accepts POST requests
+@require_POST
 def cancel_payment_attempt(request):
     """
     View to be called via AJAX when a user closes the Razorpay modal.
