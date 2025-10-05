@@ -5,16 +5,10 @@
 
 {% block css %}
   <!-- Your existing CSS imports -->
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="author" content="flexkit">
-  <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
-  <link rel="preconnect" href="https://fonts.gstatic.com/">
-  <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Allura&amp;display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   
   <style>
     .address-form-container {
@@ -86,9 +80,12 @@
               
               <!-- Phone Number -->
               <div class="mb-4">
-                <label class="form-label">Phone Number</label>
-                <input type="tel" name="phone" class="form-control" required>
-              </div>
+    <label for="phone" class="form-label">10-digit Mobile Number*</label>
+    <div class="input-group">
+        <span class="input-group-text">+91</span>
+        <input id="phone" type="tel" name="phone" class="form-control" required inputmode="numeric" pattern="[6-9][0-9]{9}" title="Please enter a valid 10-digit Indian mobile number">
+    </div>
+</div>
               
               <!-- Address Line 1 -->
               <div class="mb-4">
@@ -118,8 +115,7 @@
                 <!-- Pincode -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">Pincode</label>
-                  <input type="text" name="pincode" class="form-control" required>
-                </div>
+<input type="text" name="pincode" class="form-control" required inputmode="numeric" pattern="[0-9]{6}" title="Please enter a 6-digit pincode">                </div>
               </div>
               
               <!-- Default Address Checkbox -->
@@ -143,7 +139,6 @@
 {% endblock %}
 
 {% block script %}
-  <!-- Your existing JS imports -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
@@ -151,45 +146,36 @@
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
   <script src="{% static 'user/assets/js/theme.js' %}"></script>
-  
-  <!-- Add form validation -->
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Basic form validation
-      const form = document.querySelector('form');
-      form.addEventListener('submit', function(e) {
-        let valid = true;
-        
-        // Check required fields
-        const requiredFields = form.querySelectorAll('[required]');
-        requiredFields.forEach(field => {
-          if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            valid = false;
-          } else {
-            field.classList.remove('is-invalid');
+      const pincodeField = document.querySelector('[name="pincode"]');
+      const cityField = document.querySelector('[name="city"]');
+      const stateField = document.querySelector('[name="state"]');
+
+      if (pincodeField) {
+        pincodeField.addEventListener('input', function() {
+          const pincode = this.value;
+          // When pincode is 6 digits long, fetch the address
+          if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+            fetch(`https://api.postalpincode.in/pincode/${pincode}`)
+              .then(response => response.json())
+              .then(data => {
+                if (data && data[0].Status === 'Success') {
+                  const postOffice = data[0].PostOffice[0];
+                  cityField.value = postOffice.District;
+                  stateField.value = postOffice.State;
+                } else {
+                  console.log('Invalid Pincode');
+                  // Optionally clear fields if pincode is wrong
+                  cityField.value = '';
+                  stateField.value = '';
+                }
+              })
+              .catch(error => console.error('Error fetching pincode data:', error));
           }
         });
-        
-        // Validate phone number (Indian format)
-        const phoneField = form.querySelector('[name="phone"]');
-        if (phoneField && !/^[6-9]\d{9}$/.test(phoneField.value.trim())) {
-          phoneField.classList.add('is-invalid');
-          valid = false;
-        }
-        
-        // Validate pincode (6 digits)
-        const pincodeField = form.querySelector('[name="pincode"]');
-        if (pincodeField && !/^\d{6}$/.test(pincodeField.value.trim())) {
-          pincodeField.classList.add('is-invalid');
-          valid = false;
-        }
-        
-        if (!valid) {
-          e.preventDefault();
-          alert('Please fill all required fields correctly');
-        }
-      });
+      }
     });
   </script>
 {% endblock %}

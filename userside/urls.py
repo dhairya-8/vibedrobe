@@ -62,6 +62,7 @@ urlpatterns = [
     path('account-orders/', account_orders, name='account_orders'),
     path('account-orders/<int:order_id>/', order_detail, name='order_detail'),
     path('cancel-order/<int:order_id>/', cancel_order, name='cancel_order'),
+    
 
     path('account-details/', account_details, name='account_details'),
     path('account/deactivate/', deactivate_account, name='deactivate_account'),   
@@ -76,5 +77,11 @@ urlpatterns = [
     # ==================== Static Pages ====================
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
+    
+    # urls.py
+    path('add_review/<int:order_id>/<int:product_id>/', add_review, name='add_review'),
+    
+    path('image-search/', image_search_view, name='image_search'),
+
     
 ]

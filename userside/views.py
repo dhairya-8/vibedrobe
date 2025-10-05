@@ -3,6 +3,8 @@ import re
 import time
 import random
 import string
+import os
+import numpy as np
 from decimal import Decimal
 
 # Django core
@@ -19,6 +21,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_POST
+
+from django.core.files.storage import FileSystemStorage
+from sklearn.metrics.pairwise import cosine_similarity
+from adminside.management.commands.generate_features import extract_features # And command
 
 # Project-level
 from .decorators import user_login_required
@@ -520,7 +526,7 @@ def add_address(request):
                 address_type=request.POST.get('address_type'),
                 address_name=request.POST.get('address_name'),
                 full_name=request.POST.get('full_name'),
-                phone=request.POST.get('phone'),
+                phone = "+91" + request.POST.get('phone'),                
                 address_line_1=request.POST.get('address_line_1'),
                 address_line_2=request.POST.get('address_line_2', ''),
                 city=request.POST.get('city'),
@@ -714,6 +720,42 @@ def deactivate_account(request):
 
 
 # ============================= PRODUCT VIEWS =============================
+def image_search_view(request):
+    if request.method == 'POST' and request.FILES.get('query_img'):
+        SIMILARITY_THRESHOLD = 0.65 
+
+        # --- 1. Perform the Search (same logic as prototype) ---
+        query_img_file = request.FILES['query_img']
+        fs = FileSystemStorage()
+        query_path_relative = fs.save(query_img_file.name, query_img_file)
+        query_path_full = fs.path(query_path_relative)
+        query_features = np.array(extract_features(query_path_full))
+        indexed_products = ML_Feature_Vectors.objects.select_related('product_id').all()
+
+        all_matches = []
+        for indexed_product in indexed_products:
+            sim = cosine_similarity(
+                query_features.reshape(1, -1), 
+                np.array(indexed_product.feature_vector).reshape(1, -1)
+            )[0][0]
+            if sim >= SIMILARITY_THRESHOLD:
+                all_matches.append((indexed_product.product_id, sim))
+
+        all_matches.sort(key=lambda x: x[1], reverse=True)
+
+        # --- 2. Get the IDs of the matching products ---
+        product_ids = [product.id for product, sim in all_matches]
+
+        if not product_ids:
+            # Handle no results found, maybe redirect with a message
+            return redirect(reverse('shop') + '?image_search_status=no_results')
+
+        # --- 3. Redirect to the shop page with the IDs ---
+        shop_url = reverse('shop')
+        id_string = ','.join(map(str, product_ids))
+        return redirect(f'{shop_url}?similar_to={id_string}')
+
+    return render(request, 'image_search.html')
 
 
 def shop(request):
@@ -727,6 +769,10 @@ def shop(request):
     sort = request.GET.get('sort', 'default')
     gender = request.GET.get('gender', None)
 
+    # --- NEW: Check for image search results ---
+    similar_product_ids = request.GET.get('similar_to')
+    image_search_status = request.GET.get('image_search_status')
+    
     # Base queryset - ADD VARIANT PREFETCH HERE
     products = Product.objects.filter(is_active=True).prefetch_related(
         Prefetch(
@@ -743,6 +789,11 @@ def shop(request):
         'subcategory_id',
         'brand_id'
     )
+    if similar_product_ids:
+        # If we have IDs from an image search, filter by them
+        product_id_list = [int(pid) for pid in similar_product_ids.split(',') if pid.isdigit()]
+        products = products.filter(id__in=product_id_list)
+        
     # STEP 2: Apply the search filter if a keyword exists
     if keyword:
         products = products.annotate(
@@ -873,6 +924,7 @@ def shop(request):
         'global_min_price': global_min_price,
         'global_max_price': global_max_price,
         'current_gender': gender,
+        'image_search_status': image_search_status,
     }
     return render(request, 'shop.html', context)
 
@@ -2259,6 +2311,63 @@ def orderconfirm(request, order_id):
         return redirect('homepage')
 
 
+@user_login_required
+def add_review(request, order_id, product_id):
+    # --- 1. Fetch the logged-in user from the session ---
+    try:
+        user = User.objects.get(id=request.session.get('user_id'))
+    except User.DoesNotExist:
+        messages.error(request, "User not found. Please log in again.")
+        return redirect('login_register')
+
+    # --- 2. Get the necessary order and product objects ---
+    order = get_object_or_404(Order_Master, id=order_id)
+    product = get_object_or_404(Product, id=product_id)
+
+    # --- 3. SECURITY & LOGIC CHECKS ---
+    # THE FIX IS HERE: Use order.user_id to match your model's field name
+    if order.user_id != user:
+        messages.error(request, "You are not authorized to review this order.")
+        return redirect('account_orders')
+
+    if order.status != 'delivered':
+        messages.error(request, "You can only review products from delivered orders.")
+        return redirect('account_orders')
+
+    if not Order_Details.objects.filter(order_id=order, product_variant_id__product_id=product).exists():
+        messages.error(request, "This product is not part of the specified order.")
+        return redirect('account_orders')
+        
+    if Review.objects.filter(order_id=order, product_id=product, user_id=user).exists():
+        messages.warning(request, "You have already submitted a review for this product.")
+        return redirect('account_orders')
+
+    # --- 4. FORM HANDLING ---
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        title = request.POST.get('title')
+        comment = request.POST.get('comment')
+
+        if not rating:
+            messages.error(request, "Please select a star rating.")
+        else:
+            # Use your model's field names when creating the review
+            Review.objects.create(
+                product_id=product,
+                user_id=user,
+                order_id=order,
+                rating=rating,
+                title=title,
+                comment=comment
+            )
+            messages.success(request, f"Your review for '{product.name}' has been submitted. Thank you!")
+            return redirect('account_orders')
+
+    context = {
+        'product': product,
+        'order': order
+    }
+    return render(request, 'add_review.html', context)
 # ============================= STATIC PAGES =============================
 
 def contactus(request):

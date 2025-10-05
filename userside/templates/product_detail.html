@@ -12,6 +12,13 @@
 <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}">
 
 <style>
+  .star-filled {
+  fill: #ffc107; /* Gold color for filled stars */
+}
+
+.star-empty {
+  fill: #e0e0e0; /* Light gray for empty stars */
+}
   .swatch-list .swatch.active {
     border-color: #000;
     background-color: #f5f5f5;
@@ -145,16 +152,22 @@
 
             </div>
             <h1 class="product-single__name">{{ product.name }}</h1>
-            <div class="product-single__rating">
-              <div class="reviews-group d-flex">
-                <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-                <svg class="review-star" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg"><use href="#icon_star" /></svg>
-              </div>
-              <span class="reviews-note text-lowercase text-secondary ms-1">8k+ reviews</span>
+          <div class="product-single__rating">
+            <div class="reviews-group d-flex">
+              {% for i in "12345" %}
+              <svg class="review-star {% if forloop.counter <= average_rating %}star-filled{% else %}star-empty{% endif %}" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg">
+                  <use href="#icon_star" />
+              </svg>
+              {% endfor %}
             </div>
+            {% if reviews.count > 0 %}
+        <a href="#product-reviews" class="reviews-note text-lowercase text-secondary ms-1 js-scroll-to-reviews">
+                {{ reviews.count }} review{{ reviews.count|pluralize }}
+              </a>
+            {% else %}
+              <span class="reviews-note text-lowercase text-secondary ms-1">No reviews yet</span>
+            {% endif %}
+          </div>
             <div class="product-single__price">
               <span class="current-price">₹{{ product.price }}</span>
             </div>
@@ -310,16 +323,16 @@
                 </div>
               </div><!-- /.accordion-item -->
 
-              <div class="accordion-item">
-  <h5 class="accordion-header" id="accordion-heading-3">
-    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-3" aria-expanded="false" aria-controls="accordion-collapse-3">
-      Reviews ({{ reviews.count }})
-      <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
-    </button>
-  </h5>
-  <div id="accordion-collapse-3" class="accordion-collapse collapse" aria-labelledby="accordion-heading-3" data-bs-parent="#product_single_details_accordion">
-    <div class="accordion-body">
-      <h2 class="product-single__reviews-title mb-4">Customer Reviews</h2>
+              <div class="accordion-item" id="product-reviews">
+              <h5 class="accordion-header" id="accordion-heading-3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accordion-collapse-3" aria-expanded="false" aria-controls="accordion-collapse-3">
+                  Reviews ({{ reviews.count }})
+                  <svg class="accordion-button__icon" viewBox="0 0 14 14"><g aria-hidden="true" stroke="none" fill-rule="evenodd"><path class="svg-path-vertical" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path><path class="svg-path-horizontal" d="M14,6 L14,8 L0,8 L0,6 L14,6"></path></g></svg>
+                </button>
+              </h5>
+              <div id="accordion-collapse-3" class="accordion-collapse collapse" aria-labelledby="accordion-heading-3" data-bs-parent="#product_single_details_accordion">
+              <div class="accordion-body">
+                  <h2 class="product-single__reviews-title mb-4">Customer Reviews</h2>
       
       <!-- Review Stats -->
       <div class="review-stats mb-4 p-3 bg-light rounded">
@@ -943,9 +956,7 @@
 </div>
 
 {% endblock %}
-
 {% block script %}
-<!-- External JavaScripts -->
 <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
 <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
@@ -953,155 +964,160 @@
 <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
 <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
 
-<!-- Footer Scripts -->
 <script src="{% static 'user/assets/js/theme.js' %}"></script>
 
 <script>
-$(document).ready(function() {
-    // Initialize tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
-    
-    // Auto-select the first available size on page load
-    function autoSelectFirstSize() {
-        // Wait a bit to ensure all elements are rendered
-        setTimeout(function() {
-            const firstAvailableSize = $('.js-swatch:not(.disabled)').first();
-            console.log('Found available sizes:', $('.js-swatch:not(.disabled)').length);
-            console.log('First available size:', firstAvailableSize);
-            
-            if (firstAvailableSize.length > 0) {
-                // Remove active class from all swatches first
-                $('.js-swatch').removeClass('active');
-                
-                // Add active class to first available swatch
-                firstAvailableSize.addClass('active');
-                
-                // Trigger the selection logic
-                const variantId = firstAvailableSize.data('variant-id');
-                const price = firstAvailableSize.data('price');
-                const sku = firstAvailableSize.data('sku');
-                const stock = firstAvailableSize.data('stock');
-                
-                // Update hidden input with selected variant
-                $('#selected-variant').val(variantId);
-                
-                // Update price display
-                $('.product-single__price .current-price').text('₹' + price);
-                
-                // Update SKU display
-                $('.sku-display').text(sku);
-                
-                // Enable/disable add to cart button based on stock
-                const addToCartBtn = $('.btn-addtocart');
-                if (stock > 0) {
-                    addToCartBtn.prop('disabled', false).text('Add to Cart');
+    // This function runs once the main HTML document is ready
+    $(document).ready(function() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+        
+        // Auto-select the first available size on page load
+        function autoSelectFirstSize() {
+            setTimeout(function() {
+                const firstAvailableSize = $('.js-swatch:not(.disabled)').first();
+                if (firstAvailableSize.length > 0) {
+                    firstAvailableSize.addClass('active');
+                    const variantId = firstAvailableSize.data('variant-id');
+                    const price = firstAvailableSize.data('price');
+                    const sku = firstAvailableSize.data('sku');
+                    const stock = firstAvailableSize.data('stock');
+                    
+                    $('#selected-variant').val(variantId);
+                    $('.product-single__price .current-price').text('₹' + price);
+                    $('.sku-display').text(sku);
+                    
+                    const addToCartBtn = $('.btn-addtocart');
+                    if (stock > 0) {
+                        addToCartBtn.prop('disabled', false).text('Add to Cart');
+                    } else {
+                        addToCartBtn.prop('disabled', true).text('Out of Stock');
+                    }
                 } else {
-                    addToCartBtn.prop('disabled', true).text('Out of Stock');
+                    $('.btn-addtocart').prop('disabled', true).text('Out of Stock');
                 }
-                
-                console.log('Auto-selected size:', firstAvailableSize.text().trim(), 'with variant ID:', variantId);
+            }, 100);
+        }
+        autoSelectFirstSize();
+        
+        // Size selection functionality
+        $('.js-swatch').on('click', function(e) {
+            e.preventDefault();
+            if ($(this).hasClass('disabled')) { return; }
+            
+            $('.js-swatch').removeClass('active');
+            $(this).addClass('active');
+            
+            const variantId = $(this).data('variant-id');
+            const price = $(this).data('price');
+            const sku = $(this).data('sku');
+            const stock = $(this).data('stock');
+            
+            $('#selected-variant').val(variantId);
+            $('.product-single__price .current-price').text('₹' + price);
+            $('.sku-display').text(sku);
+            $('input[name="quantity"]').val(1);
+            
+            const addToCartBtn = $('.btn-addtocart');
+            if (stock > 0) {
+                addToCartBtn.prop('disabled', false).text('Add to Cart');
             } else {
-                console.log('No available sizes found');
-                // If no sizes available, disable the add to cart button
-                $('.btn-addtocart').prop('disabled', true).text('Out of Stock');
+                addToCartBtn.prop('disabled', true).text('Out of Stock');
             }
-        }, 100);
+        });
+        
+        // Add to cart form submission
+        $('#add-to-cart-form').on('submit', function(e) {
+            if (!$('#selected-variant').val()) {
+                e.preventDefault();
+                alert('Please select a size');
+                return false;
+            }
+            const quantity = parseInt($('input[name="quantity"]').val());
+            const maxStock = $('.js-swatch.active').data('stock');
+            if (quantity > maxStock) {
+                e.preventDefault();
+                alert('Cannot add more than available stock (' + maxStock + ' items available)');
+                return false;
+            }
+        });
+        
+        // Wishlist functionality
+        $('.add-to-wishlist').on('click', function(e) {
+            e.preventDefault();
+            window.location.href = $(this).attr('href');
+        });
+        
+        // Logic to show cart drawer if redirected
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('show_cart') === '1') {
+            $('.js-open-aside[data-aside="cartDrawer"]').trigger('click');
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+
+        // Replace your existing review scroll script with this improved version
+$(document).on('click', '.js-scroll-to-reviews', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log("DEBUG: Review link clicked");
+    
+    // Force the main page to become scrollable
+    $('html, body').css('overflow', 'visible');
+
+    const reviewsSection = document.getElementById('product-reviews');
+    const collapseContent = document.getElementById('accordion-collapse-3');
+    const accordionButton = document.querySelector('[data-bs-target="#accordion-collapse-3"]');
+
+    if (!reviewsSection || !collapseContent) {
+        console.log("DEBUG: Reviews section or collapse content not found");
+        return;
+    }
+
+    // First, open the accordion if it's not already open
+    const bsCollapse = bootstrap.Collapse.getInstance(collapseContent) || new bootstrap.Collapse(collapseContent);
+    
+    // Check if accordion is already open
+    const isOpen = collapseContent.classList.contains('show');
+    
+    if (!isOpen) {
+        // If accordion is closed, open it first, then scroll
+        collapseContent.addEventListener('shown.bs.collapse', function scrollAfterOpen() {
+            // Remove the event listener to avoid memory leaks
+            collapseContent.removeEventListener('shown.bs.collapse', scrollAfterOpen);
+            
+            // Wait a bit more for content to fully render
+            setTimeout(function() {
+                scrollToReviews();
+            }, 200);
+        });
+        
+        bsCollapse.show();
+    } else {
+        // If already open, scroll immediately
+        scrollToReviews();
     }
     
-    // Call the function to auto-select first size
-    autoSelectFirstSize();
-    
-    // Size selection functionality
-    $('.js-swatch').on('click', function(e) {
-        e.preventDefault();
+    function scrollToReviews() {
+        // Calculate the offset for better positioning
+        const headerHeight = 100; // Adjust this value based on your fixed header height
+        const reviewsOffset = reviewsSection.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         
-        // Skip if disabled (out of stock)
-        if ($(this).hasClass('disabled')) {
-            return;
-        }
+        // Use both jQuery and vanilla JS methods for better browser compatibility
+        $('html, body').animate({
+            scrollTop: reviewsOffset
+        }, 800, 'swing');
         
-        // Remove active class from all swatches
-        $('.js-swatch').removeClass('active');
+        // Fallback for modern browsers
+        window.scrollTo({
+            top: reviewsOffset,
+            behavior: 'smooth'
+        });
         
-        // Add active class to clicked swatch
-        $(this).addClass('active');
-        
-        // Get variant data
-        const variantId = $(this).data('variant-id');
-        const price = $(this).data('price');
-        const sku = $(this).data('sku');
-        const stock = $(this).data('stock');
-        
-        // Update hidden input with selected variant
-        $('#selected-variant').val(variantId);
-        
-        // Update price display
-        $('.product-single__price .current-price').text('₹' + price);
-        
-        // Update SKU display
-        $('.sku-display').text(sku);
-        
-        // Reset quantity to 1 when changing size
-        $('input[name="quantity"]').val(1);
-        
-        // Enable/disable add to cart button based on stock
-        const addToCartBtn = $('.btn-addtocart');
-        if (stock > 0) {
-            addToCartBtn.prop('disabled', false).text('Add to Cart');
-        } else {
-            addToCartBtn.prop('disabled', true).text('Out of Stock');
-        }
-    });
-    
-    // Add to cart form submission
-    $('#add-to-cart-form').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Check if a size is selected
-        if (!$('#selected-variant').val()) {
-            alert('Please select a size');
-            return false;
-        }
-        
-        // Validate quantity
-        const quantity = parseInt($('input[name="quantity"]').val());
-        if (isNaN(quantity) || quantity < 1) {
-            alert('Please enter a valid quantity');
-            return false;
-        }
-        
-        // Validate quantity against stock
-        const selectedVariant = $('.js-swatch.active');
-        const maxStock = selectedVariant.data('stock');
-        
-        if (quantity > maxStock) {
-            alert('Cannot add more than available stock (' + maxStock + ' items available)');
-            return false;
-        }
-        
-        // Submit the form via standard POST (no AJAX as requested)
-        this.submit();
-    });
-    
-    // Wishlist functionality
-    $('.add-to-wishlist').on('click', function(e) {
-        e.preventDefault();
-        
-        // Redirect to the wishlist URL (standard form submission)
-        window.location.href = $(this).attr('href');
-    });
-    
-    // Check if we need to open the cart drawer after page load
-    // This handles the case where we're redirected back after adding to cart
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('show_cart') === '1') {
-        // Open the cart drawer
-        $('.js-open-aside[data-aside="cartDrawer"]').trigger('click');
-        
-        // Clean up the URL
-        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
+        console.log("DEBUG: Scrolled to reviews section at offset:", reviewsOffset);
     }
 });
+    });
 </script>
 {% endblock %}

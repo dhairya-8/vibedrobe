@@ -248,9 +248,10 @@
       box-shadow: 0 5px 20px rgba(212, 175, 55, 0.3);
     }
   </style>
+  
 {% endblock %}
-
 {% block content %}
+
 <main>
    <div class="mb-4 pb-4"></div>
    <section class="shop-checkout container">
@@ -279,7 +280,9 @@
        </a>
      </div>
      
-     <form method="POST" action="{% url 'checkout' %}" id="checkoutForm">
+     <form method="POST" action="{% url 'checkout' %}" id="checkoutForm" 
+      class="triggers-loader" 
+      data-loader-text="Placing your order, please wait...">
        {% csrf_token %}
        <div class="checkout-form">
          <div class="billing-info__wrapper">
@@ -466,7 +469,7 @@
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
   <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
 
-  <script>
+<script>
     $(document).ready(function() {
       // Address selection
       $('.address-card').on('click', function() {
@@ -475,29 +478,26 @@
         $(this).find('input[type="radio"]').prop('checked', true);
       });
       
-// Payment method selection
-$('.payment-method-card').on('click', function() {
-    // Remove the 'selected' class from all payment method cards
-    $('.payment-method-card').removeClass('selected');
-
-    // Add the 'selected' class to the one that was just clicked
-    $(this).addClass('selected');
-
-    // Find the radio button inside the clicked card and check it
-    $(this).find('input[type="radio"]').prop('checked', true);
-});
+      // Payment method selection
+      $('.payment-method-card').on('click', function() {
+        $('.payment-method-card').removeClass('selected');
+        $(this).addClass('selected');
+        $(this).find('input[type="radio"]').prop('checked', true);
+      });
       
-      // Form validation
+      // ✨ UPDATED Form validation and loader trigger ✨
       $('#checkoutForm').on('submit', function(e) {
         // Check if at least one address is selected
         const selectedAddress = $('input[name="address_id"]:checked').val();
         if (!selectedAddress) {
-          e.preventDefault();
+          e.preventDefault(); // This stops the form from submitting
           alert('Please select a shipping address.');
-          return false;
+          return; // Exit
         }
         
-        return true;
+       
+
+        // The form will now submit to your backend.
       });
     });
   </script>

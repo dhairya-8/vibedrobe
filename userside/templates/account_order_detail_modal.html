@@ -91,7 +91,13 @@
                     <p>Size: {{ item.product_variant_id.size_id.name }}</p>
                     <p>Qty: {{ item.quantity }}</p>
                     </a>
-                </div>
+                    
+                    {% if order.status == 'delivered' %}
+                    <a href="{% url 'add_review' order_id=order.id product_id=item.product_variant_id.product_id.pk %}" class="btn-review">
+                        ★ Rate & Review
+                    </a>
+                    {% endif %}
+                    </div>
                 <div class="product-item-price">
                     ₹{{ item.total_price }}
                 </div>
@@ -211,6 +217,7 @@
     .product-list-item {
         display: flex; gap: 1.5rem; padding: 1.5rem 0;
         border-bottom: 1px solid var(--noir-border-color);
+        align-items: flex-start; /* Align items to the top */
     }
     .product-list-item-img {
         width: 90px; height: 115px; object-fit: cover; border-radius: 8px;
@@ -225,7 +232,28 @@
         font-size: 1.1rem; color: var(--noir-text-primary);
     }
 
-    /* --- 6. Animations --- */
+    /* --- 6. NEW STYLES for Review Button --- */
+    .btn-review {
+        display: inline-block;
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--noir-accent);
+        text-decoration: none;
+        border: 1px solid var(--noir-accent);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .btn-review:hover {
+        background-color: var(--noir-accent);
+        color: var(--noir-bg-primary);
+    }
+    /* --- END NEW STYLES --- */
+
+
+    /* --- 7. Animations --- */
     @keyframes slideInLeft {
         from { transform: translateX(-50px); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
@@ -235,7 +263,7 @@
         to { opacity: 1; }
     }
     
-    /* --- 7. Responsive Design (Mobile) --- */
+    /* --- 8. Responsive Design (Mobile) --- */
     @media (max-width: 991.98px) {
         .noir-modal .modal-dialog {
             max-width: none;

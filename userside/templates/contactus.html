@@ -43,8 +43,14 @@
            <div class="my-4">
              <textarea class="form-control form-control_gray" name="message" placeholder="Your Message" cols="30" rows="8" required></textarea>
            </div>
-           <div class="my-4">
-             <button type="submit" class="btn btn-primary">Submit</button>
+           
+            {% comment %} templates/contact_us.html {% endcomment %}
+<div class="my-4">
+  <button type="submit" class="btn btn-primary d-flex align-items-center" id="contact-submit-btn">
+    <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+    <span class="button-text">Submit</span>
+  </button>
+
            </div>
          </form>
        </div>
@@ -107,30 +113,33 @@
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
 
-  <!-- Form validation -->
+  <script src="{% static 'user/assets/js/theme.js' %}"></script>
+
   <script>
-    // Example starter JavaScript for disabling form submissions if there are invalid fields
+    // Self-invoking function for Bootstrap form validation
     (function () {
       'use strict'
-      
-      // Fetch all the forms we want to apply custom Bootstrap validation styles to
       var forms = document.querySelectorAll('.needs-validation')
-      
-      // Loop over them and prevent submission
       Array.prototype.slice.call(forms)
         .forEach(function (form) {
           form.addEventListener('submit', function (event) {
-            if (!form.checkValidity()) {
-              event.preventDefault()
-              event.stopPropagation()
+            // This is the new part for the loader
+            if (form.checkValidity()) {
+              const submitBtn = document.getElementById('contact-submit-btn');
+              const spinner = submitBtn.querySelector('.spinner-border');
+              const btnText = submitBtn.querySelector('.button-text');
+
+              // Disable button and show loader
+              submitBtn.disabled = true;
+              spinner.classList.remove('d-none');
+              btnText.textContent = 'Sending...';
+            } else {
+              event.preventDefault();
+              event.stopPropagation();
             }
-            
-            form.classList.add('was-validated')
+            form.classList.add('was-validated');
           }, false)
         })
     })()
   </script>
-
-  <!-- Footer Scripts -->
-  <script src="{% static 'user/assets/js/theme.js' %}"></script>
 {% endblock %}
