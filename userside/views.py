@@ -1,6 +1,7 @@
 # Standard library
 import re
 import time
+import json
 import random
 import string
 from decimal import Decimal
@@ -12,9 +13,10 @@ from django.contrib.auth import get_user_model
 from django.core.mail import BadHeaderError, EmailMultiAlternatives, send_mail
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Min, Prefetch
+from django.db.models import Count, Max, Min, Prefetch, Sum, Avg, Case, When, Value, IntegerField
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -984,6 +986,12 @@ def product_detail(request, product_id):
             is_active=True
         ).exclude(id=product.id).order_by('?')[:8]
         
+        # --- FBT START: Add this new block ---
+        # Fetch pre-calculated "Frequently Bought Together" recommendations
+        fbt_rules = Frequently_Bought_Together.objects.filter(product_a_id=product).order_by('-lift_score')[:4] # Get top 4
+        fbt_products = [rule.product_b_id for rule in fbt_rules]
+        # --- FBT END ---
+        
         # Track recently viewed
         recently_viewed_products = []
         has_purchased = False
@@ -1046,6 +1054,9 @@ def product_detail(request, product_id):
             'gallery_images': gallery_images,
             'tags': tags,
             'related_products': related_products,
+            # --- FBT START: Add fbt_products to the context ---
+            'fbt_products': fbt_products,
+            # --- FBT END ---
             'recently_viewed_products': recently_viewed_products,
             'has_purchased': has_purchased,
             'prev_product': prev_product,
@@ -1280,6 +1291,26 @@ def quick_add_to_wishlist(request, product_id):
            
     return redirect('shop')
 
+@user_login_required
+def quick_add_to_wishlist_home(request, product_id):
+    try:
+        user = User.objects.get(id=request.session['user_id'])
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+
+        #Check if product is already in wishlist
+        if Wishlist.objects.filter(user_id=user, product_id=product).exists():
+            messages.info(request, f"{product.name} is already in your wishlist 💖")
+        else:
+            Wishlist.objects.create(user_id=user, product_id=product)
+            messages.success(request, f"✓ {product.name} added to wishlist!")
+
+    except IntegrityError:
+        messages.error(request, "Couldn't add to wishlist. Please try again.")
+    except Exception as e:
+        messages.error(request, "An unexpected error occurred.")
+        error(f"Quick add to wishlist error: {str(e)}")
+
+    return redirect('homepage')
 
 # ============================= CART VIEWS =============================
 
@@ -1743,6 +1774,55 @@ def quick_add_to_cart(request, product_id):
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
 
+@user_login_required
+def quick_add_to_cart_home(request, product_id):
+    try:
+        product = get_object_or_404(Product, id=product_id, is_active=True)
+        variant = product.variants.filter(is_active=True).first()
+        
+        if not variant:
+            messages.error(request, "This product is currently unavailable.")
+            return redirect('homepage')
+        
+        if variant.stock_quantity <= 0:
+            messages.warning(request, f"Sorry, {product.name} is out of stock.")
+            return redirect('homepage')
+        
+        user = User.objects.get(id=request.session['user_id'])
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user_id=user)
+        
+        # Check if item already exists in cart
+        cart_item, created = Cart_Items.objects.get_or_create(
+            cart_id=cart,
+            product_variant_id=variant,
+            defaults={
+                'price_at_time': product.price + (variant.additional_price or 0),
+                'quantity': 1
+            }
+        )
+        
+        if not created:
+            # If item exists and we can add more
+            new_quantity = cart_item.quantity + 1
+            if new_quantity <= variant.stock_quantity:
+                cart_item.quantity = new_quantity
+                cart_item.save()
+                messages.success(request, f"Added one more {product.name} to your cart. Total: {new_quantity}")
+            else:
+                messages.warning(request, 
+                    f"You already have {cart_item.quantity} in cart. Only {variant.stock_quantity} available.")
+        else:
+            messages.success(request, f"✓ {product.name} added to cart!")
+        
+    except Exception as e:
+        messages.error(request, "Couldn't add item to cart. Please try again.")
+        error(f"Quick add from grid error: {str(e)}")
+           
+    # Redirect back to shop with parameter to open cart drawer
+    homepage_url = reverse('homepage')
+    return redirect(f"{homepage_url}?open_cart_drawer=true")
+
 
 # ============================= CHECKOUT & ORDER PROCESSING =============================
 
@@ -2189,6 +2269,60 @@ def orderconfirm(request, order_id):
     except Exception as e:
         messages.error(request, "Order not found or you don't have permission to view this order.")
         return redirect('homepage')
+
+
+@user_login_required
+@require_POST  # Ensures this view only accepts POST requests
+def cancel_payment_attempt(request):
+    """
+    View to be called via AJAX when a user closes the Razorpay modal.
+    This sets a Django message, cancels the order, and restocks items.
+    """
+    order_number = None  # Define here for use in the final exception block
+    try:
+        data = json.loads(request.body)
+        order_number = data.get('order_number')
+        user_id = request.session.get('user_id')
+
+        if not order_number:
+            # This is a bad request, not a user-facing error. Log it.
+            error("AJAX call to cancel_payment_attempt received no order_number.")
+            return HttpResponse(status=400) # Bad Request
+
+        # Find the specific order for this user that is still processing
+        order = Order_Master.objects.get(
+            order_number=order_number,
+            user_id_id=user_id,
+            status='processing'
+        )
+        
+        # Use your existing robust method to cancel and restock
+        order.cancel_and_restock()
+        
+        # Use your custom logger for debugging
+        info(f"Order {order_number} was cancelled by user closing the payment gateway.")
+        
+        # Set a message for the user to see on the next page
+        messages.info(request, 'Your order was cancelled as the payment was not completed.')
+        
+        # Return an empty response with a "No Content" status, indicating success to AJAX
+        return HttpResponse(status=204)
+
+    except Order_Master.DoesNotExist:
+        # This can happen if the order was already paid. It's not an error for the user.
+        info(f"Attempt to cancel order {order_number} failed: Order not found in 'processing' state.")
+        # We can return success here because the desired state (order is not processing) is met.
+        return HttpResponse(status=204)
+        
+    except Exception as e:
+        # Use your custom logger for the exception
+        error(f"Error in cancel_payment_attempt for order {order_number}: {str(e)}")
+        
+        # Set an error message for the user
+        messages.error(request, 'An error occurred while cancelling your order. Please check your order history.')
+        
+        # Return an Internal Server Error status
+        return HttpResponse(status=500)
 
 
 # ============================= STATIC PAGES =============================

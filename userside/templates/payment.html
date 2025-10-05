@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
 
   <style>
-    /* Payment Container Styles */
+    /* Payment Container Styles (PRESERVED FROM YOUR ORIGINAL) */
     .payment-container {
       max-width: 600px;
       margin: 40px auto;
@@ -130,7 +130,7 @@
       margin: 20px 0;
     }
 
-    /* --- LOADER STYLES START --- */
+    /* --- LOADER STYLES START (PRESERVED) --- */
     .loader-overlay {
       position: fixed;
       top: 0;
@@ -142,16 +142,17 @@
       justify-content: center;
       align-items: center;
       z-index: 10000;
-      backdrop-filter: blur(2px); /* Slight blur as requested */
+      backdrop-filter: blur(2px);
     }
 
     .loader {
-      border: 8px solid #f3f3f3; /* Light grey circle */
-      border-top: 8px solid #d4af37; /* Gold color from your button */
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #d4af37;
       border-radius: 50%;
       width: 80px;
       height: 80px;
       animation: spin 1s linear infinite;
+      justify-content: center;
     }
 
     @keyframes spin {
@@ -166,6 +167,31 @@
         font-weight: 600;
     }
     /* --- LOADER STYLES END --- */
+    
+    /* --- PAYMENT TIMER STYLES (ADDED) --- */
+    .payment-timer-container {
+      text-align: center;
+      margin: 25px 0;
+      padding: 10px;
+      background-color: #fffbe6;
+      border: 1px solid #ffe58f;
+      border-radius: 8px;
+    }
+
+    .payment-timer-container p {
+      margin: 0;
+      font-weight: 600;
+      color: #8a6d3b;
+    }
+
+    #payment-timer {
+      font-size: 1.2em;
+      color: #d9534f;
+    }
+
+    .payment-timer-container.expired p {
+        color: #a94442;
+    }
   </style>
 {% endblock %}
 
@@ -182,6 +208,13 @@
     <h2>Complete Your Payment</h2>
     <p>Order #{{ order.order_number }}</p>
     <div class="payment-amount">₹{{ order.total_amount|floatformat:2 }}</div>
+  </div>
+
+  <div id="payment-timer-container" class="payment-timer-container">
+    <p>
+      Please complete your payment within: 
+      <strong id="payment-timer">10:00</strong>
+    </p>
   </div>
   
   <div class="payment-instructions">
@@ -241,14 +274,36 @@
 
   <script>
     $(document).ready(function() {
-      // Check for failure status from previous attempts
       const urlParams = new URLSearchParams(window.location.search);
       const paymentStatus = urlParams.get('payment_status');
       if (paymentStatus === 'failed') {
         $('#payment-failure').show();
       }
 
-      // 5. We switch from data-attributes to a manual JS setup for more control
+      // --- TIMER LOGIC ---
+      let timeLeft = 10 * 60; // 10 minutes in seconds
+      const timerElement = $('#payment-timer');
+      const timerContainer = $('#payment-timer-container');
+      const payButton = $('#rzp-button1');
+
+      const timerInterval = setInterval(function() {
+        timeLeft--;
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+
+        if (timeLeft > 0) {
+          timerElement.text(`${minutes}:${seconds}`);
+        } else {
+          clearInterval(timerInterval);
+          timerContainer.addClass('expired');
+          timerContainer.find('p').html('<strong>Your payment session has expired.</strong><br>Please go back to checkout to try again.');
+          payButton.prop('disabled', true).css('opacity', 0.6).text('Session Expired');
+        }
+      }, 1000);
+
+      // --- RAZORPAY LOGIC (WITH CANCELLATION HANDLER) ---
       var options = {
           "key": "{{ razorpay_key_id }}",
           "amount": "{{ razorpay_amount }}",
@@ -258,18 +313,11 @@
           "image": "{% static 'user/assets/images/favicon.png' %}",
           "order_id": "{{ razorpay_order_id }}",
           "handler": function (response){
-              // This function is the key. It runs ONLY on successful payment.
-              
-              // a. Show the loader immediately
+              clearInterval(timerInterval);
               $('#loader-overlay').css('display', 'flex');
-
-              // b. Populate the hidden form fields with data from Razorpay
               document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
               document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
               document.getElementById('razorpay_signature').value = response.razorpay_signature;
-
-              // c. Submit the form to your backend
-              // The loader will stay visible while the backend processes everything
               document.getElementById('payment-form').submit();
           },
           "prefill": {
@@ -282,16 +330,41 @@
           },
           "modal": {
               "ondismiss": function(){
-                  // This function runs when the user closes the payment window.
-                  // We do nothing here, so the loader is NOT shown for failed/cancelled payments.
-                  console.log('Razorpay modal closed');
+                  console.log('Razorpay modal closed by user.');
+                  clearInterval(timerInterval);
+                  payButton.prop('disabled', true).text('Cancelling...');
+                  $('#loader-overlay').css('display', 'flex').find('.loader-text').text('Cancelling your order...');
+
+                  fetch("{% url 'cancel_payment_attempt' %}", {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': '{{ csrf_token }}'
+                      },
+                      body: JSON.stringify({
+                          'order_number': '{{ order.order_number }}'
+                      })
+                  })
+                  .then(response => {
+                      if (response.ok) {
+                          // Redirect to cart; the backend message will be displayed there.
+                          window.location.href = "{% url 'cart' %}";
+                      } else {
+                          console.error("Cancellation request failed:", response.status);
+                          // Assumes you have an orders list page named 'account_orders'
+                          window.location.href = "{% url 'account_orders' %}"; 
+                      }
+                  })
+                  .catch(error => {
+                      console.error('Error during cancellation:', error);
+                      window.location.href = "{% url 'checkout' %}";
+                  });
               }
           }
       };
       
       var rzp1 = new Razorpay(options);
 
-      // 6. Attach the click event to our custom button
       document.getElementById('rzp-button1').onclick = function(e){
           rzp1.open();
           e.preventDefault();

@@ -66,6 +66,258 @@
   font-size: 0.875rem;
 }
 </style>
+<style>
+.fbt-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    padding: 3rem 0;
+    border-radius: 20px;
+    margin-top: 2rem;
+}
+
+.fbt-header {
+    position: relative;
+}
+
+.fbt-product-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.fbt-product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.fbt-product-card.featured {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.fbt-product-card.selectable {
+    cursor: pointer;
+}
+
+.fbt-product-card.selectable:hover {
+    border-color: #dee2e6;
+}
+
+.product-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #007bff;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.selected-badge {
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.product-checkbox {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+}
+
+.product-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.product-checkbox label {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.product-checkbox input[type="checkbox"]:checked + label {
+    background: #007bff;
+    border-color: #007bff;
+}
+
+.product-checkbox input[type="checkbox"]:checked + label:after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.product-image {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8f9fa;
+    margin-bottom: 1rem;
+}
+
+.product-image img {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.fbt-product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+.product-quick-view {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #333;
+}
+
+.fbt-product-card:hover .product-quick-view {
+    opacity: 1;
+}
+
+.product-name {
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+}
+
+.product-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-quantity {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #dee2e6;
+    background: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.btn-quantity:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+}
+
+.quantity-input {
+    width: 40px;
+    height: 28px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.fbt-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.plus-icon {
+    width: 48px;
+    height: 48px;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.connector-line {
+    flex: 1;
+    width: 2px;
+    background: linear-gradient(to bottom, #007bff, #dee2e6);
+    border-radius: 1px;
+}
+
+.fbt-summary {
+    border-top: 1px solid #e9ecef;
+    padding-top: 2rem;
+}
+
+.summary-card {
+    background: white !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e9ecef;
+}
+
+.bundle-actions .btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 12px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .fbt-section {
+        padding: 2rem 1rem;
+        border-radius: 16px;
+    }
+    
+    .fbt-product-card {
+        padding: 1rem;
+    }
+    
+    .fbt-connector {
+        display: none;
+    }
+    
+    .bundle-actions .btn {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .product-image img {
+        height: 140px;
+    }
+}
+</style>
+
 
 {% endblock %}
 
@@ -524,6 +776,134 @@
   </div><!-- /.position-relative -->
 
 </section>
+{% endif %}
+
+{% if fbt_products %}
+<section class="fbt-section container mb-5">
+    <div class="fbt-header text-center mb-5">
+        <h2 class="section-title text-uppercase mb-3">Complete Your Look</h2>
+        <p class="text-muted mb-4">Customers who bought this item also purchased</p>
+    </div>
+
+    <div class="fbt-container">
+        <div class="row g-4 align-items-center justify-content-center">
+            <!-- Main Product -->
+            <div class="col-lg-3 col-md-4">
+                <div class="fbt-product-card featured">
+                    <div class="product-badge">Your Choice</div>
+                    <div class="product-image">
+                        <img src="{{ product.base_image.url }}" alt="{{ product.name }}" class="img-fluid">
+                    </div>
+                    <div class="product-info text-center mt-3">
+                        <h6 class="product-name mb-2">{{ product.name|truncatechars:35 }}</h6>
+                        <div class="product-price">
+                            <span class="current-price" data-price="{{ product.price }}">₹{{ product.price }}</span>
+                        </div>
+                        <div class="product-selection mt-2">
+                            <span class="selected-badge">Selected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plus Icon -->
+            <div class="col-lg-auto col-md-1 d-none d-md-block">
+                <div class="fbt-connector">
+                    <div class="plus-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="connector-line"></div>
+                </div>
+            </div>
+
+            <!-- FBT Products -->
+            <div class="col-lg-8 col-md-7">
+                <div class="row g-3">
+                    {% for fbt_product in fbt_products %}
+                    <div class="col-xl-4 col-md-6">
+                        <div class="fbt-product-card selectable" data-product-id="{{ fbt_product.id }}">
+                            <div class="product-checkbox">
+                                <input type="checkbox" id="fbt-{{ fbt_product.id }}" checked>
+                                <label for="fbt-{{ fbt_product.id }}"></label>
+                            </div>
+                            <div class="product-image">
+                                <img src="{{ fbt_product.base_image.url }}" alt="{{ fbt_product.name }}" class="img-fluid">
+                                <a href="{% url 'product_detail' fbt_product.id %}" class="product-quick-view">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 8C1 8 3.5 3 8 3C12.5 3 15 8 15 8C15 8 12.5 13 8 13C3.5 13 1 8 1 8Z" stroke="currentColor" stroke-width="1.5"/>
+                                        <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                </a>
+                            </div>
+                            <div class="product-info">
+                                <h6 class="product-name">{{ fbt_product.name|truncatechars:30 }}</h6>
+                                <p class="product-brand text-muted small mb-2">{{ fbt_product.brand_id.name }}</p>
+                                <div class="product-price">
+                                    <span class="current-price" data-price="{{ fbt_product.price }}">₹{{ fbt_product.price }}</span>
+                                </div>
+                                <div class="product-actions mt-2">
+                                    <button class="btn-quantity btn-minus">-</button>
+                                    <input type="number" class="quantity-input" value="1" min="1" max="10" data-product-id="{{ fbt_product.id }}">
+                                    <button class="btn-quantity btn-plus">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bundle Summary -->
+        <div class="fbt-summary mt-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="summary-card bg-light rounded-3 p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="bundle-details">
+                                    <h5 class="mb-3">Order Summary</h5>
+                                    <div class="price-breakdown">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Selected Items:</span>
+                                            <span><span class="selected-count">1</span> items</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Total Quantity:</span>
+                                            <span><span class="total-quantity">1</span> pcs</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between fw-bold fs-5 mt-3 pt-2 border-top">
+                                            <span>Total Amount:</span>
+                                            <span class="text-primary">₹<span class="bundle-total">{{ product.price }}</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-center text-md-end">
+                                <div class="bundle-actions">
+                                    <button class="btn btn-primary btn-lg me-3 add-bundle-to-cart">
+                                        <i class="bi bi-cart-plus me-2"></i>
+                                        Add All to Cart
+                                    </button>
+                                    <button class="btn btn-outline-secondary add-selected-to-cart">
+                                        Add Selected to Cart
+                                    </button>
+                                    <p class="text-muted small mt-2">
+                                        <i class="bi bi-truck me-1"></i>
+                                        Free shipping on orders above ₹999
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 {% endif %}
 
 {% if related_products %}
@@ -1101,6 +1481,202 @@ $(document).ready(function() {
         // Clean up the URL
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
+    }
+});
+</script>
+<script>
+$(document).ready(function() {
+    // Initialize cart items storage
+    let cartItems = [];
+    
+    // Calculate initial bundle price
+    calculateBundlePrice();
+    
+    // Quantity controls
+    $('.btn-plus').on('click', function() {
+        const input = $(this).siblings('.quantity-input');
+        const currentVal = parseInt(input.val());
+        if (currentVal < 10) {
+            input.val(currentVal + 1);
+            calculateBundlePrice();
+        }
+    });
+    
+    $('.btn-minus').on('click', function() {
+        const input = $(this).siblings('.quantity-input');
+        const currentVal = parseInt(input.val());
+        if (currentVal > 1) {
+            input.val(currentVal - 1);
+            calculateBundlePrice();
+        }
+    });
+    
+    $('.quantity-input').on('change', function() {
+        let value = parseInt($(this).val());
+        if (isNaN(value) || value < 1) value = 1;
+        if (value > 10) value = 10;
+        $(this).val(value);
+        calculateBundlePrice();
+    });
+    
+    // Checkbox toggle
+    $('.product-checkbox input[type="checkbox"]').on('change', function() {
+        const card = $(this).closest('.fbt-product-card');
+        if ($(this).is(':checked')) {
+            card.addClass('selected');
+            card.css('border-color', '#007bff');
+        } else {
+            card.removeClass('selected');
+            card.css('border-color', 'transparent');
+        }
+        calculateBundlePrice();
+    });
+    
+    // Calculate bundle price
+    function calculateBundlePrice() {
+        let subtotal = parseFloat('{{ product.price }}');
+        let selectedCount = 1; // Main product is always selected
+        let totalQuantity = 1; // Main product quantity
+        
+        // Calculate FBT products
+        $('.fbt-product-card.selectable').each(function() {
+            const checkbox = $(this).find('input[type="checkbox"]');
+            if (checkbox.is(':checked')) {
+                const priceText = $(this).find('.current-price').data('price');
+                const price = parseFloat(priceText);
+                const quantity = parseInt($(this).find('.quantity-input').val());
+                subtotal += price * quantity;
+                selectedCount++;
+                totalQuantity += quantity;
+            }
+        });
+        
+        // Update display
+        $('.selected-count').text(selectedCount);
+        $('.total-quantity').text(totalQuantity);
+        $('.bundle-total').text(subtotal.toFixed(2));
+    }
+    
+    // Add all products to cart
+    $('.add-bundle-to-cart').on('click', function() {
+        cartItems = []; // Reset cart
+        
+        // Add main product
+        cartItems.push({
+            id: '{{ product.id }}',
+            name: '{{ product.name }}',
+            price: parseFloat('{{ product.price }}'),
+            quantity: 1,
+            image: '{{ product.base_image.url }}'
+        });
+        
+        // Add all FBT products
+        $('.fbt-product-card.selectable').each(function() {
+            const productId = $(this).data('product-id');
+            const productName = $(this).find('.product-name').text();
+            const price = parseFloat($(this).find('.current-price').data('price'));
+            const quantity = parseInt($(this).find('.quantity-input').val());
+            const image = $(this).find('img').attr('src');
+            
+            cartItems.push({
+                id: productId,
+                name: productName,
+                price: price,
+                quantity: quantity,
+                image: image
+            });
+        });
+        
+        addToCart(cartItems, 'All items added to cart successfully!');
+    });
+    
+    // Add only selected products to cart
+    $('.add-selected-to-cart').on('click', function() {
+        cartItems = []; // Reset cart
+        
+        // Add main product (always selected)
+        cartItems.push({
+            id: '{{ product.id }}',
+            name: '{{ product.name }}',
+            price: parseFloat('{{ product.price }}'),
+            quantity: 1,
+            image: '{{ product.base_image.url }}'
+        });
+        
+        // Add selected FBT products
+        $('.fbt-product-card.selectable').each(function() {
+            const checkbox = $(this).find('input[type="checkbox"]');
+            if (checkbox.is(':checked')) {
+                const productId = $(this).data('product-id');
+                const productName = $(this).find('.product-name').text();
+                const price = parseFloat($(this).find('.current-price').data('price'));
+                const quantity = parseInt($(this).find('.quantity-input').val());
+                const image = $(this).find('img').attr('src');
+                
+                cartItems.push({
+                    id: productId,
+                    name: productName,
+                    price: price,
+                    quantity: quantity,
+                    image: image
+                });
+            }
+        });
+        
+        addToCart(cartItems, 'Selected items added to cart successfully!');
+    });
+    
+    // Add items to cart function
+    function addToCart(items, successMessage) {
+        // Store in localStorage for demo purposes
+        // In real implementation, this would be an API call
+        const existingCart = JSON.parse(localStorage.getItem('fbtCart') || '[]');
+        const updatedCart = [...existingCart, ...items];
+        localStorage.setItem('fbtCart', JSON.stringify(updatedCart));
+        
+        // Show success message
+        showToast(successMessage);
+        
+        // Update cart count in header (if exists)
+        updateCartCount(updatedCart.length);
+        
+        // Open cart drawer
+        setTimeout(() => {
+            $('.js-open-aside[data-aside="cartDrawer"]').trigger('click');
+        }, 1000);
+    }
+    
+    // Show toast notification
+    function showToast(message) {
+        // Create toast element
+        const toast = $(`
+            <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+                <div class="toast show" role="alert">
+                    <div class="toast-header bg-success text-white">
+                        <strong class="me-auto">Success</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        $('body').append(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+    // Update cart count in header
+    function updateCartCount(count) {
+        const cartBadge = $('.cart-count-badge, .header-cart-count');
+        if (cartBadge.length) {
+            cartBadge.text(count);
+        }
     }
 });
 </script>

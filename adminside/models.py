@@ -192,7 +192,6 @@ class Product_Variants(models.Model):
         
     def get_main_image(self):
         return self.product_id.images.first()
-
     
 class Product_Gallery(models.Model):
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -234,8 +233,7 @@ class Cart_Items(models.Model):
         
     def __str__(self):
         return f"{self.quantity}x {self.product_variant_id.product_id.name} in Cart#{self.cart_id.id}"
-
-    
+ 
 class Wishlist(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     product_id = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -248,7 +246,6 @@ class Wishlist(models.Model):
     def in_stock(self):
         return self.product_id.variants.filter(stock_quantity__gt=0).exists()
     
-
 class Order_Master(models.Model):
     # For invoice 
     invoice_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -334,6 +331,21 @@ class Order_Master(models.Model):
     def __str__(self):
         return f"Order#{self.order_number or self.id}: {self.total_amount} ({self.status})"
     
+    def update_status_based_on_shipping(self, shipping_status):
+        """
+        Sync the order status based on the provided shipping status.
+        This method is used in views when updating shipping.
+        """
+        mapping = {
+            'confirm': 'confirmed',
+            'shipped': 'shipped',
+            'delivered': 'delivered',
+        }
+        new_status = mapping.get(shipping_status)
+        if new_status and self.status != new_status:
+            self.status = new_status
+            self.save(update_fields=['status'])
+            
 class Order_Details(models.Model):
     order_id = models.ForeignKey(Order_Master, on_delete=models.PROTECT)
     product_variant_id = models.ForeignKey(Product_Variants, on_delete=models.CASCADE)
@@ -472,9 +484,9 @@ class Frequently_Bought_Together(models.Model):
     product_a_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fbt_a")
     product_b_id = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fbt_b")
     frequency_count = models.IntegerField(null=False, blank=False, default=1)
-    confidence_score = models.DecimalField(decimal_places=4,max_digits=5, null=False, blank=False)
-    support_score = models.DecimalField(decimal_places=4,max_digits=5, null=False, blank=False)
-    lift_score = models.DecimalField(decimal_places=4, max_digits=5, null=False, blank=False)
+    confidence_score = models.DecimalField(decimal_places=4,max_digits=10, null=False, blank=False)
+    support_score = models.DecimalField(decimal_places=4,max_digits=10, null=False, blank=False)
+    lift_score = models.DecimalField(decimal_places=4, max_digits=10, null=False, blank=False)
     last_calculated = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

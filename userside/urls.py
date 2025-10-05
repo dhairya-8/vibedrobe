@@ -26,6 +26,7 @@ urlpatterns = [
     # Checkout and Order Confirmation
     path('checkout/', checkout, name='checkout'),
     path('checkout/payment-handler/', payment_handler, name='payment_handler'),
+    path('cancel-payment-attempt/', cancel_payment_attempt, name='cancel_payment_attempt'),
     path('order-confirm/<int:order_id>/', orderconfirm, name='orderconfirm'),
     
     # ==================== Quick Add to Cart/Wishlist (Home Page) URLs ====================
