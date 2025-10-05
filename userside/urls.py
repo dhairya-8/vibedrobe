@@ -84,5 +84,7 @@ urlpatterns = [
     
     path('image-search/', image_search_view, name='image_search'),
 
+    path('cart/add-fbt/', add_fbt_to_cart, name='add_fbt_to_cart'),
+
     
 ]

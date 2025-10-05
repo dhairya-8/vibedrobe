@@ -1873,7 +1873,74 @@ def quick_add_to_cart_home(request, product_id):
     # Redirect back to shop with parameter to open cart drawer
     homepage_url = reverse('homepage')
     return redirect(f"{homepage_url}?open_cart_drawer=true")
-  
+
+@user_login_required
+@require_POST
+def add_fbt_to_cart(request):
+    try:
+        # Get the main product ID to redirect back to the correct page
+        main_product_id = request.POST.get('main_product_id')
+        if not main_product_id:
+            messages.error(request, "Could not identify the main product.")
+            return redirect('homepage')
+
+        # Get the string of items from the hidden form input
+        items_str = request.POST.get('fbt_items', '')
+        if not items_str:
+            messages.warning(request, "No items were selected to add.")
+            return redirect('product_detail', product_id=main_product_id)
+
+        user_id = request.session.get('user_id')
+        items_added_count = 0
+
+        with transaction.atomic():
+            cart, _ = Cart.objects.get_or_create(user_id_id=user_id)
+            
+            # The string format is "product_id:quantity,product_id:quantity,..."
+            for item_data in items_str.split(','):
+                product_id_str, quantity_str = item_data.split(':')
+                product_id = int(product_id_str)
+                quantity = int(quantity_str)
+
+                product = Product.objects.get(id=product_id, is_active=True)
+                
+                # Find the first available variant for the product
+                variant = Product_Variants.objects.filter(
+                    product_id=product, 
+                    is_active=True, 
+                    stock_quantity__gte=quantity
+                ).order_by('id').first()
+
+                if not variant:
+                    messages.warning(request, f"Could not add {product.name} as it is out of stock.")
+                    continue
+
+                price = float(product.price) + float(variant.additional_price or 0)
+
+                cart_item, created = Cart_Items.objects.get_or_create(
+                    cart_id=cart,
+                    product_variant_id=variant,
+                    defaults={'quantity': quantity, 'price_at_time': price}
+                )
+
+                if not created:
+                    cart_item.quantity += quantity
+                    cart_item.save()
+                
+                items_added_count += 1
+
+        if items_added_count > 0:
+            messages.success(request, f'{items_added_count} item(s) added to your cart.')
+        
+        # Redirect back to the product page with a parameter to open the cart drawer
+        return redirect(f"{reverse('product_detail', args=[main_product_id])}?show_cart=1")
+
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        # Try to redirect back to the product page if possible, otherwise homepage
+        if 'main_product_id' in locals():
+            return redirect('product_detail', product_id=main_product_id)
+        return redirect('homepage')
 # ============================= CHECKOUT & ORDER PROCESSING =============================
 
 
