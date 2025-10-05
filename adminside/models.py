@@ -469,7 +469,7 @@ class Shipping(models.Model):
         return f"Ship#{self.tracking_number or 'NA'}: {self.shipping_status}"
     
 class ML_Feature_Vectors(models.Model):
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, unique=True)
+    product_id = models.OneToOneField(Product, on_delete=models.CASCADE)
     feature_vector = models.JSONField(null=False, blank=False)
     model_name = models.CharField(max_length=50, null=False, blank=False)
     model_version = models.CharField(max_length=20, null=False, blank=False)

@@ -40,9 +40,8 @@
             <!-- Login part -->
             <div class="tab-pane fade show active" id="tab-item-login" role="tabpanel" aria-labelledby="login-tab">
                 <div class="login-form">
-                    <form action="{% url 'login_register' %}" method="post" enctype="multipart/form-data"
-                        name="login-form" class="triggers-loader" 
-      data-loader-text="Creating your account, please wait..." novalidate>
+                    <form action="{% url 'login_register' %}" method="post" enctype="multipart/form-data" class="needs-validation"
+                        name="login-form" novalidate>
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <div class="form-floating mb-3">
@@ -91,8 +90,9 @@
             <!-- Registration part - Simplified to 4 fields -->
             <div class="tab-pane fade" id="tab-item-register" role="tabpanel" aria-labelledby="register-tab">
                 <div class="register-form">
-                    <form action="{% url 'login_register' %}" method="post" name="register-form" class="show-loader-on-submit"
-                        class="needs-validation" novalidate>
+                    <form action="{% url 'login_register' %}" method="post" name="register-form" class="triggers-loader" 
+                            data-loader-text="Creating your account, please wait..."
+                         novalidate>
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <!-- Username -->

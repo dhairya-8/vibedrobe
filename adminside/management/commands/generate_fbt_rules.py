@@ -8,7 +8,6 @@ from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
 
 # --- IMPORTANT ---
-# Make sure to replace 'vibedrobe_app' with the actual name of your app.
 from adminside.models import Order_Details, Product, Frequently_Bought_Together
 
 class Command(BaseCommand):

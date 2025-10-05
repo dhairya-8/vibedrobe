@@ -1,0 +1,443 @@
+/* =================================================================== */
+/* A. GENERAL PAGE STYLES (Reviews, Swatches, etc.)
+/* =================================================================== */
+
+.star-filled {
+    fill: #ffc107;
+}
+
+.star-empty {
+    fill: #e0e0e0;
+}
+
+.review-star {
+    width: 16px;
+    height: 16px;
+    fill: #ddd;
+}
+
+.review-star.filled {
+    fill: #ffc107;
+}
+
+.progress-bar {
+    background-color: #ffc107;
+}
+
+.rating-bar-item {
+    font-size: 0.9rem;
+}
+
+.swatch-list .swatch.active {
+    border-color: #000;
+    background-color: #f5f5f5;
+}
+
+.size-guide .table {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.size-guide .table th,
+.size-guide .table td {
+    padding: 8px 5px;
+}
+
+.composition-care-wrapper .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.composition-care-wrapper .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.bg-opacity-10 {
+    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+}
+
+.composition-care-wrapper .bi {
+    font-size: 1.1em;
+}
+
+.small {
+    font-size: 0.875rem;
+}
+
+
+/* =================================================================== */
+/* B. FBT SECTION - BASE STYLES
+/* =================================================================== */
+/* These are the foundational styles that the Minimal Theme builds upon. */
+
+:root {
+    --fbt-primary: #222;
+    --fbt-success: #28a745;
+    --fbt-text-dark: #1d1d1f;
+    --fbt-text-light: #6e6e73;
+    --fbt-border-color: #d2d2d7;
+    --fbt-border-radius: 18px;
+}
+
+.fbt-header .section-title {
+    color: var(--fbt-text-dark);
+}
+
+.fbt-header .text-muted {
+    color: var(--fbt-text-light) !important;
+    font-size: 1.1rem;
+}
+
+.fbt-product-card {
+    background: #ffffff;
+    border-radius: var(--fbt-border-radius);
+    padding: 1rem;
+    position: relative;
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.fbt-product-card.selectable {
+    cursor: pointer;
+}
+
+.product-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--fbt-primary);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 3;
+}
+
+.selected-badge {
+    background: var(--fbt-success);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.product-checkbox {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 2;
+}
+
+.product-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.product-checkbox label {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--fbt-border-color);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+
+.product-checkbox input[type="checkbox"]:checked+label {
+    background: var(--fbt-primary);
+    border-color: var(--fbt-primary);
+    transform: scale(1.1);
+}
+
+.product-checkbox input[type="checkbox"]:checked+label:after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.fbt-product-card .product-image {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 1rem;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fbt-product-card .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.35s ease;
+}
+
+.fbt-product-card:hover .product-image img {
+    transform: scale(1.08);
+}
+
+.product-quick-view {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: var(--fbt-text-dark);
+}
+
+.fbt-product-card:hover .product-quick-view {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.product-info {
+    text-align: center;
+    margin-top: auto;
+}
+
+.product-name {
+    color: var(--fbt-text-dark);
+    line-height: 1.4;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.product-brand {
+    font-size: 0.8rem;
+}
+
+.product-price .current-price {
+    color: var(--fbt-text-dark);
+}
+
+.product-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.fbt-product-card.selectable:hover .product-actions {
+    opacity: 1;
+}
+
+.btn-quantity {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--fbt-border-color);
+    background: #fff;
+    border-radius: 8px;
+    color: var(--fbt-text-light);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-quantity:hover {
+    background: var(--fbt-primary);
+    border-color: var(--fbt-primary);
+    color: #fff;
+}
+
+.quantity-input {
+    width: 45px;
+    height: 30px;
+    border: 1px solid var(--fbt-border-color);
+    border-radius: 8px;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.fbt-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.bundle-details h5 {
+    color: var(--fbt-text-dark);
+}
+
+.bundle-total {
+    color: var(--fbt-primary);
+}
+
+.bundle-actions .btn {
+    border-radius: 14px;
+    transition: all 0.25s ease;
+}
+
+.bundle-actions .btn:hover {
+    transform: scale(1.03);
+}
+
+.bundle-actions .btn-primary {
+    background-color: var(--fbt-primary);
+    border-color: var(--fbt-primary);
+}
+
+
+/* =================================================================== */
+/* C. MINIMAL THEME & UNIFIED SPACING
+/* =================================================================== */
+/* This block controls the final look for the FBT, Recently Viewed,
+   and Related Products sections, including fonts, spacing, and lines. */
+
+/* C1. Consistent Spacing & Separator Lines for All Sections */
+/* === FINAL, UNIFIED SPACING & BORDERS === */
+/* This single, simple rule creates equal spacing above every section. */
+
+.fbt-section.minimal-theme,
+.products-carousel {
+    padding-top: 5rem !important;
+    /* This is now the ONLY vertical spacing */
+    padding-bottom: 0 !important;
+    /* NO bottom padding */
+    margin: 0 auto !important;
+    /* Center horizontally with NO vertical margin */
+
+    border-top: 1px solid #e8e8e8;
+    /* The separator line */
+    border-bottom: none !important;
+    border-radius: 0 !important;
+    background-color: #fff !important;
+}
+
+/* C2. Font Control for Minimal Theme */
+.fbt-section.minimal-theme {
+    font-family: "Jost", sans-serif;
+}
+
+.fbt-section.minimal-theme .section-title {
+    font-weight: 600;
+}
+
+.fbt-section.minimal-theme .product-name {
+    font-weight: 500;
+}
+
+.fbt-section.minimal-theme .summary-card {
+    font-weight: 400;
+}
+
+.fbt-section.minimal-theme .bundle-actions .btn {
+    font-weight: 600;
+    font-family: inherit;
+}
+
+/* C3. Minimalist Card Styles (No Shadow, Border on Hover) */
+.minimal-theme .fbt-product-card {
+    box-shadow: none;
+    border: 1px solid #e8e8e8;
+    transition: border-color 0.3s ease;
+}
+
+.minimal-theme .fbt-product-card:hover {
+    transform: none;
+    border-color: #222;
+}
+
+.minimal-theme .fbt-product-card.featured {
+    border-width: 2px;
+    border-color: var(--fbt-primary);
+}
+
+/* C4. Minimalist Summary Card & Connector */
+.minimal-theme .plus-icon {
+    box-shadow: none;
+    border: 1px solid #e8e8e8;
+    background-color: #fff;
+    color: var(--fbt-primary);
+    font-size: 2rem;
+    font-weight: 300;
+}
+
+.minimal-theme .summary-card {
+    box-shadow: none !important;
+    background: #f8f8f8 !important;
+    border: 1px solid #e8e8e8;
+    margin-bottom: 5rem !important;
+    margin-top: 1rem;
+}
+
+.minimal-theme .bundle-actions .btn {
+    border-radius: 8px;
+}
+
+/* C5. REMOVE Separator Line Inside FBT Section */
+.fbt-section.minimal-theme .fbt-summary {
+    border-top: none;
+}
+
+
+/* =================================================================== */
+/* D. RESPONSIVE ADJUSTMENTS
+/* =================================================================== */
+
+@media (max-width: 992px) {
+    .fbt-section.minimal-theme {
+        padding: 2.5rem 0 !important;
+    }
+
+    .fbt-product-card {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .fbt-section.minimal-theme {
+        padding: 2rem 1rem !important;
+        border-radius: 16px !important;
+    }
+
+    .fbt-connector {
+        display: none;
+    }
+
+    .bundle-actions {
+        margin-top: 1.5rem;
+    }
+
+    .bundle-actions .btn {
+        width: 100%;
+        margin-bottom: 0.75rem;
+    }
+
+    .fbt-summary {
+        margin-top: 3rem;
+    }
+}
