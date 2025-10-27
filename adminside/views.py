@@ -298,47 +298,78 @@ class AdminProfileManagement(View):
 
             # --- Profile Information or Image Update ---
             if 'update_profile' in request.POST:
+                
+                # --- Get text fields ---
                 first_name = request.POST.get('first_name')
                 last_name = request.POST.get('last_name')
                 username = request.POST.get('username')
                 email = request.POST.get('email')
+                
+                # --- Get image fields ---
                 profile_image = request.FILES.get('profile_image')
+                clear_image = request.POST.get('clear_profile_image') == '1'
 
-                # If only profile_image is being updated (from modal)
-                if profile_image and not any([first_name, last_name, username, email]):
-                    admin.profile_image = profile_image
-                    admin.save(update_fields=['profile_image', 'updated_at'])
-                    messages.success(request, 'Profile image updated successfully!')
+                # Check if this is the "Personal Information" form (text fields are present)
+                is_text_form_submission = any([first_name, last_name, username, email])
+
+                if is_text_form_submission:
+                    # --- Logic for "Personal Information" Form Submission ---
+                    
+                    if not all([first_name, last_name, username, email]):
+                        messages.error(request, "All fields are required.")
+                        return redirect('display_admin_profile')
+
+                    # Check for unique username/email (exclude self)
+                    if Admin.objects.exclude(id=admin.id).filter(username=username).exists():
+                        messages.error(request, "Username already taken.")
+                        return redirect('display_admin_profile')
+                    if Admin.objects.exclude(id=admin.id).filter(email=email).exists():
+                        messages.error(request, "Email already taken.")
+                        return redirect('display_admin_profile')
+
+                    admin.first_name = first_name
+                    admin.last_name = last_name
+                    admin.username = username
+                    admin.email = email
+                    
+                    # This form doesn't submit an image, so profile_image will be None.
+                    # We only save the text fields and leave the image as-is.
+                    update_list = ['first_name', 'last_name', 'username', 'email', 'updated_at']
+
+                    try:
+                        admin.full_clean()
+                        admin.save(update_fields=update_list)
+                        messages.success(request, 'Profile updated successfully!')
+                    except ValidationError as e:
+                        # Convert validation error dict to a simpler string message
+                        error_message = ". ".join([f"{k}: {v[0]}" for k, v in e.message_dict.items()])
+                        messages.error(request, f"Invalid data: {error_message}")
+                    
                     return redirect('display_admin_profile')
 
-                # Otherwise, require all fields for full profile update
-                if not all([first_name, last_name, username, email]):
-                    messages.error(request, "All fields are required.")
+                else:
+                    # --- Logic for "Profile Image Modal" Submission ---
+                    
+                    if profile_image:
+                        # 1. User uploaded a new image
+                        admin.profile_image = profile_image
+                        admin.save(update_fields=['profile_image', 'updated_at'])
+                        messages.success(request, 'Profile image updated successfully!')
+                    
+                    elif clear_image:
+                        # 2. User clicked "Remove Photo" and saved
+                        if admin.profile_image:
+                            admin.profile_image.delete(save=True) # Deletes file and saves model
+                            messages.success(request, 'Profile image removed.')
+                        else:
+                            messages.info(request, 'No profile image to remove.')
+                    
+                    else:
+                        # 3. User clicked "Save" in modal with no change
+                        messages.info(request, 'No changes to profile image were saved.')
+
                     return redirect('display_admin_profile')
 
-                # Check for unique username/email (exclude self)
-                if Admin.objects.exclude(id=admin.id).filter(username=username).exists():
-                    messages.error(request, "Username already taken.")
-                    return redirect('display_admin_profile')
-                if Admin.objects.exclude(id=admin.id).filter(email=email).exists():
-                    messages.error(request, "Email already taken.")
-                    return redirect('display_admin_profile')
-
-                admin.first_name = first_name
-                admin.last_name = last_name
-                admin.username = username
-                admin.email = email
-
-                if profile_image:
-                    admin.profile_image = profile_image
-
-                try:
-                    admin.full_clean()
-                    admin.save(update_fields=['first_name', 'last_name', 'username', 'email', 'profile_image', 'updated_at'])
-                    messages.success(request, 'Profile updated successfully!')
-                except ValidationError as e:
-                    messages.error(request, f"Invalid data: {e}")
-                return redirect('display_admin_profile')
 
             # --- Change Password ---
             elif 'change_password' in request.POST:
@@ -357,10 +388,12 @@ class AdminProfileManagement(View):
                 elif len(new_password) < 8:
                     messages.error(request, 'New password must be at least 8 characters.')
                 else:
-                    admin.password = new_password  # The save method will hash it
+                    admin.set_password(new_password) # Use set_password to ensure hashing
                     admin.save(update_fields=['password', 'updated_at'])
                     messages.success(request, 'Password changed successfully!')
-
+                    # Note: You might want to log the user out here for security
+                    # update_session_auth_hash(request, admin) # Or update session
+                
                 return redirect('display_admin_profile')
 
             # --- Unknown form submission ---
@@ -371,6 +404,9 @@ class AdminProfileManagement(View):
         except Admin.DoesNotExist:
             messages.error(request, "Admin profile not found.")
             return redirect('admin_login')
+        except Exception as e:
+            messages.error(request, f"An unexpected error occurred: {e}")
+            return redirect('display_admin_profile')
 
 @admin_login_required
 def display_admin(request):

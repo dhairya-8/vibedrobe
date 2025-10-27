@@ -25,7 +25,7 @@ class Command(BaseCommand):
             # These are the column names in your CSV file.
             headers = [
                 'id', 'name', 'description', 'price', 'category', 'subcategory',
-                'brand', 'color', 'material', 'gender', 'tags'
+                'brand', 'color', 'material', 'gender', 'tags', 'base_image'
             ]
             writer.writerow(headers)
 
@@ -52,7 +52,8 @@ class Command(BaseCommand):
                     product.color,
                     product.material_id.name,
                     product.gender,
-                    tags
+                    tags,
+                    product.base_image
                 ])
 
         self.stdout.write(self.style.SUCCESS(f"✅ Successfully exported {products.count()} products to {file_path}"))

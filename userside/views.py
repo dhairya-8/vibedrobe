@@ -25,7 +25,6 @@ from django.views.decorators.http import require_POST
 
 from django.core.files.storage import FileSystemStorage
 from sklearn.metrics.pairwise import cosine_similarity
-from adminside.management.commands.generate_features import extract_features
 
 # Project-level
 from .decorators import user_login_required
@@ -721,44 +720,6 @@ def deactivate_account(request):
 
 
 # ============================= PRODUCT VIEWS =============================
-
-
-def image_search_view(request):
-    if request.method == 'POST' and request.FILES.get('query_img'):
-        SIMILARITY_THRESHOLD = 0.65 
-
-        # --- 1. Perform the Search (same logic as prototype) ---
-        query_img_file = request.FILES['query_img']
-        fs = FileSystemStorage()
-        query_path_relative = fs.save(query_img_file.name, query_img_file)
-        query_path_full = fs.path(query_path_relative)
-        query_features = np.array(extract_features(query_path_full))
-        indexed_products = ML_Feature_Vectors.objects.select_related('product_id').all()
-
-        all_matches = []
-        for indexed_product in indexed_products:
-            sim = cosine_similarity(
-                query_features.reshape(1, -1), 
-                np.array(indexed_product.feature_vector).reshape(1, -1)
-            )[0][0]
-            if sim >= SIMILARITY_THRESHOLD:
-                all_matches.append((indexed_product.product_id, sim))
-
-        all_matches.sort(key=lambda x: x[1], reverse=True)
-
-        # --- 2. Get the IDs of the matching products ---
-        product_ids = [product.id for product, sim in all_matches]
-
-        if not product_ids:
-            # Handle no results found, maybe redirect with a message
-            return redirect(reverse('shop') + '?image_search_status=no_results')
-
-        # --- 3. Redirect to the shop page with the IDs ---
-        shop_url = reverse('shop')
-        id_string = ','.join(map(str, product_ids))
-        return redirect(f'{shop_url}?similar_to={id_string}')
-
-    return render(request, 'image_search.html')
 
 
 def shop(request):
