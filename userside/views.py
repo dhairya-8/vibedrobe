@@ -756,7 +756,6 @@ def deactivate_account(request):
 
 
 # ============================= PRODUCT VIEWS =============================
-
 def shop(request):
     
     keyword = request.GET.get('search-keyword', None)    

@@ -108,7 +108,7 @@ Display Profile | VibeDrobe
                                             <img src="{{ admin.profile_image.url }}" alt="Profile Image" width="135"
                                                 height="115" class="vd-profile-avatar-lg">
                                             {% else %}
-                                            <img src="{% static 'admin/assets/images/users/avatar-7.jpg' %}"
+                                            <img src="{% static 'admin/assets/images/users/default_pic.png' %}"
                                                 alt="Default Profile" height="120" class="rounded-circle mb-2">
                                             {% endif %}
                                             <a href="#" id="edit-profile-image"
@@ -359,21 +359,38 @@ Display Profile | VibeDrobe
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
+
                 <div class="modal-body text-center py-4">
-                    <div id="image-preview" class="mb-3">
-                        {% if admin.profile_image %}
-                        <img src="{{ admin.profile_image.url }}" alt="Current Profile" class="vd-profile-avatar-lg"
-                            style="max-width: 120px;">
-                        {% else %}
-                        <img src="{% static 'admin/assets/images/users/avatar-7.jpg' %}" alt="Default"
-                            class="vd-profile-avatar-lg" style="max-width: 120px;">
-                        {% endif %}
+                    <div class="position-relative d-inline-block mb-3">
+                        <div id="image-preview">
+                            {% if admin.profile_image %}
+                            <img src="{{ admin.profile_image.url }}" alt="Current Profile" class="vd-profile-avatar-lg">
+                            {% else %}
+                            <img src="{% static 'admin/assets/images/users/default_pic.png' %}" alt="Default"
+                                class="vd-profile-avatar-lg">
+                            {% endif %}
+                        </div>
+                        <label for="profile-image-input"
+                            class="thumb-md justify-content-center d-flex align-items-center bg-primary text-white rounded-circle position-absolute end-0 bottom-0 border border-3 border-white"
+                            style="cursor: pointer; right: 5px; bottom: 5px;" data-bs-toggle="tooltip" title="Change Image">
+                            <i class="fas fa-camera"></i>
+                        </label>
                     </div>
-                    <input type="file" id="profile-image-input" name="profile_image" accept="image/*"
-                        class="form-control mb-3" required>
+
+                    <input type="file" id="profile-image-input" name="profile_image" accept="image/*" class="d-none">
+
+                    <input type="hidden" id="clear-image-input" name="clear_profile_image" value="0">
+                    
                     <input type="hidden" name="update_profile" value="1">
-                    <small class="text-muted">Choose a clear, square image under 2MB.</small>
+
+                    <div class="d-grid gap-2 d-sm-block">
+                        <button type="button" id="clear-image-btn" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash-alt me-1"></i> Remove Photo
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Choose a clear, square image under 2MB.</small>
                 </div>
+
                 <div class="modal-footer bg-light rounded-bottom-4">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary px-4">Save</button>
@@ -392,7 +409,6 @@ Display Profile | VibeDrobe
 <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
 <script src="{% static 'admin/assets/js/app.js' %}"></script>
 
-<!-- DataTable and alert auto-dismiss -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // DataTable initialization
@@ -414,11 +430,16 @@ Display Profile | VibeDrobe
             });
         }, 3000);
 
-        // Profile Image Modal logic
+        // --- Profile Image Modal logic ---
         var editProfileBtn = document.getElementById('edit-profile-image');
         var profileImageInput = document.getElementById('profile-image-input');
         var imagePreview = document.getElementById('image-preview');
-        var saveImageBtn = document.getElementById('save-image-btn');
+        
+        // --- NEW ---
+        var clearImageBtn = document.getElementById('clear-image-btn');
+        var clearImageInput = document.getElementById('clear-image-input');
+        const defaultImagePath = "{% static 'admin/assets/images/users/default_pic.png' %}";
+        // -----------
 
         if (editProfileBtn) {
             editProfileBtn.addEventListener('click', function (e) {
@@ -435,22 +456,39 @@ Display Profile | VibeDrobe
                     const reader = new FileReader();
                     reader.onload = function (evt) {
                         imagePreview.innerHTML =
-                            `<img src="${evt.target.result}" alt="Preview" style="max-width: 120px; border-radius: 50%;">`;
+                            // Use the vd-profile-avatar-lg class for consistency
+                            `<img src="${evt.target.result}" alt="Preview" class="vd-profile-avatar-lg">`;
                     };
                     reader.readAsDataURL(file);
-                } else {
-                    imagePreview.innerHTML = "";
+                    
+                    // If user selects a new file, they are NOT clearing.
+                    if (clearImageInput) {
+                        clearImageInput.value = '0';
+                    }
                 }
             });
         }
 
-        if (saveImageBtn) {
-            saveImageBtn.addEventListener('click', function () {
-                // TODO: Add your AJAX upload logic here
-                var modal = bootstrap.Modal.getInstance(document.getElementById('profileImageModal'));
-                modal.hide();
+        // --- NEW: Logic for "Remove Photo" button (Requirement 4) ---
+        if (clearImageBtn) {
+            clearImageBtn.addEventListener('click', function() {
+                // 1. Reset preview to default
+                imagePreview.innerHTML = 
+                    `<img src="${defaultImagePath}" alt="Default Profile" class="vd-profile-avatar-lg">`;
+                
+                // 2. Clear the file input's value (so no file is submitted)
+                if (profileImageInput) {
+                    profileImageInput.value = null; 
+                }
+                
+                // 3. Set hidden field to '1' to signal backend
+                if (clearImageInput) {
+                    clearImageInput.value = '1';
+                }
             });
         }
+
+        // Removed the old 'saveImageBtn' listener as it's not needed (form submit button works)
     });
 </script>
 {% endblock %}

@@ -15,25 +15,26 @@
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
 
-  <style>
-    .profile-pic {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;       /* makes it circular */
-  overflow: hidden;         /* hides extra parts */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f4f4f4;      /* optional, looks clean if img has transparent parts */
-}
+    <style>
 
-.profile-pic img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;        /* 👈 KEY: crops instead of stretching */
-}
+      .profile-pic {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;       /* makes it circular */
+        overflow: hidden;         /* hides extra parts */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f4f4;      /* optional, looks clean if img has transparent parts */
+      }
 
-  </style>
+      .profile-pic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;        /* 👈 KEY: crops instead of stretching */
+      }
+
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -82,17 +83,15 @@
                       {% for user in users %}
                       <tr>
                         <td>{{ user.id }}</td>
-
-<td>
-  <div class="profile-pic">
-    {% if user.profile_image %}
-      <img src="{{ user.profile_image.url }}" alt="profile">
-    {% else %}
-      <img src="{% static 'admin/assets/images/users/default_pic.png' %}" alt="profile">
-    {% endif %}
-  </div>
-</td>
-
+                        <td>
+                          <div class="profile-pic">
+                            {% if user.profile_image %}
+                              <img src="{{ user.profile_image.url }}" alt="profile">
+                            {% else %}
+                            <img src="{% static 'admin/assets/images/users/default_pic.png' %}" alt="profile">
+                            {% endif %}
+                          </div>
+                        </td>
                         <td>{{ user.username }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.first_name }} {{ user.last_name }}</td>

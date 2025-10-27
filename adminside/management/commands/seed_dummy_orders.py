@@ -89,10 +89,13 @@ class Command(BaseCommand):
             [615, 549, 545, 615, 618],
             [634, 15, 14, 16, 635]
         ]
-  
+    
         # --- GENERATION PARAMETERS ---
         NUM_DUMMY_USERS = 50
         NUM_ORDERS_TO_CREATE = 2000
+        # --- NEW: SET YOUR BIAS HERE ---
+        # 75% of orders will be "Cluster Orders" to create strong patterns
+        CLUSTER_ORDER_BIAS = 0.75 
 
         # --- HELPER FUNCTIONS ---
         def generate_unique_username(first_name, last_name):
@@ -121,7 +124,6 @@ class Command(BaseCommand):
         
         def generate_indian_phone():
             """Generate realistic Indian mobile numbers"""
-            # Indian mobile numbers start with 6, 7, 8, or 9
             return int(f"{random.choice([6, 7, 8, 9])}{random.randint(100000000, 999999999)}")
         
         def calculate_gst(subtotal):
@@ -133,7 +135,6 @@ class Command(BaseCommand):
         
         def generate_payment_id():
             """Generate a guaranteed unique payment ID using UUID."""
-            # This is robust and will not create duplicates.
             return f"PAY_{uuid.uuid4().hex[:16]}"
 
         # --- GENERATE REALISTIC USERS ---
@@ -143,11 +144,10 @@ class Command(BaseCommand):
             first_name = fake.first_name()
             last_name = fake.last_name()
             
-            # Generate unique DOB for each user
             user_dob = fake.date_of_birth(minimum_age=18, maximum_age=65)
             user_username = generate_unique_username(first_name, last_name)
             user_email = generate_email(first_name, last_name)
-            user_contact = generate_indian_phone()  # Use Indian phone generator
+            user_contact = generate_indian_phone() 
             
             user, created = User.objects.get_or_create(
                 email=user_email,
@@ -164,7 +164,6 @@ class Command(BaseCommand):
             users.append(user)
 
             if not User_Address.objects.filter(user_id=user).exists():
-                # Generate realistic Indian secondary address
                 secondary_addresses = [
                     '', 
                     f"Flat {random.randint(1, 50)}, Building {random.randint(1, 20)}",
@@ -196,10 +195,16 @@ class Command(BaseCommand):
         
         product_to_variants_map = {p.id: [] for p in Product.objects.all()}
         for variant in all_variants:
-            product_to_variants_map[variant.product_id_id].append(variant)
+            # Ensure product_id_id exists in the map before appending
+            if variant.product_id_id in product_to_variants_map:
+                product_to_variants_map[variant.product_id_id].append(variant)
 
         # --- GENERATE REALISTIC ORDERS ---
         self.stdout.write(f"Generating {NUM_ORDERS_TO_CREATE} orders with realistic data...")
+        orders_created = 0
+        cluster_orders_created = 0
+        random_orders_created = 0
+
         for i in range(NUM_ORDERS_TO_CREATE):
             try:
                 with transaction.atomic():
@@ -208,23 +213,59 @@ class Command(BaseCommand):
                     if not user_default_address:
                         continue
 
-                    # --- BUILD SMART CART ---
-                    cart_variants = []
-                    chosen_cluster = random.choice(PRODUCT_CLUSTERS)
-                    num_themed_items = random.randint(2, min(3, len(chosen_cluster)))
-                    themed_product_ids = random.sample(chosen_cluster, num_themed_items)
+                    # ######################################################
+                    # ### --- MODIFIED: BUILD SMART CART --- ###
+                    # ######################################################
                     
-                    for pid in themed_product_ids:
-                        if pid in product_to_variants_map and product_to_variants_map[pid]:
-                            variant = random.choice(product_to_variants_map[pid])
+                    cart_variants = []
+                    
+                    if random.random() < CLUSTER_ORDER_BIAS:
+                        # --- This is a "Cluster Order" ---
+                        # We will *force* items from a cluster to be bought together
+                        chosen_cluster = random.choice(PRODUCT_CLUSTERS)
+                        
+                        # Pick a "strong" number of items from the cluster
+                        min_items = 2
+                        max_items = min(4, len(chosen_cluster)) # Pick up to 4 items or cluster size
+                        if max_items < min_items:
+                             max_items = min_items # ensure we pick at least 2 if cluster is tiny
+
+                        num_themed_items = random.randint(min_items, max_items)
+                        themed_product_ids = random.sample(chosen_cluster, num_themed_items)
+                        
+                        for pid in themed_product_ids:
+                            # Check if product ID is valid and has variants
+                            if pid in product_to_variants_map and product_to_variants_map[pid]:
+                                variant = random.choice(product_to_variants_map[pid])
+                                if variant not in cart_variants:
+                                    cart_variants.append(variant)
+                        
+                        # Add a *small* chance of 1 random item to add a little noise
+                        if random.random() < 0.25: # 25% chance of adding one random item
+                             variant = random.choice(all_variants)
+                             if variant not in cart_variants:
+                                 cart_variants.append(variant)
+                        
+                        if cart_variants:
+                            cluster_orders_created += 1
+
+                    else:
+                        # --- This is a "Random Order" ---
+                        # These orders create the "background noise"
+                        # We must ensure they have at least 2 items to be analyzed by FBT
+                        num_random_items = random.randint(2, 5) 
+                        
+                        for _ in range(num_random_items):
+                            variant = random.choice(all_variants)
                             if variant not in cart_variants:
                                 cart_variants.append(variant)
+                        
+                        if cart_variants:
+                            random_orders_created += 1
                     
-                    num_random_items = random.randint(0, 2)
-                    for _ in range(num_random_items):
-                        variant = random.choice(all_variants)
-                        if variant not in cart_variants:
-                            cart_variants.append(variant)
+                    # ######################################################
+                    # ### --- END OF MODIFICATIONS --- ###
+                    # ######################################################
                     
                     if not cart_variants:
                         continue
@@ -235,7 +276,9 @@ class Command(BaseCommand):
                     
                     for v in cart_variants:
                         quantity = random.randint(1, 3)
-                        unit_price = v.product_id.price + (v.additional_price or Decimal('0'))
+                        # Handle potential None for additional_price
+                        additional_price = v.additional_price or Decimal('0')
+                        unit_price = v.product_id.price + additional_price
                         total_price = unit_price * quantity
                         subtotal += total_price
                         
@@ -251,7 +294,7 @@ class Command(BaseCommand):
                     # Calculate taxes and shipping
                     tax_amount = calculate_gst(subtotal)
                     shipping_charge = Decimal('69.00')
-                    total_amount = subtotal + shipping_charge  # Tax is inclusive
+                    total_amount = subtotal + shipping_charge # Assuming tax is inclusive, adjust if not
                     
                     # Generate historical order date
                     order_datetime = fake.date_time_between(start_date='-2y', end_date='now', tzinfo=timezone.get_current_timezone())
@@ -279,12 +322,7 @@ class Command(BaseCommand):
                         shipping_charge=shipping_charge,
                         total_amount=total_amount,
                         expected_delivery=expected_delivery_date,
-                        created_at=order_datetime,
-                        order_date=order_datetime
-                    )
-                    
-                    # Update timestamps
-                    Order_Master.objects.filter(pk=order.pk).update(
+                        # Set created_at and order_date here directly
                         created_at=order_datetime,
                         order_date=order_datetime
                     )
@@ -359,10 +397,15 @@ class Command(BaseCommand):
                         created_at=order_datetime
                     )
                     
+                    orders_created += 1
                     if (i + 1) % 100 == 0:
-                        self.stdout.write(f"  ... {i+1}/{NUM_ORDERS_TO_CREATE} orders created.")
+                        self.stdout.write(f"   ... {i+1}/{NUM_ORDERS_TO_CREATE} loops processed ({orders_created} valid orders created).")
                         
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error creating order {i+1}: {e}"))
-
-        self.stdout.write(self.style.SUCCESS("✅ Enhanced seeding complete! Database populated with realistic data."))
+        
+        self.stdout.write(self.style.SUCCESS(f"--- Seeding Stats ---"))
+        self.stdout.write(self.style.SUCCESS(f"Total Orders Created: {orders_created}"))
+        self.stdout.write(self.style.SUCCESS(f"Cluster-biased Orders: {cluster_orders_created} (~{cluster_orders_created/orders_created*100:.0f}%)"))
+        self.stdout.write(self.style.SUCCESS(f"Random Orders: {random_orders_created} (~{random_orders_created/orders_created*100:.0f}%)"))
+        self.stdout.write(self.style.SUCCESS("✅ Enhanced seeding complete!"))
