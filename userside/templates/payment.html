@@ -129,44 +129,6 @@
       text-align: center;
       margin: 20px 0;
     }
-
-    /* --- LOADER STYLES START (PRESERVED) --- */
-    .loader-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.8);
-      display: none; /* Hidden by default */
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      backdrop-filter: blur(2px);
-    }
-
-    .loader {
-      border: 8px solid #f3f3f3;
-      border-top: 8px solid #d4af37;
-      border-radius: 50%;
-      width: 80px;
-      height: 80px;
-      animation: spin 1s linear infinite;
-      justify-content: center;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loader-text {
-        color: #333;
-        margin-top: 20px;
-        font-size: 18px;
-        font-weight: 600;
-    }
-    /* --- LOADER STYLES END --- */
     
     /* --- PAYMENT TIMER STYLES (ADDED) --- */
     .payment-timer-container {
@@ -196,7 +158,6 @@
 {% endblock %}
 
 {% block content %}
-
 
 <div class="payment-container">
   <div class="payment-header">
