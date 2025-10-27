@@ -1239,7 +1239,7 @@ def display_product(request):
     # Annotate with variant count
     products = products.annotate(variant_count=Count('variants'))
     
-    paginator = Paginator(products, 30)
+    paginator = Paginator(products, 32)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     

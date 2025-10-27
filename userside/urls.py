@@ -77,7 +77,7 @@ urlpatterns = [
     # ==================== Static Pages ====================
     path('contact-us/', contactus, name='contactus'),
     path('about-us/', aboutus, name='aboutus'),
-    
+        
     # ==================== FBT (Frequently Bought Together) URLs ====================
     path('cart/add-fbt/', add_fbt_to_cart, name='add_fbt_to_cart'),
 

@@ -4,6 +4,7 @@ import time
 import json
 import random
 import string
+import os
 import numpy as np
 from decimal import Decimal
 
@@ -33,7 +34,6 @@ from adminside.models import *
 
 # Third-party
 import razorpay
-
 
 # Get the User model
 User = get_user_model()
@@ -459,21 +459,17 @@ def cancel_order(request, order_id):
         order = get_object_or_404(Order_Master, id=order_id, user_id_id=user_id_session)
 
         if order.status in ['processing', 'confirmed']:
-            # [IMPROVEMENT] Use a transaction to ensure data integrity
+            # --- Transaction for database changes ---
             with transaction.atomic():
                 # --- Restock Inventory ---
                 order_items = order.order_details_set.all()
                 for item in order_items:
                     variant = item.product_variant_id
-                    
-                    # --- [FIX] Check if the variant still exists ---
                     if variant:
                         variant.stock_quantity += item.quantity
                         variant.save()
                     else:
-                        # This variant was likely deleted. Log this serious issue.
                         error(f"Cannot restock item for Order #{order.order_number}. Product Variant ID {item.product_variant_id_id} not found.")
-                        # We will still cancel the order but the admin needs to know about the stock discrepancy.
                 
                 # --- Handle Refund for Prepaid Orders ---
                 if order.mode_of_payment != 'cod':
@@ -490,6 +486,47 @@ def cancel_order(request, order_id):
                 order.status = 'cancelled'
                 order.save()
             
+            # --- [NEW] SEND CANCELLATION EMAIL (AFTER TRANSACTION) ---
+            try:
+                user = order.user_id # Get the user object from the order
+                subject = f'Your VibeDrobe Order #{order.order_number} has been Cancelled'
+                
+                email_context = {
+                    'user_name': user.first_name or user.username,
+                    'order': order,
+                }
+                
+                # Render the HTML template
+                html_message = render_to_string('emails/order_cancelled_email.html', email_context)
+                
+                # Create a plain-text fallback
+                plain_message = (
+                    f"Hi {email_context['user_name']},\n\n"
+                    f"This is to confirm that your VibeDrobe order #{order.order_number} "
+                    f"(placed on {order.order_date.strftime('%B %d, %Y')}) has been successfully cancelled.\n\n"
+                )
+                if order.mode_of_payment != 'cod':
+                    plain_message += f"A refund for ₹{order.total_amount} has been initiated.\n\n"
+                else:
+                    plain_message += "As this was a 'Cash on Delivery' order, no payment was processed.\n\n"
+                plain_message += "We hope to see you again soon.\n- The VibeDrobe Team"
+
+                # Send the email
+                send_mail(
+                    subject,
+                    plain_message,
+                    settings.DEFAULT_FROM_EMAIL, # Uses the email from your settings.py
+                    [user.email],
+                    html_message=html_message,
+                    fail_silently=False 
+                )
+                # info(f"Cancellation email sent for Order #{order.order_number} to {user.email}")
+
+            except Exception as email_error:
+                # Log the error, but don't stop the user. The order is already cancelled.
+                error(f'CRITICAL: Failed to send cancellation email for Order #{order.order_number}. Error: {str(email_error)}', detailed=True)
+            # --- END OF EMAIL LOGIC ---
+
             messages.success(request, f"Order #{order.order_number} has been successfully cancelled.")
 
         else:
@@ -500,7 +537,6 @@ def cancel_order(request, order_id):
         messages.error(request, "An unexpected error occurred. Please try again.")
 
     return redirect('account_orders')
-    
 
 @user_login_required
 def account_addresses(request):
@@ -720,8 +756,6 @@ def deactivate_account(request):
 
 
 # ============================= PRODUCT VIEWS =============================
-
-
 def shop(request):
     
     keyword = request.GET.get('search-keyword', None)    
@@ -2411,6 +2445,7 @@ def add_review(request, order_id, product_id):
     }
     return render(request, 'add_review.html', context)
 
+
 @require_POST
 def cancel_payment_attempt(request):
     """
@@ -2466,38 +2501,54 @@ def cancel_payment_attempt(request):
 
 # ============================= STATIC PAGES =============================
 
+
 def contactus(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
         message = request.POST.get('message')
         
-        # Basic validation
+        # Basic validation (Keep existing logic)
         if not name or not email or not message:
             messages.error(request, 'Please fill in all required fields.')
             return render(request, 'contactus.html')
         
         # Send email
         try:
-            # Email to admin
-            subject = f"Contact Form Submission from {name}"
-            message_body = f"""
+            # 1. EMAIL TO ADMIN (Plain Text - Keep as is for simplicity)
+            admin_subject = f"Contact Form Submission from {name}"
+            admin_message_body = f"""
             Name: {name}
             Email: {email}
             Message: {message}
             """
             
             send_mail(
-                subject,
-                message_body,
+                admin_subject,
+                admin_message_body,
                 settings.DEFAULT_FROM_EMAIL,
-                [settings.CONTACT_EMAIL],  # Make sure to add this to your settings
+                [settings.CONTACT_EMAIL],
                 fail_silently=False,
             )
             
-            # Optional: Send confirmation email to user
-            user_subject = "Thank you for contacting VibeDrobe"
-            user_message = f"""
+            # 2. EMAIL CONFIRMATION TO USER (HTML TEMPLATE - NEW LOGIC)
+            user_subject = "VibeDrobe: Thank you for your inquiry"
+            
+            # Context for the email template
+            email_context = {
+                'name': name,
+                'user_message': message, # Pass the message to the template
+                'domain': request.get_host(), # Used for link in the template
+            }
+            
+            # Render the HTML content
+            html_content = render_to_string(
+                'emails/contact_us_confirmation_email.html', 
+                email_context
+            )
+            
+            # Create a fallback plain text message for non-HTML clients
+            text_content = f"""
             Dear {name},
             
             Thank you for reaching out to us. We have received your message and will get back to you within 24-48 hours.
@@ -2509,13 +2560,15 @@ def contactus(request):
             VibeDrobe Team
             """
             
-            send_mail(
+            # Use EmailMultiAlternatives for both text and html
+            msg = EmailMultiAlternatives(
                 user_subject,
-                user_message,
+                text_content, # Plain text fallback
                 settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+                [email]
             )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
             
             messages.success(request, 'Your message has been sent successfully! We will get back to you soon.')
             return redirect('contactus')
@@ -2528,6 +2581,7 @@ def contactus(request):
             return render(request, 'contactus.html')
     
     return render(request, 'contactus.html')
+
 
 def aboutus(request):
    return render(request, 'aboutus.html')
