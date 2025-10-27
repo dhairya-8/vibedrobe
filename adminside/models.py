@@ -486,7 +486,7 @@ class Frequently_Bought_Together(models.Model):
     frequency_count = models.IntegerField(null=False, blank=False, default=1)
     confidence_score = models.DecimalField(decimal_places=4,max_digits=10, null=False, blank=False)
     support_score = models.DecimalField(decimal_places=4,max_digits=10, null=False, blank=False)
-    lift_score = models.DecimalField(decimal_places=4, max_digits=10, null=False, blank=False)
+    lift_score = models.DecimalField(decimal_places=8, max_digits=10, null=False, blank=False)
     last_calculated = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

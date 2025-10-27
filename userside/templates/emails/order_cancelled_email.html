@@ -1,0 +1,32 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Order Cancelled | VibeDrobe{% endblock %}
+
+{% block content %}
+<div class="greeting">
+  <h2>Order Cancelled</h2>
+  <p>Hi {{ user_name }},</p> 
+  <p>This is to confirm that your VibeDrobe order <strong>#{{ order.order_number }}</strong> (placed on {{ order.order_date|date:"F j, Y" }}) has been successfully cancelled as per your request.</p>
+</div>
+
+{% if order.mode_of_payment != 'cod' %}
+  <div style="margin-bottom: 30px;">
+    <h3 style="color: #2c3e50; font-size: 20px; margin-bottom: 10px;">Refund Information</h3>
+    <p style="color: #6c757d; font-size: 16px;">
+      Since this was a prepaid order, a refund for <strong>₹{{ order.total_amount }}</strong> has been initiated. 
+      You can expect to see the amount reflected in your original payment account within 5-7 business days.
+    </p>
+  </div>
+{% else %}
+  <div style="margin-bottom: 30px;">
+    <h3 style="color: #2c3e50; font-size: 20px; margin-bottom: 10px;">No Payment Due</h3>
+    <p style="color: #6c757d; font-size: 16px;">
+      As this was a 'Cash on Delivery' order, no payment was processed.
+    </p>
+  </div>
+{% endif %}
+
+<p style="color: #6c757d; font-size: 16px; margin-bottom: 20px;">We're sorry this order didn't work out. We hope to see you again soon!</p>
+
+<a href="https://www.vibedrobe.com" class="cta-button" style="color: white;">Continue Shopping</a>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}VibeDrobe: Message Received{% endblock %}
+
+{% block content %}
+<div class="greeting">
+    <h2>👋 Message Received!</h2>
+    <p>Hi {{ name }},</p>
+    <p>Thank you for reaching out to **The VibeDrobe Team**. We've successfully received your inquiry and will get back to you within **24-48 hours**.</p>
+</div>
+
+<div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid #007bff;">
+    <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 18px;">Your Submitted Message</h3>
+    <p style="color: #6c757d; font-style: italic; white-space: pre-wrap;">
+        {{ user_message }} 
+    </p>
+</div>
+
+<div style="margin-top: 30px;">
+    <p style="color: #6c757d; font-size: 16px;">
+        While you wait, you might find answers to common questions in our FAQ section or on our website.
+    </p>
+    <a href="http://{{ domain }}#faqAccordion" class="cta-button" style="color: #2c3e50;">View Our FAQs</a>
+</div>
+
+<div style="margin-top: 30px;">
+    <p style="color: #6c757d; font-size: 16px;">
+        We appreciate your patience. <br>
+        <strong>The VibeDrobe Team</strong>
+    </p>
+</div>
+{% endblock %}

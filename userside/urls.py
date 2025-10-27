@@ -82,8 +82,6 @@ urlpatterns = [
     # urls.py
     path('add_review/<int:order_id>/<int:product_id>/', add_review, name='add_review'),
     
-    path('image-search/', image_search_view, name='image_search'),
-
     path('cart/add-fbt/', add_fbt_to_cart, name='add_fbt_to_cart'),
 
     

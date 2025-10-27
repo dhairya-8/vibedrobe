@@ -18,8 +18,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Allura&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'user/assets/css/preloader.css' %}" />
 
-
- 
     <style>
       .wishlist-amount {
         position: absolute !important;
@@ -218,7 +216,7 @@
       <div class="spinner"></div>
       <p id="loader-text">Processing, please wait...</p>
     </div>
-    
+
     <!-- Integrating header -->
     {% include 'header.html' %}
 
@@ -248,7 +246,7 @@
           <div class="modal-body">
             <div class="row">
               <div class="col-md-7">
-                <form id="image-search-form" method="post" action="{% url 'image_search' %}" enctype="multipart/form-data">
+                <form id="image-search-form" method="post" action="#" enctype="multipart/form-data">
                   {% csrf_token %}
 
                   <div class="upload-zone" id="upload-zone">
@@ -306,31 +304,48 @@
       // --- 2. SCRIPT FOR ALL OTHER ACTIONS (DOM READY) ---
       // This runs once the HTML document is fully loaded.
       document.addEventListener('DOMContentLoaded', function () {
-        // --- A. DYNAMIC LOADER LOGIC ---
-        // This is the new "smart" loader for forms, buttons, etc.
+        // --- A. DYNAMIC LOADER LOGIC (Updated with Event Delegation) ---
+        // This version works for elements loaded via AJAX (like your modal)
         const loaderOverlay = document.getElementById('loader-overlay')
         const loaderText = document.getElementById('loader-text')
       
-        // Find all elements that should trigger the loader
-        const loaderTriggers = document.querySelectorAll('.triggers-loader')
+        // Helper function to show the loader
+        function showLoader(message) {
+          if (loaderText) {
+            loaderText.textContent = message || 'Processing, please wait...'
+          }
+          if (loaderOverlay) {
+            loaderOverlay.style.display = 'flex'
+          }
+        }
       
-        loaderTriggers.forEach((trigger) => {
-          // Get the custom message from the element's data attribute
-          const message = trigger.dataset.loaderText || 'Processing, please wait...'
-      
-          // Check if it's a form (use 'submit') or a button/link (use 'click')
-          const eventType = trigger.tagName.toLowerCase() === 'form' ? 'submit' : 'click'
-      
-          trigger.addEventListener(eventType, function () {
-            if (loaderText) {
-              loaderText.textContent = message // Set the custom message
+        // --- Event Delegation for 'submit' events (like your cancel form) ---
+        document.body.addEventListener('submit', function (event) {
+          const form = event.target
+          // Check if the form that was submitted has our trigger class
+          if (form && form.matches('.triggers-loader')) {
+            // Check for HTML5 validation
+            if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+              return // Don't show loader if form is invalid
             }
-            if (loaderOverlay) {
-              loaderOverlay.style.display = 'flex' // Show the loader
-            }
-          })
+            showLoader(form.dataset.loaderText)
+          }
         })
       
+        // --- Event Delegation for 'click' events (for links or buttons) ---
+        document.body.addEventListener('click', function (event) {
+          // Find the closest ancestor (or the element itself) that is a trigger
+          const trigger = event.target.closest('.triggers-loader')
+      
+          // If a trigger is found, but it's not a form...
+          if (trigger && trigger.tagName.toLowerCase() !== 'form') {
+            // ...and it's not a submit button inside a form that is *already* a trigger...
+            if (trigger.type === 'submit' && trigger.form && trigger.form.matches('.triggers-loader')) {
+              return // Let the 'submit' event handle this
+            }
+            showLoader(trigger.dataset.loaderText)
+          }
+        })
         // --- B. IMAGE SEARCH MODAL LOGIC ---
         // This is all your original code for the image search pop-up.
         const modal = document.getElementById('imageSearchModal')
@@ -342,6 +357,27 @@
           const previewZone = modal.querySelector('#preview-zone')
           const imagePreview = modal.querySelector('#image-preview')
           const removeBtn = modal.querySelector('#remove-preview-btn')
+      
+          // **************************************************
+          // *** START: ADDED CODE TO TRIGGER LOADER ON SUBMIT ***
+          // **************************************************
+          if (form) {
+            form.addEventListener('submit', function () {
+              // This is the global loader overlay you already created
+              const globalLoader = document.getElementById('loader-overlay')
+              const globalLoaderText = document.getElementById('loader-text')
+      
+              if (globalLoader && globalLoaderText) {
+                // Set the specific message for image analysis
+                globalLoaderText.textContent = 'Analyzing your image...'
+                // Show the loader
+                globalLoader.style.display = 'flex'
+              }
+            })
+          }
+          // **************************************************
+          // *** END: ADDED CODE                           ***
+          // **************************************************
       
           function showPreview(file) {
             const reader = new FileReader()
