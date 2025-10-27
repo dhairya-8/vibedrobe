@@ -2267,45 +2267,45 @@ def send_order_confirmation_email(order, order_details, order_address):
         }
         
         # Render HTML email template
-        html_content = render_to_string('emails/order_confirmation.html', context)
+        html_content = render_to_string('emails/order_confirmation_email.html', context)
         
         # Create plain text version (fallback)
         plain_text_content = f"""
-Thank you for your order!
+            Thank you for your order!
 
-Hi {order_address.full_name},
+            Hi {order_address.full_name},
 
-Your order has been confirmed and is being processed.
+            Your order has been confirmed and is being processed.
 
-Order Details:
-- Order Number: {order.order_number}
-- Date: {order.order_date.strftime('%d/%m/%Y')}
-- Total Amount: ₹{order.total_amount:.2f}
-- Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
+            Order Details:
+                - Order Number: {order.order_number}
+                - Date: {order.order_date.strftime('%d/%m/%Y')}
+                - Total Amount: ₹{order.total_amount:.2f}
+                - Payment Method: {order.get_mode_of_payment_display() if hasattr(order, 'get_mode_of_payment_display') else order.mode_of_payment.title()}
 
-Shipping Address:
-{order_address.full_name}
-{order_address.address_line_1}
-{order_address.address_line_2 if order_address.address_line_2 else ''}
-{order_address.city}, {order_address.state} - {order_address.pincode}
-Phone: {order_address.phone}
+            Shipping Address:
+                {order_address.full_name}
+                {order_address.address_line_1}
+                {order_address.address_line_2 if order_address.address_line_2 else ''}
+                {order_address.city}, {order_address.state} - {order_address.pincode}
+            Phone: {order_address.phone}
 
-Items Ordered:"""
+            Items Ordered:"""
         
         for item in order_details:
             plain_text_content += f"\n- {item.product_name} × {item.quantity} - ₹{item.total_price:.2f}"
         
         plain_text_content += f"""
 
-Subtotal: ₹{order.subtotal:.2f}
-GST: ₹{order.tax_amount:.2f}
-Shipping: ₹{order.shipping_charge:.2f}
-Total: ₹{order.total_amount:.2f}
+            Subtotal: ₹{order.subtotal:.2f}
+            GST: ₹{order.tax_amount:.2f}
+            Shipping: ₹{order.shipping_charge:.2f}
+            Total: ₹{order.total_amount:.2f}
 
-Thank you for choosing VibeDrobe!
+            Thank you for choosing VibeDrobe!
 
-For support, contact us at support@vibedrobe.com
-"""
+            For support, contact us at support@vibedrobe.com
+            """
         
         # Create email message
         email = EmailMultiAlternatives(

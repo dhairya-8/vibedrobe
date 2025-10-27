@@ -1,0 +1,108 @@
+{% extends "base_email.html" %}
+
+{% block title %}Order Invoice - VibeDrobe{% endblock %}
+
+{% block content %}
+<!-- Greeting -->
+<div class="greeting">
+    <h2>Thank you for your order!</h2>
+    <p>Hi {{ order_address.full_name }}, we're getting your order ready to be shipped. We will notify you when it has been sent.</p>
+</div>
+
+<!-- Order Success Message -->
+<div class="order-success">
+    <h3>✅ Order Confirmed</h3>
+    <p>Your order has been successfully placed and is being processed. You'll receive a shipping confirmation email once your items are on their way.</p>
+</div>
+
+<!-- Order Summary -->
+<div class="order-summary">
+    <h3>Order Summary</h3>
+    <div class="order-info-grid">
+        <div class="order-info-item">
+            <label>Order Number</label>
+            <span>{{ order.order_number }}</span>
+        </div>
+        <div class="order-info-item">
+            <label>Order Date</label>
+            <span>{{ order.order_date|date:"d/m/Y" }}</span>
+        </div>
+        <div class="order-info-item">
+            <label>Total Amount</label>
+            <span>₹{{ order.total_amount|floatformat:2 }}</span>
+        </div>
+        <div class="order-info-item">
+            <label>Payment Method</label>
+            <span>
+                {% if order.mode_of_payment == 'cod' %}
+                    Cash on Delivery
+                {% elif order.mode_of_payment == 'online' %}
+                    Online Payment
+                {% elif order.mode_of_payment == 'upi' %}
+                    UPI Payment
+                {% else %}
+                    {{ order.mode_of_payment|title }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Shipping Address -->
+    {% if order_address %}
+    <div class="shipping-address">
+        <h4>📦 Shipping Address</h4>
+        <p><strong>{{ order_address.full_name }}</strong></p>
+        <p>{{ order_address.address_line_1 }}</p>
+        {% if order_address.address_line_2 %}
+            <p>{{ order_address.address_line_2 }}</p>
+        {% endif %}
+        <p>{{ order_address.city }}, {{ order_address.state }} - {{ order_address.pincode }}</p>
+        <p>📞 {{ order_address.phone }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Order Details -->
+<div class="order-details">
+    <h3>Order Details</h3>
+    <table class="order-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th style="text-align: right;">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_details %}
+            <tr>
+                <td>
+                    <div class="product-info">{{ item.product_name }} × {{ item.quantity }}</div>
+                    <span class="product-sku">SKU: {{ item.product_sku }}</span>
+                </td>
+                <td class="price">₹{{ item.total_price|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Totals -->
+    <table class="totals-table">
+        <tr>
+            <th>Subtotal:</th>
+            <td>₹{{ order.subtotal|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>GST:</th>
+            <td>₹{{ order.tax_amount|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <th>Shipping:</th>
+            <td>₹{{ order.shipping_charge|floatformat:2 }}</td>
+        </tr>
+        <tr class="total-row">
+            <th>Total:</th>
+            <td>₹{{ order.total_amount|floatformat:2 }}</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}
