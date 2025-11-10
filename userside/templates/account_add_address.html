@@ -5,11 +5,10 @@
 
 {% block css %}
   <!-- Your existing CSS imports -->
-  
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css">
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css">
-  
+
   <style>
     .address-form-container {
       max-width: 800px;
@@ -50,10 +49,8 @@
         <div class="address-form-container">
           <div class="form-section">
             <h3 class="form-title">Address Information</h3>
-            
             <form method="post" action="{% url 'add_address' %}">
               {% csrf_token %}
-              
               <div class="row">
                 <!-- Address Type -->
                 <div class="col-md-6 mb-4">
@@ -64,66 +61,57 @@
                     <option value="other">Other</option>
                   </select>
                 </div>
-                
                 <!-- Address Name -->
                 <div class="col-md-6 mb-4">
                   <label class="form-label">Address Name (e.g., Home, Office)</label>
                   <input type="text" name="address_name" class="form-control" required>
                 </div>
               </div>
-              
               <!-- Full Name -->
               <div class="mb-4">
                 <label class="form-label">Full Name</label>
                 <input type="text" name="full_name" class="form-control" required>
               </div>
-              
               <!-- Phone Number -->
               <div class="mb-4">
-    <label for="phone" class="form-label">10-digit Mobile Number*</label>
-    <div class="input-group">
-        <span class="input-group-text">+91</span>
-        <input id="phone" type="tel" name="phone" class="form-control" required inputmode="numeric" pattern="[6-9][0-9]{9}" title="Please enter a valid 10-digit Indian mobile number">
-    </div>
-</div>
-              
+                <label for="phone" class="form-label">10-digit Mobile Number*</label>
+                <div class="input-group">
+                  <span class="input-group-text">+91</span>
+                  <input id="phone" type="tel" name="phone" class="form-control" required inputmode="numeric" pattern="[6-9][0-9]{9}" title="Please enter a valid 10-digit Indian mobile number">
+                </div>
+              </div>
               <!-- Address Line 1 -->
               <div class="mb-4">
                 <label class="form-label">Address Line 1</label>
                 <input type="text" name="address_line_1" class="form-control" required>
               </div>
-              
               <!-- Address Line 2 -->
               <div class="mb-4">
                 <label class="form-label">Address Line 2 (Optional)</label>
                 <input type="text" name="address_line_2" class="form-control">
               </div>
-              
               <div class="row">
                 <!-- City -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">City</label>
                   <input type="text" name="city" class="form-control" required>
                 </div>
-                
                 <!-- State -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">State</label>
                   <input type="text" name="state" class="form-control" required>
                 </div>
-                
                 <!-- Pincode -->
                 <div class="col-md-4 mb-4">
                   <label class="form-label">Pincode</label>
-<input type="text" name="pincode" class="form-control" required inputmode="numeric" pattern="[0-9]{6}" title="Please enter a 6-digit pincode">                </div>
+                  <input type="text" name="pincode" class="form-control" required inputmode="numeric" pattern="[0-9]{6}" title="Please enter a 6-digit pincode">
+                </div>
               </div>
-              
               <!-- Default Address Checkbox -->
               <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" name="is_default" id="defaultAddress">
                 <label class="form-check-label" for="defaultAddress">Set as default address</label>
               </div>
-              
               <!-- Form Buttons -->
               <div class="d-flex justify-content-between mt-4">
                 <a href="{% url 'account_addresses' %}" class="btn btn-outline-secondary">Cancel</a>
@@ -178,4 +166,5 @@
       }
     });
   </script>
+</script>
 {% endblock %}

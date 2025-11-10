@@ -10,20 +10,20 @@
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
   <style>
     /* Add this to your CSS */
-@media (max-width: 767px) {
-  .page-title {
-    font-size: 2rem; /* Make the main title a bit smaller on mobile */
-  }
-}
+    @media (max-width: 767px) {
+      .page-title {
+        font-size: 2rem; /* Make the main title a bit smaller on mobile */
+      }
+    }
 
-.service-promotion {
-    background-color: #f8f9fa; /* A light grey to separate the section */
-    padding-top: 4rem;
-    padding-bottom: 4rem;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-}
-</style>
+    .service-promotion {
+      background-color: #f8f9fa; /* A light grey to separate the section */
+      padding-top: 4rem;
+      padding-bottom: 4rem;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+  </style>
 {% endblock %}
 {% block content %}
 <main>
@@ -38,21 +38,29 @@
       </p>
       <div class="mw-930">
         <h3 class="mb-4">OUR STORY</h3>
-        <p class="fs-6 fw-medium mb-4">Welcome to VibeDrobe, where fashion is more than just fabric—it's a feeling. Born in the vibrant heart of Ahmedabad, a city woven with a rich tapestry of textile heritage, VibeDrobe was founded on a simple idea: your wardrobe should be a reflection of your unique vibe.</p>
-        <p class="mb-4">We believe style is a personal journey, a way to tell your story without speaking a word. We grew tired of the monotonous cycle of trends and wanted to create a space where fashion is personal, expressive, and fun. From a small design studio to a curated online destination, our journey has been about discovering unique pieces and timeless styles that empower you to be you, unapologetically.</p>
-        
+        <p class="fs-6 fw-medium mb-4">
+          Welcome to VibeDrobe, where fashion is more than just fabric—it's a feeling. Born in the vibrant heart of Ahmedabad, a city woven with a rich tapestry of textile heritage, VibeDrobe was founded on a simple idea: your wardrobe should be a reflection of your unique vibe.
+        </p>
+        <p class="mb-4">
+          We believe style is a personal journey, a way to tell your story without speaking a word. We grew tired of the monotonous cycle of trends and wanted to create a space where fashion is personal, expressive, and fun. From a small design studio to a curated online destination, our journey has been about discovering unique pieces and timeless styles that empower you to be you, unapologetically.
+        </p>
+
         <div class="text-center my-5">
-            <a href="{% url 'shop' %}" class="btn btn-primary btn-lg rounded-1">Explore Our Collection</a>
+          <a href="{% url 'shop' %}" class="btn btn-primary btn-lg rounded-1">Explore Our Collection</a>
         </div>
-        
+
         <div class="row mb-5">
           <div class="col-md-6">
             <h5 class="mb-3">Our Mission</h5>
-            <p class="mb-3">To empower every individual to express their personal style confidently by providing a curated collection of high-quality, trend-setting apparel that combines modern aesthetics with timeless comfort.</p>
+            <p class="mb-3">
+              To empower every individual to express their personal style confidently by providing a curated collection of high-quality, trend-setting apparel that combines modern aesthetics with timeless comfort.
+            </p>
           </div>
           <div class="col-md-6">
             <h5 class="mb-3">Our Vision</h5>
-            <p class="mb-3">To become India's most-loved fashion destination, celebrated for our unique style, commitment to quality, and a community that thrives on the art of self-expression.</p>
+            <p class="mb-3">
+              To become India's most-loved fashion destination, celebrated for our unique style, commitment to quality, and a community that thrives on the art of self-expression.
+            </p>
           </div>
         </div>
       </div>
@@ -62,35 +70,51 @@
         </div>
         <div class="content-wrapper col-lg-6 px-lg-4">
           <h5 class="mb-3">THE VIBE WE CURATE</h5>
-          <p>VibeDrobe is more than just an e-commerce platform; we are a community of fashion enthusiasts, designers, and curators. Based in Ahmedabad, we are inspired daily by the city's dynamic blend of culture and innovation. This drives us to source the finest materials and partner with designers who share our passion for craftsmanship. Our team is dedicated to ensuring a seamless shopping experience, from the moment you discover a piece you love to the day it arrives at your doorstep.</p>
+          <p>
+            VibeDrobe is more than just an e-commerce platform; we are a community of fashion enthusiasts, designers, and curators. Based in Ahmedabad, we are inspired daily by the city's dynamic blend of culture and innovation. This drives us to source the finest materials and partner with designers who share our passion for craftsmanship. Our team is dedicated to ensuring a seamless shopping experience, from the moment you discover a piece you love to the day it arrives at your doorstep.
+          </p>
         </div>
       </div>
     </div>
   </section>
-  
+
   <div class="service-promotion-bg">
     <section class="service-promotion horizontal container mw-930 pt-0">
-        <div class="row">
-          <div class="col-md-4 text-center mb-5 mb-md-0">
-            <div class="service-promotion__icon mb-4">
-              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_shipping" /></svg>
-            </div>
-            <h3 class="service-promotion__title fs-6 text-uppercase">Swift & Free Shipping</h3>
-            <p class="service-promotion__content text-secondary">Enjoy complimentary shipping on all orders over ₹1499 across India.</p>
-          </div><div class="col-md-4 text-center mb-5 mb-md-0">
-            <div class="service-promotion__icon mb-4">
-              <svg width="53" height="52" viewBox="0 0 53 52" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_headphone" /></svg>
-            </div>
-            <h3 class="service-promotion__title fs-6 text-uppercase">Here For You 24/7</h3>
-            <p class="service-promotion__content text-secondary">Questions? Style advice? Our friendly support team is here to help you.</p>
-          </div><div class="col-md-4 text-center mb-4 pb-1 mb-md-0">
-            <div class="service-promotion__icon mb-4">
-              <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#icon_shield" /></svg>
-            </div>
-            <h3 class="service-promotion__title fs-6 text-uppercase">Easy & Secure Returns</h3>
-            <p class="service-promotion__content text-secondary">Shop with confidence. We offer a hassle-free 30-day return policy.</p>
+      <div class="row">
+        <div class="col-md-4 text-center mb-5 mb-md-0">
+          <div class="service-promotion__icon mb-4">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <use href="#icon_shipping" />
+            </svg>
           </div>
+          <h3 class="service-promotion__title fs-6 text-uppercase">Swift & Free Shipping</h3>
+          <p class="service-promotion__content text-secondary">
+            Enjoy complimentary shipping on all orders over ₹1499 across India.
+          </p>
         </div>
+        <div class="col-md-4 text-center mb-5 mb-md-0">
+          <div class="service-promotion__icon mb-4">
+            <svg width="53" height="52" viewBox="0 0 53 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <use href="#icon_headphone" />
+            </svg>
+          </div>
+          <h3 class="service-promotion__title fs-6 text-uppercase">Here For You 24/7</h3>
+          <p class="service-promotion__content text-secondary">
+            Questions? Style advice? Our friendly support team is here to help you.
+          </p>
+        </div>
+        <div class="col-md-4 text-center mb-4 pb-1 mb-md-0">
+          <div class="service-promotion__icon mb-4">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <use href="#icon_shield" />
+            </svg>
+          </div>
+          <h3 class="service-promotion__title fs-6 text-uppercase">Easy & Secure Returns</h3>
+          <p class="service-promotion__content text-secondary">
+            Shop with confidence. We offer a hassle-free 30-day return policy.
+          </p>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -133,27 +157,30 @@
         }'>
         <div class="swiper-wrapper">
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand1.png' %}" width="120" height="20" alt="Mango">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand1.png' %}" width="120" height="20" alt="Mango" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand2.png' %}" width="87" height="20" alt="Zara">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand2.png' %}" width="87" height="20" alt="Zara" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand3.png' %}" width="132" height="22" alt="Reebok">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand3.png' %}" width="132" height="22" alt="Reebok" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand4.png' %}" width="72" height="21" alt="Asos">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand4.png' %}" width="72" height="21" alt="Asos" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand5.png' %}" width="123" height="31" alt="Stradivarious">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand5.png' %}" width="123" height="31" alt="Stradivarious" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand6.png' %}" width="137" height="22" alt="Brand Partner">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand6.png' %}" width="137" height="22" alt="Brand Partner" />
           </div>
           <div class="swiper-slide">
-            <img loading="lazy" src="{% static 'user/assets/images/brands/brand7.png' %}" width="94" height="21" alt="Brand Partner">
+            <img loading="lazy" src="{% static 'user/assets/images/brands/brand7.png' %}" width="94" height="21" alt="Brand Partner" />
           </div>
-        </div></div></div></section>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 {% endblock %}

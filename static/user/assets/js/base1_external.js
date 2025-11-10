@@ -37,68 +37,112 @@ document.addEventListener('DOMContentLoaded', function () {
     })
 
     // --- B. IMAGE SEARCH MODAL LOGIC ---
-    // This is all your original code for the image search pop-up.
-    const modal = document.getElementById('imageSearchModal')
-    if (modal) {
-        // Only run this code if the modal exists
-        const form = modal.querySelector('#image-search-form')
-        const input = modal.querySelector('#image-search-input')
-        const uploadZone = modal.querySelector('#upload-zone')
-        const previewZone = modal.querySelector('#preview-zone')
-        const imagePreview = modal.querySelector('#image-preview')
-        const removeBtn = modal.querySelector('#remove-preview-btn')
+    // Replace your existing image search modal logic with this updated version
 
-        function showPreview(file) {
-            const reader = new FileReader()
-            reader.onload = function (e) {
-                imagePreview.src = e.target.result
-                uploadZone.style.display = 'none'
-                previewZone.style.display = 'block'
-            }
-            reader.readAsDataURL(file)
+// --- IMAGE SEARCH MODAL LOGIC ---
+const modal = document.getElementById('imageSearchModal')
+if (modal) {
+    const form = modal.querySelector('#image-search-form')
+    const input = modal.querySelector('#image-search-input')
+    const uploadZone = modal.querySelector('#upload-zone')
+    const previewZone = modal.querySelector('#preview-zone')
+    const imagePreview = modal.querySelector('#image-preview')
+    const removeBtn = modal.querySelector('#remove-preview-btn')
+    const submitBtn = modal.querySelector('#search-submit-btn')
+
+    function showPreview(file) {
+        const reader = new FileReader()
+        reader.onload = function (e) {
+            imagePreview.src = e.target.result
+            uploadZone.style.display = 'none'
+            previewZone.style.display = 'block'
         }
-
-        function resetForm() {
-            if (form) form.reset()
-            if (input) input.value = ''
-            if (uploadZone) uploadZone.style.display = 'block'
-            if (previewZone) previewZone.style.display = 'none'
-            if (imagePreview) imagePreview.src = '#'
-        }
-
-        // Event listeners for the modal
-        if (uploadZone) uploadZone.addEventListener('click', () => input.click())
-        if (input)
-            input.addEventListener('change', () => {
-                if (input.files.length > 0) {
-                    showPreview(input.files[0])
-                }
-            })
-        if (removeBtn) removeBtn.addEventListener('click', resetForm)
-
-        // Drag and Drop functionality
-        if (uploadZone) {
-            ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-                uploadZone.addEventListener(eventName, (e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                })
-            })
-                ;['dragenter', 'dragover'].forEach((eventName) => {
-                    uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'))
-                })
-                ;['dragleave', 'drop'].forEach((eventName) => {
-                    uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'))
-                })
-            uploadZone.addEventListener('drop', (e) => {
-                if (e.dataTransfer.files.length > 0) {
-                    input.files = e.dataTransfer.files
-                    showPreview(input.files[0])
-                }
-            })
-        }
-
-        // Reset form when modal is closed
-        modal.addEventListener('hidden.bs.modal', resetForm)
+        reader.readAsDataURL(file)
     }
+
+    function resetForm() {
+        if (form) form.reset()
+        if (input) input.value = ''
+        if (uploadZone) uploadZone.style.display = 'block'
+        if (previewZone) previewZone.style.display = 'none'
+        if (imagePreview) imagePreview.src = '#'
+        if (submitBtn) {
+            submitBtn.disabled = false
+            submitBtn.querySelector('.btn-text').style.display = 'inline'
+            submitBtn.querySelector('.btn-spinner').style.display = 'none'
+        }
+    }
+
+    function showLoading(show) {
+        if (submitBtn) {
+            submitBtn.disabled = show
+            if (show) {
+                submitBtn.querySelector('.btn-text').style.display = 'none'
+                submitBtn.querySelector('.btn-spinner').style.display = 'inline'
+            } else {
+                submitBtn.querySelector('.btn-text').style.display = 'inline'
+                submitBtn.querySelector('.btn-spinner').style.display = 'none'
+            }
+        }
+    }
+
+    // Event listeners
+    if (uploadZone) {
+        uploadZone.addEventListener('click', () => input.click())
+    }
+
+    if (input) {
+        input.addEventListener('change', () => {
+            if (input.files.length > 0) {
+                showPreview(input.files[0])
+            }
+        })
+    }
+
+    if (removeBtn) {
+        removeBtn.addEventListener('click', resetForm)
+    }
+
+    // Drag and Drop functionality
+    if (uploadZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+            uploadZone.addEventListener(eventName, (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+            })
+        })
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'))
+        })
+
+        ['dragleave', 'drop'].forEach((eventName) => {
+            uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'))
+        })
+
+        uploadZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer.files.length > 0) {
+                input.files = e.dataTransfer.files
+                showPreview(input.files[0])
+            }
+        })
+    }
+
+    // Form submission - Show loading state
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            if (!input.files || input.files.length === 0) {
+                e.preventDefault()
+                alert('Please select an image first.')
+                return
+            }
+            // Show loading state
+            showLoading(true)
+            // Form will submit normally and redirect
+        })
+    }
+
+    // Reset form when modal is closed
+    modal.addEventListener('hidden.bs.modal', resetForm)
+}
 })

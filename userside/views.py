@@ -41,7 +41,128 @@ User = get_user_model()
 # Initialize Razorpay client
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
+import pickle
+import torch
+from PIL import Image
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.conf import settings
+from sklearn.metrics.pairwise import cosine_similarity
 
+# Import timm for ConvNeXt V2
+import timm
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
+
+# Global variables to cache the model and features
+_model = None
+_transform = None
+_device = None
+_product_features = None
+
+def load_model_and_features():
+    """Load the model and pre-computed features (called once)"""
+    global _model, _transform, _device, _product_features
+    
+    if _model is None:
+        print("Loading ConvNeXt V2 Large model...")
+        _model = timm.create_model('convnextv2_large.fcmae_ft_in22k_in1k_384', pretrained=True)
+        _model.eval()
+        
+        _device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        _model = _model.to(_device)
+        
+        config = resolve_data_config({}, model=_model)
+        _transform = create_transform(**config)
+        
+        print(f"Model loaded on {_device}")
+    
+    if _product_features is None:
+        feature_file = os.path.join(settings.BASE_DIR, 'convnextv2_features.pkl')
+        try:
+            with open(feature_file, 'rb') as f:
+                _product_features = pickle.load(f)
+            print(f"Loaded features for {len(_product_features)} products")
+        except FileNotFoundError:
+            print(f"Error: Feature file not found at {feature_file}")
+            return False
+    
+    return True
+
+def get_features_from_image(img):
+    """Extract features from a PIL Image"""
+    img = img.convert('RGB')
+    img_tensor = _transform(img).unsqueeze(0).to(_device)
+    
+    with torch.no_grad():
+        features = _model.forward_features(img_tensor)
+        features = features.mean(dim=[2, 3])  # Global average pooling
+        features = features.cpu().numpy().flatten()
+    
+    return features
+
+def image_search(request):
+    """Handle image search requests and redirect to shop page with results"""
+    if request.method == 'POST' and request.FILES.get('query_img'):
+        try:
+            # Load model and features
+            if not load_model_and_features():
+                messages.error(request, 'Image search is currently unavailable. Please try again later.')
+                return redirect('shop')
+            
+            # Get uploaded image
+            uploaded_file = request.FILES['query_img']
+            query_image = Image.open(uploaded_file)
+            
+            # Extract features
+            query_features = get_features_from_image(query_image)
+            query_features = query_features.reshape(1, -1)
+            
+            # Get all product features
+            product_ids = list(_product_features.keys())
+            feature_vectors = np.array(list(_product_features.values()))
+            
+            # Calculate cosine similarity
+            similarities = cosine_similarity(query_features, feature_vectors)
+            
+            # Get top 20 results (adjust as needed)
+            top_n = 10
+            top_indices = np.argsort(similarities[0])[-top_n:][::-1]
+            top_product_ids = [product_ids[i] for i in top_indices]
+            
+            # Filter out products that don't exist or aren't active
+            # IMPORTANT: Keep the order from top_product_ids (highest similarity first)
+            valid_products = Product.objects.filter(
+                id__in=top_product_ids,
+                is_active=True
+            ).values_list('id', flat=True)
+            
+            # Convert to set for fast lookup
+            valid_product_set = set(valid_products)
+            
+            # Preserve the similarity order by filtering top_product_ids
+            ordered_product_ids = [pid for pid in top_product_ids if pid in valid_product_set]
+            
+            if not ordered_product_ids:
+                messages.warning(request, 'No similar products found. Try a different image.')
+                return redirect('shop')
+            
+            # Create comma-separated string of product IDs in SIMILARITY ORDER
+            similar_ids = ','.join(map(str, ordered_product_ids))
+            
+            # Add success message
+            messages.success(request, f'Found {len(ordered_product_ids)} similar products based on your image!')
+            
+            # Redirect to shop page with similar product IDs
+            return redirect(f'/shop/?similar_to={similar_ids}&image_search_status=success')
+        
+        except Exception as e:
+            print(f"Image search error: {str(e)}")
+            messages.error(request, 'Failed to process image. Please try again.')
+            return redirect('shop')
+    
+    messages.warning(request, 'Please upload an image to search.')
+    return redirect('shop')
 
 # ============================= AUTHENTICATION VIEWS =============================
 
@@ -790,7 +911,14 @@ def shop(request):
     if similar_product_ids:
         # If we have IDs from an image search, filter by them
         product_id_list = [int(pid) for pid in similar_product_ids.split(',') if pid.isdigit()]
-        products = products.filter(id__in=product_id_list)
+        
+        # 1. Build a 'Case' expression to preserve the order from the URL
+        preserved_order = Case(
+            *[When(id=id_val, then=pos) for pos, id_val in enumerate(product_id_list)]
+        )
+        
+        # 2. Filter the products AND order them by the 'Case'
+        products = products.filter(id__in=product_id_list).order_by(preserved_order)
         
     # STEP 2: Apply the search filter if a keyword exists
     if keyword:
@@ -858,15 +986,19 @@ def shop(request):
         'default': '-created_at'
     }
     
-    # If a search is active, we sort by relevance first, then by the user's choice.
-    if keyword:
-        # For default sort on a search page, relevance is all we need.
-        # For other sorts, we use relevance as the primary sorter.
-        if sort != 'default':
-             products = products.order_by('relevance', sort_options[sort])
-    else:
-        # Original sorting if no search is performed
-        products = products.order_by(sort_options[sort])
+    # --- FIX ---
+    # Only apply default sorting IF we are NOT doing an image search.
+    # The image search has its own 'preserved_order' which we must not overwrite.
+    if not similar_product_ids:
+        # If a search is active, we sort by relevance first, then by the user's choice.
+        if keyword:
+            # For default sort on a search page, relevance is all we need.
+            # For other sorts, we use relevance as the primary sorter.
+            if sort != 'default':
+                products = products.order_by('relevance', sort_options[sort])
+        else:
+            # Original sorting if no search is performed
+            products = products.order_by(sort_options[sort])
 
     # Brands data
     all_brands = Brand.objects.filter(is_active=True).annotate(
