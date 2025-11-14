@@ -1535,7 +1535,7 @@ def delete_user(request, user_id):
     except Exception as e:
         messages.error(request, f"Error deleting user {user.username}: {str(e)}")
 
-    return redirect('display_user')  # adjust to your users list page
+    return redirect('display_user') 
 
 @admin_login_required
 def toggle_user_status(request, user_id):
@@ -1564,11 +1564,6 @@ def order_details_content(request, order_id):
     }
     return render(request, 'partials/order_details_content.html', context)
 
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
-from django.db import IntegrityError
 
 @admin_login_required
 def shipping_management(request):
@@ -1599,49 +1594,16 @@ def shipping_management(request):
 
 @admin_login_required
 def shipping_details_content(request, order_id):
-    try:
-        order = get_object_or_404(
-            Order_Master.objects.prefetch_related(
-                'shipping_set', 
-                'order_address_set', 
-                'order_details_set',
-                'user_id'
-            ), 
-            id=order_id
-        )
-        
-        # Get or create shipping record
-        shipping, created = Shipping.objects.get_or_create(
-            order_id=order,
-            defaults={
-                'shipping_status': 'confirm',
-                'tracking_number': None,  # Will be auto-generated on save if needed
-                'delivery_notes': ''
-            }
-        )
-        
-        context = {
-            'order': order,
-            'shipping': shipping,
-        }
-        return render(request, 'partials/shipping_details_content.html', context)
-    
-    except Exception as e:
-        # Log the error for debugging
-        print(f"Error in shipping_details_content: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        # Return a simple error message
-        error_html = f'''
-        <div class="alert alert-danger">
-            <h5><i class="fas fa-exclamation-triangle"></i> Error Loading Shipping Details</h5>
-            <p>{str(e)}</p>
-            <p class="mb-0">Please check the console for more details.</p>
-        </div>
-        '''
-        from django.http import HttpResponse
-        return HttpResponse(error_html, status=500)
+    order = get_object_or_404(Order_Master, id=order_id)
+
+    #Get or create shipping record
+    shipping, created = Shipping.objects.get_or_create(order_id=order)
+
+    context = {
+        'order': order,
+        'shipping': shipping,
+    }
+    return render(request, 'partials/shipping_details_content.html', context)
 
 
 @admin_login_required
