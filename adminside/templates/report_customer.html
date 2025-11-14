@@ -5,12 +5,10 @@
 {% endblock %}
 
 {% block css %}
-  <!-- App favicon -->
   <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
 
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
-  <!-- App css -->
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
@@ -20,34 +18,28 @@
 
 {% block content %}
   <div class="page-wrapper">
-    <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
         <div class="row justify-content-center">
           <div class="col-12">
             <div class="card">
-              <div class="card-header">
+             <div class="card-header">
                 <div class="row align-items-center">
                   <div class="col-auto">
                     <h4 class="card-title">Customer Activity Report</h4>
                   </div>
-                  <!-- end col -->
-                  <div class="col-auto">
-                    <div class="btn-group">
-                      <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="mdi mdi-download me-1"></i> Export
-                      </button>
-                      <div class="dropdown-menu">
-                        <a class="dropdown-item export-link" href="?export=csv">CSV</a>
-                        <a class="dropdown-item export-link" href="?export=excel">Excel</a>
-                        <a class="dropdown-item export-link" href="?export=pdf">PDF</a>
-                      </div>
-                    </div>
+                  <div class="col text-end">
+                      <a href="{% url 'report_customer' %}?export=csv" class="btn btn-sm btn-success me-2">
+                          <i class="fas fa-file-csv me-1"></i> Export CSV
+                      </a>
+                      <a href="{% url 'report_customer' %}?export=excel" class="btn btn-sm btn-primary me-2">
+                          <i class="fas fa-file-excel me-1"></i> Export Excel
+                      </a>
+                      <a href="{% url 'report_customer' %}?export=pdf" class="btn btn-sm btn-danger">
+                          <i class="fas fa-file-pdf me-1"></i> Export PDF
+                      </a>
                   </div>
-                  <!-- end col -->
-                </div> <!-- end row -->
-              </div>
-              <!-- end card-header -->
+                  </div> </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
                   <table class="table" id="customerReportTable">
@@ -80,38 +72,27 @@
                   </table>
                 </div>
               </div>
-              <!-- end card-body -->
-            </div>
-            <!-- end card -->
-          </div> <!-- end col -->
+              </div>
+            </div> </div>
         </div>
-        <!-- end row -->
-      </div>
-      <!-- container -->
-      <!-- Start Footer -->
       {% include 'footer.html' %}
-      <!-- end footer -->
+      </div>
     </div>
-    <!-- end page content -->
-  </div>
-  <!-- end page-wrapper -->
-{% endblock %}
+  {% endblock %}
 
-<!-- Javascript -->
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
   
   <script>
-    // Initialize the data table
+    // Your existing script is perfect
     document.addEventListener('DOMContentLoaded', function() {
       const table = document.getElementById('customerReportTable');
       if (table) {
-        const dataTable = new DataTable(table, {
+        const dataTable = new vanilla.DataTable(table, { // Using 'vanilla.DataTable'
           perPage: 10,
           perPageSelect: [5, 10, 20, 50],
           searchable: true,
@@ -125,10 +106,11 @@
         });
       }
 
-      // Add loading indicator for export links
+      // This script can be simplified
       document.querySelectorAll('.export-link').forEach(link => {
         link.addEventListener('click', function(e) {
-          document.getElementById('exportLoading').style.display = 'block';
+          // You could add a spinner here
+          console.log('Exporting ' + this.href);
         });
       });
     });

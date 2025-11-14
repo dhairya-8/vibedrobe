@@ -3,6 +3,9 @@ import os
 import json
 import random
 import string
+import csv
+import io
+import openpyxl
 from io import BytesIO
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -14,8 +17,8 @@ from django.core.files.storage import FileSystemStorage
 from django.core.mail import EmailMessage, send_mail, EmailMultiAlternatives
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Avg, Count, F, Q, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Avg, Count, F, Q, Sum, ExpressionWrapper, DecimalField, Max
+from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template, render_to_string
@@ -33,7 +36,8 @@ from django.contrib.staticfiles import finders
 from .decorators import admin_login_required
 from .models import *
 
-
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 @admin_login_required
 def index(request):
@@ -1560,17 +1564,31 @@ def order_details_content(request, order_id):
     }
     return render(request, 'partials/order_details_content.html', context)
 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from django.db import IntegrityError
+
 @admin_login_required
 def shipping_management(request):
     # Get filter parameter if exists
     status_filter = request.GET.get('status', 'all')
     
     # Get all orders with shipping information
-    orders = Order_Master.objects.all().prefetch_related('shipping_set')
+    orders = Order_Master.objects.all().prefetch_related(
+        'shipping_set', 
+        'order_address_set', 
+        'order_details_set',
+        'user_id'
+    )
     
     # Apply filter if needed
     if status_filter != 'all':
         orders = orders.filter(shipping__shipping_status=status_filter)
+    
+    # Order by most recent first
+    orders = orders.order_by('-order_date').distinct()
     
     context = {
         'orders': orders,
@@ -1578,59 +1596,136 @@ def shipping_management(request):
     }
     return render(request, 'display_shipping.html', context)
 
+
 @admin_login_required
 def shipping_details_content(request, order_id):
-    order = get_object_or_404(Order_Master, id=order_id)
+    try:
+        order = get_object_or_404(
+            Order_Master.objects.prefetch_related(
+                'shipping_set', 
+                'order_address_set', 
+                'order_details_set',
+                'user_id'
+            ), 
+            id=order_id
+        )
+        
+        # Get or create shipping record
+        shipping, created = Shipping.objects.get_or_create(
+            order_id=order,
+            defaults={
+                'shipping_status': 'confirm',
+                'tracking_number': None,  # Will be auto-generated on save if needed
+                'delivery_notes': ''
+            }
+        )
+        
+        context = {
+            'order': order,
+            'shipping': shipping,
+        }
+        return render(request, 'partials/shipping_details_content.html', context)
     
-    # Get or create shipping record
-    shipping, created = Shipping.objects.get_or_create(order_id=order)
-    
-    context = {
-        'order': order,
-        'shipping': shipping,
-    }
-    return render(request, 'partials/shipping_details_content.html', context)
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in shipping_details_content: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return a simple error message
+        error_html = f'''
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle"></i> Error Loading Shipping Details</h5>
+            <p>{str(e)}</p>
+            <p class="mb-0">Please check the console for more details.</p>
+        </div>
+        '''
+        from django.http import HttpResponse
+        return HttpResponse(error_html, status=500)
+
 
 @admin_login_required
 def update_shipping_status(request, order_id):
     if request.method == 'POST':
-        order = get_object_or_404(Order_Master, id=order_id)
-        shipping = get_object_or_404(Shipping, order_id=order)
-        
-        new_status = request.POST.get('shipping_status')
-        tracking_number = request.POST.get('tracking_number', '')
-        excepted_delivery = request.POST.get('excepted_delivery', '')
-        delivery_notes = request.POST.get('delivery_notes', '')
-        
-        # Update shipping status
-        shipping.shipping_status = new_status
-        
-        # Set dates based on status changes
-        if new_status == 'shipped' and shipping.shipping_status != 'shipped':
-            shipping.shipped_date = timezone.now()
-        elif new_status == 'delivered' and shipping.shipping_status != 'delivered':
-            shipping.delivered_date = timezone.now()
-        
-        # Update other fields if provided
-        if tracking_number:
-            shipping.tracking_number = tracking_number
-        
-        if excepted_delivery:
-            shipping.excepted_delivery = excepted_delivery
+        try:
+            order = get_object_or_404(Order_Master, id=order_id)
+            shipping = get_object_or_404(Shipping, order_id=order)
             
-        if delivery_notes:
+            # Validate order is not cancelled
+            if order.status == 'cancelled':
+                messages.error(request, 'Cannot update shipping for cancelled orders.')
+                return redirect('shipping_management')
+            
+            new_status = request.POST.get('shipping_status')
+            tracking_number = request.POST.get('tracking_number', '').strip()
+            excepted_delivery = request.POST.get('excepted_delivery', '').strip()
+            delivery_notes = request.POST.get('delivery_notes', '').strip()
+            
+            # Validate required fields
+            if new_status in ['shipped', 'delivered'] and not tracking_number:
+                messages.error(request, 'Tracking number is required for shipped/delivered status.')
+                return redirect('shipping_management')
+            
+            # Store old status before updating
+            old_status = shipping.shipping_status
+            
+            # Update shipping status first
+            shipping.shipping_status = new_status
+            
+            # Set dates based on status changes
+            if new_status == 'shipped' and old_status != 'shipped':
+                shipping.shipped_date = timezone.now()
+            elif new_status == 'delivered' and old_status != 'delivered':
+                shipping.delivered_date = timezone.now()
+            
+            # Update tracking number
+            if tracking_number:
+                # Check if tracking number already exists for another order
+                existing = Shipping.objects.filter(tracking_number=tracking_number).exclude(id=shipping.id).exists()
+                if existing:
+                    messages.error(request, 'This tracking number is already assigned to another order.')
+                    return redirect('shipping_management')
+                shipping.tracking_number = tracking_number
+            elif new_status in ['shipped', 'delivered'] and not shipping.tracking_number:
+                # Auto-generate tracking number if not provided
+                pass  # The model's save() method will handle this
+            
+            # Update expected delivery date
+            if excepted_delivery:
+                shipping.excepted_delivery = excepted_delivery
+            else:
+                shipping.excepted_delivery = None
+            
+            # Update delivery notes
             shipping.delivery_notes = delivery_notes
+            
+            # Save shipping record
+            shipping.save()
+            
+            # Update the main order status using the model method
+            order.update_status_based_on_shipping(new_status)
+            
+            messages.success(request, f'Shipping status for order #{order.order_number} updated successfully!')
+            return redirect('shipping_management')
         
-        shipping.save()
+        except IntegrityError as e:
+            print(f"Database integrity error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            messages.error(request, 'Database error: This tracking number might already exist.')
+            return redirect('shipping_management')
         
-        # Update the main order status based on shipping status
-        order.update_status_based_on_shipping(new_status)
-        
-        messages.success(request, f'Shipping status for order #{order.order_number} updated successfully!')
-        return redirect('shipping_management')
+        except Exception as e:
+            print(f"Error updating shipping: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            messages.error(request, f'Error updating shipping status: {str(e)}')
+            return redirect('shipping_management')
     
     messages.error(request, 'Invalid request method.')
     return redirect('shipping_management')
+
+
 
 # ============================= Cart and Wishlist Views =============================
 @admin_login_required
@@ -1944,11 +2039,265 @@ def update_payment_status(request, payment_id):
     return redirect('display_payment')
 
 # ============================ Reports Views =============================
+
 def report_FBT(request):
-    return render(request, 'report_FBT.html')
+    
+    # Check if this is an export request
+    export_format = request.GET.get('export', None)
+
+    # 1. Query the data from the database
+    # We use select_related to efficiently get product names
+    # We use annotate to calculate the combined revenue on the fly
+    fbt_data = Frequently_Bought_Together.objects.select_related(
+        'product_a_id', 
+        'product_b_id'
+    ).annotate(
+        # Calculate: (Price A + Price B) * Frequency
+        combined_revenue=ExpressionWrapper(
+            (F('product_a_id__price') + F('product_b_id__price')) * F('frequency_count'),
+            output_field=DecimalField()
+        )
+    ).order_by('-frequency_count') # Show most frequent first
+
+    # 2. Handle CSV Export
+    if export_format == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="fbt_report.csv"'
+        
+        writer = csv.writer(response)
+        # Write the header row
+        writer.writerow(['ID', 'Primary Product', 'Bought With', 'Frequency', 'Combined Revenue'])
+        
+        # Write data rows
+        for item in fbt_data:
+            writer.writerow([
+                item.id,
+                item.product_a_id.name,
+                item.product_b_id.name,
+                item.frequency_count,
+                f"Rs.{item.combined_revenue:.2f}"
+            ])
+            
+        return response
+
+    # 3. Handle PDF Export
+    if export_format == 'pdf':
+        template_path = 'report_FBT_pdf.html' # We will create this template next
+        context = {'fbt_data': fbt_data}
+        
+        # Create a Django template
+        template = get_template(template_path)
+        html = template.render(context)
+
+        # Create a PDF
+        result = io.BytesIO()
+        pdf = pisa.CreatePDF(
+            io.BytesIO(html.encode("UTF-8")), # source HTML
+            dest=result                        # file handle to receive result
+        )
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="fbt_report.pdf"'
+            return response
+        
+        return HttpResponse("Error Rendering PDF", status=500)
+
+    # 4. Handle standard HTML page view (no export)
+    context = {
+        'fbt_data': fbt_data
+    }
+    return render(request, 'report_FBT.html', context)
 
 def report_customer(request):
-    return render(request, 'report_customer.html')
+    
+    export_format = request.GET.get('export', None)
+
+    # 1. Query the data
+    # We only want to count orders that are confirmed, shipped, or delivered
+    valid_order_status = Q(order_master__status__in=['confirmed', 'shipped', 'delivered'])
+
+    customer_data = User.objects.annotate(
+        total_orders=Count('order_master', filter=valid_order_status),
+        total_spent=Sum(
+            'order_master__total_amount', 
+            filter=valid_order_status
+        ),
+        last_order_date=Max(
+            'order_master__order_date', 
+            filter=valid_order_status
+        )
+    ).order_by('-total_spent') # Show top spenders first
+
+    # 2. Handle CSV Export
+    if export_format == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="customer_report.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date'])
+        
+        for customer in customer_data:
+            writer.writerow([
+                customer.id,
+                f"{customer.first_name} {customer.last_name}",
+                customer.email,
+                customer.total_orders,
+                f"Rs.{customer.total_spent or 0:.2f}",
+                customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
+            ])
+            
+        return response
+
+    # 3. Handle PDF Export
+    if export_format == 'pdf':
+        template_path = 'report_customer_pdf.html' # We will create this template
+        context = {'customers': customer_data}
+        
+        template = get_template(template_path)
+        html = template.render(context)
+
+        result = io.BytesIO()
+        pdf = pisa.CreatePDF(
+            io.BytesIO(html.encode("UTF-8")),
+            dest=result
+        )
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="customer_report.pdf"'
+            return response
+        
+        return HttpResponse("Error Rendering PDF", status=500)
+
+    # 4. Handle Excel Export
+    if export_format == 'excel':
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="customer_report.xlsx"'
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Customer Report"
+        
+        # Write Header
+        ws.append(['ID', 'Customer Name', 'Email', 'Total Orders', 'Total Spent', 'Last Order Date'])
+        
+        # Write Data
+        for customer in customer_data:
+            last_date = customer.last_order_date.strftime('%Y-%m-%d') if customer.last_order_date else 'No orders'
+            ws.append([
+                customer.id,
+                f"{customer.first_name} {customer.last_name}",
+                customer.email,
+                customer.total_orders,
+                customer.total_spent or 0, # Store as number in Excel
+                last_date
+            ])
+        
+        # Format currency column
+        # Note: 'E' is the 5th column (Total Spent)
+        for cell in ws['E']:
+            if cell.row > 1: # Skip header
+                cell.number_format = '"₹"#,##0.00'
+                
+        wb.save(response)
+        return response
+
+    # 5. Handle standard HTML page view
+    context = {
+        'customers': customer_data
+    }
+    return render(request, 'report_customer.html', context)
 
 def report_sales(request):
-    return render(request, 'report_sales.html')
+    
+    export_format = request.GET.get('export', None)
+
+    # 1. Database Query
+    # Define filters for valid sales vs. returns (cancellations)
+    valid_sales_filter = Q(status__in=['confirmed', 'shipped', 'delivered'])
+    cancelled_sales_filter = Q(status='cancelled')
+
+    # This is the core query.
+    # It groups all orders by month and calculates the stats for that month.
+    sales_data = Order_Master.objects.annotate(
+        month=TruncMonth('order_date')  # 1. Group by month (e.g., '2025-01-01')
+    ).values(
+        'month'  # 2. Tell Django to GROUP BY this month value
+    ).annotate(
+        # 3. Calculate aggregates for each group
+        total_orders=Count('id', filter=valid_sales_filter),
+        total_revenue=Sum('total_amount', filter=valid_sales_filter),
+        avg_order_value=Avg('total_amount', filter=valid_sales_filter),
+        total_returns=Count('id', filter=cancelled_sales_filter)
+    ).order_by('-month')  # 4. Show most recent months first
+
+    # 2. Handle CSV Export
+    if export_format == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="sales_report.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Month', 'Total Orders', 'Revenue', 'Avg Order Value', 'Returns'])
+        
+        for sale in sales_data:
+            writer.writerow([
+                sale['month'].strftime('%B %Y'),
+                sale['total_orders'],
+                f"Rs.{sale['total_revenue'] or 0:.2f}",
+                f"Rs.{sale['avg_order_value'] or 0:.2f}",
+                sale['total_returns']
+            ])
+        return response
+
+    # 3. Handle PDF Export
+    if export_format == 'pdf':
+        template_path = 'report_sales_pdf.html' # We will create this template
+        context = {'sales_data': sales_data}
+        
+        template = get_template(template_path)
+        html = template.render(context)
+        result = io.BytesIO()
+        
+        pdf = pisa.CreatePDF(io.BytesIO(html.encode("UTF-8")), dest=result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="sales_report.pdf"'
+            return response
+        return HttpResponse("Error Rendering PDF", status=500)
+
+    # 4. Handle Excel Export
+    if export_format == 'excel':
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="sales_report.xlsx"'
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sales Report"
+        
+        ws.append(['Month', 'Total Orders', 'Revenue', 'Avg Order Value', 'Returns'])
+        
+        for sale in sales_data:
+            ws.append([
+                sale['month'].strftime('%B %Y'),
+                sale['total_orders'],
+                sale['total_revenue'] or 0,
+                sale['avg_order_value'] or 0,
+                sale['total_returns']
+            ])
+        
+        # Format currency columns
+        for col in ['C', 'D']: # Revenue and Avg Order Value
+            for cell in ws[col]:
+                if cell.row > 1: # Skip header
+                    cell.number_format = '"₹"#,##0.00'
+                
+        wb.save(response)
+        return response
+
+    # 5. Handle standard HTML page view
+    context = {
+        'sales_data': sales_data
+    }
+    return render(request, 'report_sales.html', context)

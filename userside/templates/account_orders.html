@@ -7,7 +7,6 @@
 
 {% block css %}
 
-  <!-- Stylesheets -->
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/swiper.min.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'user/assets/css/plugins/jquery.fancybox.css' %}" type="text/css" />
   <link rel="stylesheet" href="{% static 'user/assets/css/style.css' %}" type="text/css" />
@@ -104,12 +103,17 @@
                     <td>₹{{ order_data.order.total_amount }}</td>
                     <td>{{ order_data.item_count }} item(s)</td>
                     <td>
-                      <!-- Payment status available if needed -->
                       {% if order_data.payment %}
                         <small class="text-muted">{{ order_data.payment.status }}</small>
                       {% endif %}
 
                       <button class="btn btn-primary view-order-btn" data-bs-toggle="modal" data-bs-target="#orderModal" data-order-id="{{ order_data.order.id }}">VIEW</button>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">
+                      No orders found.
                     </td>
                   </tr>
                 {% endfor %}
@@ -120,29 +124,25 @@
       </div>
     </section>
 
-    <!-- Order Details Modal -->
     <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl noir-modal"> 
-        <div class="modal-content">
-                  </div>
-      </div>
-    </div>
+          <div class="modal-dialog modal-xl noir-modal"> 
+        <div class="modal-content">
+              </div>
+      </div>
+    </div>
   </main>
 {% endblock %}
 
 {% block script %}
-  <!-- External JavaScripts -->
   <script src="{% static 'user/assets/js/plugins/jquery.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/bootstrap.bundle.min.js' %}"></script>
-  <script src="{% static 'user/assets/js/plugins/bootstrap-slider.min.js' %}"></script>
+  <script src="{% static 'user/assetsf/js/plugins/bootstrap-slider.min.js' %}"></script>
 
   <script src="{% static 'user/assets/js/plugins/swiper.min.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/countdown.js' %}"></script>
   <script src="{% static 'user/assets/js/plugins/jquery.fancybox.js' %}"></script>
 
-  <!-- Footer Scripts -->
-  <script src="{% static 'user/assets/js/theme.js' %}"></script>!<!-- ajax script for loading order detail modal -->
-  <script>
+  <script src="{% static 'user/assets/js/theme.js' %}"></script>!<script>
     $(document).ready(function () {
       $('#orderModal').on('show.bs.modal', function (event) {
         const button = $(event.relatedTarget)

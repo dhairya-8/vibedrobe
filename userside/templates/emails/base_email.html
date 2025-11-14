@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}VibeDrobe{% endblock %}</title>
     <style>
-        /* All the CSS from your order_confirm.html goes here */
+        /* --- Base Email Styles --- */
         * {
             margin: 0;
             padding: 0;
@@ -114,7 +114,10 @@
             font-weight: 600;
         }
 
-        /* Add any other common styles from your original template here */
+        /* --- Page-specific styles will be injected here --- */
+        {% block extra_styles %}
+        {% endblock %}
+
     </style>
 </head>
 <body>
@@ -149,3 +152,4 @@
     </div>
 </body>
 </html>
+

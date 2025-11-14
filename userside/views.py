@@ -542,7 +542,21 @@ def order_detail(request, order_id):
         if not user_id_session:
             error('Session expired during modal load')
             messages.error(request, 'Your session expired. Please refresh the page.')
-            return redirect('account_orders')
+            # You should return an HttpResponse error snippet here, not a redirect
+            return HttpResponse(
+                 '<div class="alert alert-danger m-3">Session expired. Please close this and log in again.</div>',
+                 status=401
+            )
+            
+        # --- [MODIFICATION 1: Get the 'user' object] ---
+        # We need this to search for the user's reviews.
+        try:
+            user = User.objects.get(id=user_id_session)
+        except User.DoesNotExist:
+             return HttpResponse(
+                 '<div class="alert alert-danger m-3">User not found. Please close this and log in again.</div>',
+                 status=401
+            )
             
         order = Order_Master.objects.get(id=order_id, user_id=user_id_session)
         payment = order.payment_set.first()
@@ -552,9 +566,33 @@ def order_detail(request, order_id):
 
         order_address = Order_Address.objects.filter(order_id=order)
         
+        # --- [MODIFICATION 2: Get order_items *before* the context] ---
+        order_items = order.order_details_set.all().select_related(
+            'product_variant_id__product_id',
+            'product_variant_id__size_id'
+        )
+        
+        # --- [MODIFICATION 3: PASTE THE REVIEW LOGIC HERE] ---
+        
+        # Get all reviews for this order
+        reviews = Review.objects.filter(
+            order_id=order,
+            user_id=user  # Use the 'user' object from above
+        ).select_related('product_id')
+        
+        # Create a dictionary mapping product_id to review
+        reviews_dict = {review.product_id.id: review for review in reviews}
+        
+        # Attach review to each order item
+        for item in order_items:
+            product_id = item.product_variant_id.product_id.id
+            item.user_review = reviews_dict.get(product_id, None)
+            
+        # --- [END OF PASTED LOGIC] ---
+        
         context = {
             'order': order,
-            'order_items': order.order_details_set.all(),
+            'order_items': order_items, # This now contains the review data
             'shipping_address': order_address.first(),
             'payment': order.payment_set.first(),
             'shipping': order.shipping_set.first(),
@@ -563,15 +601,19 @@ def order_detail(request, order_id):
         
     except Order_Master.DoesNotExist:
         error(f'Order {order_id} not found')
-        messages.error(request, 'The requested order was not found.')
-        return redirect('account_orders')
+        # Return an HTML snippet for the modal
+        return HttpResponse(
+            '<div class="alert alert-danger m-3">The requested order was not found.</div>',
+             status=404
+        )
         
     except Exception as e:
         error(f'Modal error: {str(e)}', detailed=True)
-        messages.error(request, 'Failed to load order details. Please try again.')
-        return redirect('account_orders')
-
-
+        return HttpResponse(
+            '<div class="alert alert-danger m-3">Failed to load order details. Please try again.</div>',
+             status=500
+        )
+        
 @user_login_required
 @require_POST
 def cancel_order(request, order_id):
@@ -1567,21 +1609,20 @@ def add_to_cart_quick_view(request, product_id):
 @user_login_required
 @require_POST
 def add_to_cart(request, product_id):
-    try:
-        # Check user session
-        if 'user_id' not in request.session:
-            messages.error(request, 'Please login to add items to cart')
-            return redirect('product_detail', product_id=product_id)
 
+    try:
         # Get product and validate
         product = get_object_or_404(Product, id=product_id, is_active=True)
         variant_id = request.POST.get('variant_id')
         quantity = int(request.POST.get('quantity', 1))
         keep_cart_open = request.POST.get('keep_cart_open') == '1'
+        
+        # Get the URL to redirect back to (product detail page)
+        redirect_url = reverse('product_detail', args=[product_id])
 
         if not variant_id:
             messages.error(request, 'Please select a size')
-            return redirect('product_detail', product_id=product_id)
+            return redirect(redirect_url)
 
         with transaction.atomic():
             # Get and lock variant
@@ -1591,46 +1632,63 @@ def add_to_cart(request, product_id):
                 is_active=True
             )
 
-            # Check stock
-            if variant.stock_quantity < quantity:
-                messages.warning(request, f'Only {variant.stock_quantity} available in stock')
-                return redirect('product_detail', product_id=product_id)
-
             # Get or create cart
-            cart, created = Cart.objects.get_or_create(user_id_id=request.session['user_id'])
+            cart, _ = Cart.objects.get_or_create(user_id_id=request.session['user_id'])
             
             # Calculate price
             price = float(product.price) + float(variant.additional_price or 0)
 
-            # Add or update cart item
-            cart_item, created = Cart_Items.objects.get_or_create(
-                cart_id=cart,
-                product_variant_id=variant,
-                defaults={
-                    'quantity': quantity,
-                    'price_at_time': price
-                }
-            )
-
-            if not created:
+            # 2. THE FIX: Replace get_or_create with try/except
+            try:
+                # First, try to GET the item
+                cart_item = Cart_Items.objects.get(
+                    cart_id=cart,
+                    product_variant_id=variant
+                )
+                
+                # --- ITEM ALREADY EXISTS ---
                 new_quantity = cart_item.quantity + quantity
+                
+                # Check stock for the *total* quantity
                 if new_quantity > variant.stock_quantity:
-                    messages.warning(request, f'Cannot add more than {variant.stock_quantity} items')
-                    return redirect('product_detail', product_id=product_id)
+                    messages.warning(request, f'Cannot add. Only {variant.stock_quantity} total available.')
+                    return redirect(redirect_url)
+                
                 cart_item.quantity = new_quantity
+                # Also update the price, in case it changed
+                cart_item.price_at_time = price 
                 cart_item.save()
+                messages.success(request, f'Updated {product.name} in your cart')
 
-            messages.success(request, f'Added {product.name} to your cart')
-            
-            # Redirect back with parameter to open cart
+            except Cart_Items.DoesNotExist:
+                # --- ITEM IS NEW ---
+                # Check stock for the *new* quantity
+                if quantity > variant.stock_quantity:
+                    messages.warning(request, f'Only {variant.stock_quantity} available in stock')
+                    return redirect(redirect_url)
+                
+                # Create the new item
+                Cart_Items.objects.create(
+                    cart_id=cart,
+                    product_variant_id=variant,
+                    quantity=quantity,
+                    price_at_time=price
+                )
+                messages.success(request, f'Added {product.name} to your cart')
+
+            # 3. CONSOLIDATED REDIRECT
             if keep_cart_open:
-                return redirect(f"{reverse('product_detail', args=[product_id])}?show_cart=1")
-            return redirect('product_detail', product_id=product_id)
+                return redirect(f"{redirect_url}?show_cart=1")
+            return redirect(redirect_url)
 
     except Product_Variants.DoesNotExist:
         messages.error(request, 'Selected size not available')
+    except ValueError:
+        messages.error(request, 'Invalid quantity')
     except Exception as e:
-        messages.error(request, 'An error occurred. Please try again.')
+        messages.error(request, f'An error occurred: {e}')
+    
+    # Fallback redirect
     return redirect('product_detail', product_id=product_id)
 
 
@@ -1699,11 +1757,16 @@ def cart(request):
         error(f"Cart error: {str(e)}")
         return redirect('homepage')    
 
-
-@user_login_required
+@user_login_required  
 def update_cart_item_drawer(request):
-    if request.method == 'POST' and request.user.is_authenticated:
-        referer = request.META.get('HTTP_REFERER', 'home')
+    
+    # Define referer and keep_drawer_open at the top
+    referer = request.META.get('HTTP_REFERER', 'home')
+    keep_drawer_open = False 
+
+    # You don't need 'request.user.is_authenticated' check
+    # because your decorator already handles it.
+    if request.method == 'POST':
         try:
             cart_item_id = request.POST.get('cart_item_id')
             quantity = int(request.POST.get('quantity'))
@@ -1711,21 +1774,25 @@ def update_cart_item_drawer(request):
             
             if quantity < 1:
                 messages.error(request, 'Quantity must be at least 1')
-                if keep_drawer_open:
-                    return redirect(referer + '?open_cart_drawer=true')
-                return redirect(referer)
             
-            cart_item = Cart_Items.objects.get(
-                id=cart_item_id,
-                cart_id__user_id=request.user.id
-            )
-            
-            # Update only the quantity
-            cart_item.quantity = quantity
-            cart_item.save()  # total_price should update automatically if it's a property
-            
-            messages.success(request, 'Cart updated successfully')
-            
+            else:
+                # Get user_id from session, just like your decorator does
+                user_id = request.session.get('user_id') 
+                if not user_id:
+                     # This should not happen if decorator is working, but a good safety check
+                    messages.error(request, 'Session expired. Please login again.')
+                    return redirect('login_register')
+
+                # Find the cart item, ensuring it belongs to the logged-in user
+                cart_item = Cart_Items.objects.get(
+                    id=cart_item_id,
+                    cart_id__user_id=user_id  # Match user_id from session
+                )
+                
+                cart_item.quantity = quantity
+                cart_item.save()
+                messages.success(request, 'Cart updated successfully')
+                
         except Cart_Items.DoesNotExist:
             messages.error(request, 'Item not found in your cart')
         except ValueError:
@@ -1733,18 +1800,27 @@ def update_cart_item_drawer(request):
         except Exception as e:
             messages.error(request, 'An error occurred while updating the cart')
     
-    # Check if we need to keep drawer open
-    keep_drawer_open = request.POST.get('keep_drawer_open') == 'true'
+    # Single redirect logic at the end
     if keep_drawer_open:
-        return redirect(referer + '?open_cart_drawer=true')
+        separator = '&' if '?' in referer else '?'
+        return redirect(referer + f'{separator}open_cart_drawer=true')
     
     return redirect(referer)
 
 
 @user_login_required
 def remove_cart_item_drawer(request, product_id, variant_id):
+    
+    # 1. Define referer and keep_drawer_open at the top
+    referer = request.META.get('HTTP_REFERER', 'home')
+    
+    # 2. Check the current request's GET params to see if the drawer should stay open
+    keep_drawer_open = request.GET.get('open_cart_drawer') == 'true'
+
+    # 3. Get user_id from session (which your decorator ensures exists)
     user_id = request.session.get('user_id')
-    if user_id:
+    
+    if user_id: 
         try:
             cart = Cart.objects.get(user_id=user_id)
             item = Cart_Items.objects.get(
@@ -1755,15 +1831,20 @@ def remove_cart_item_drawer(request, product_id, variant_id):
             product_name = item.product_variant_id.product_id.name
             item.delete()
             messages.success(request, f"'{product_name[:20]}...' removed from cart")
+        
         except (Cart.DoesNotExist, Cart_Items.DoesNotExist):
             messages.error(request, "Item not found in your cart")
+        except Exception as e:
+            # Good to catch any other potential errors
+            messages.error(request, "An error occurred while removing the item.")
     
-    referer = request.META.get('HTTP_REFERER', 'home')
+    # 4. Consolidated redirect logic at the end
+    if keep_drawer_open:
+        # Append the query param to the referer URL
+        separator = '&' if '?' in referer else '?'
+        return redirect(referer + f'{separator}open_cart_drawer=true')
     
-    # Check if we need to keep drawer open
-    if request.GET.get('open_cart_drawer') == 'true':
-        return redirect(referer + '?open_cart_drawer=true')
-        
+    # 5. Default redirect if drawer doesn't need to stay open
     return redirect(referer)
 
 
@@ -1953,6 +2034,7 @@ def quick_add_to_cart(request, product_id):
     # Redirect back to shop with parameter to open cart drawer
     shop_url = reverse('shop')
     return redirect(f"{shop_url}?open_cart_drawer=true")
+
 
 @user_login_required
 def quick_add_to_cart_home(request, product_id):
@@ -2329,8 +2411,8 @@ def checkout(request):
         messages.error(request, "An error occurred while loading checkout.")
         error(f"Checkout error for user {request.session.get('user_id')}: {str(e)}")
         return redirect('cart')
-
-
+    
+    
 # ============================= PAYMENT HANDLER & ORDER CONFIRMATION =============================
 
 
@@ -2501,24 +2583,43 @@ def orderconfirm(request, order_id):
         
         # Get the order with related data
         order = get_object_or_404(Order_Master, id=order_id, user_id=user)
-        order_details = Order_Details.objects.filter(order_id=order)
-        order_address = Order_Address.objects.filter(order_id=order).first()
+        order_items = Order_Details.objects.filter(order_id=order).select_related(
+            'product_variant_id__product_id',
+            'product_variant_id__size_id'
+        )
+        shipping_address = Order_Address.objects.filter(order_id=order).first()
         payment = Payment.objects.filter(order_id=order).first()
+        
+        # Get all reviews for this order
+        reviews = Review.objects.filter(
+            order_id=order,
+            user_id=user
+        ).select_related('product_id')
+        
+        # Create a dictionary mapping product_id to review
+        reviews_dict = {review.product_id.id: review for review in reviews}
+        
+        # Attach review to each order item
+        for item in order_items:
+            product_id = item.product_variant_id.product_id.id
+            item.user_review = reviews_dict.get(product_id, None)
         
         context = {
             'order': order,
-            'order_details': order_details,
-            'order_address': order_address,
+            'order_items': order_items,  # Changed from order_details
+            'shipping_address': shipping_address,  # Changed from order_address
             'payment': payment,
         }
         
         return render(request, 'orderconfirm.html', context)
         
     except Exception as e:
+        print(f"Error in orderconfirm: {str(e)}")
+        import traceback
+        traceback.print_exc()
         messages.error(request, "Order not found or you don't have permission to view this order.")
         return redirect('homepage')
-
-
+    
 @user_login_required
 def add_review(request, order_id, product_id):
     # --- 1. Fetch the logged-in user from the session ---

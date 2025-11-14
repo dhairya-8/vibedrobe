@@ -357,31 +357,57 @@
       </div>
     </div>
 
-    <div class="order-main-content">
-      <h3 class="main-content-header">Your Items ({{ order_items|length }})</h3>
-      <div class="product-list">
-        {% for item in order_items %}
-        <div class="product-list-item">
-          <img src="{{ item.product_variant_id.product_id.base_image.url }}" class="product-list-item-img" alt="{{ item.product_name }}">
-          <div class="product-item-details">
-            <a href="{% url 'product_detail' item.product_variant_id.product_id.pk %}">
-              <h4>{{ item.product_name|truncatechars:40 }}</h4>
-              <p>Size: {{ item.product_variant_id.size_id.name }}</p>
-              <p>Qty: {{ item.quantity }}</p>
-            </a>
-            {% if order.status == 'delivered' %}
-            <a href="{% url 'add_review' order_id=order.id product_id=item.product_variant_id.product_id.pk %}" class="btn-review">
-              ★ Rate & Review
-            </a>
-            {% endif %}
+  <div class="order-main-content">
+  <h3 class="main-content-header">Your Items ({{ order_items|length }})</h3>
+  <div class="product-list">
+    {% for item in order_items %}
+    <div class="product-list-item">
+      <img src="{{ item.product_variant_id.product_id.base_image.url }}" class="product-list-item-img" alt="{{ item.product_name }}">
+      <div class="product-item-details">
+  <a href="{% url 'product_detail' item.product_variant_id.product_id.pk %}">
+    <h4>{{ item.product_name|truncatechars:40 }}</h4>
+    <p>Size: {{ item.product_variant_id.size_id.name }}</p>
+    <p>Qty: {{ item.quantity }}</p>
+  </a>
+  
+  {% if order.status == 'delivered' %}
+    {% if item.user_review %}
+      <!-- Show existing review -->
+      <div class="existing-review" style="margin-top: 0.75rem; padding: 0.75rem; background-color: var(--noir-bg-primary); border-radius: 8px; border: 1px solid var(--noir-border-color);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <div class="star-rating" style="color: var(--noir-accent); font-size: 0.9rem;">
+            {% for i in "12345" %}
+              {% if forloop.counter <= item.user_review.rating %}
+                ★
+              {% else %}
+                ☆
+              {% endif %}
+            {% endfor %}
           </div>
-          <div class="product-item-price">
-            ₹{{ item.total_price }}
-          </div>
+          <span style="color: var(--noir-text-secondary); font-size: 0.8rem;">Your Review</span>
         </div>
-        {% endfor %}
+        {% if item.user_review.title %}
+          <p style="color: var(--noir-text-primary); font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem;">{{ item.user_review.title }}</p>
+        {% endif %}
+        {% if item.user_review.comment %}
+          <p style="color: var(--noir-text-secondary); margin-bottom: 0; font-size: 0.85rem; line-height: 1.4;">{{ item.user_review.comment|truncatechars:100 }}</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <!-- Show Rate & Review button -->
+      <a href="{% url 'add_review' order_id=order.id product_id=item.product_variant_id.product_id.pk %}" class="btn-review">
+        ★ Rate & Review
+      </a>
+    {% endif %}
+  {% endif %}
+</div>
+      <div class="product-item-price">
+        ₹{{ item.total_price }}
       </div>
     </div>
+    {% endfor %}
+  </div>
+</div>
   </div>
 
   <!-- Cancellation Confirmation Overlay -->

@@ -3,37 +3,27 @@
 <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
 <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
 
-<!-- leftbar-tab-menu -->
 <div class="startbar d-print-none">
-  <!-- start brand -->
   <div class="brand">
     <a href="index.html" class="logo">
       <span><img src="{% static 'admin/assets/images/rbg2.png' %}" alt="logo-large" class="logo-sm" width="150px" /></span>
       <span class=""><img src="{% static 'admin/assets/images/VibeDrobe_light.png' %}" alt="logo-large" class="logo-lg logo-light" /></span>
     </a>
   </div>
-  <!-- end brand -->
-  <!-- start startbar-menu -->
   <div class="startbar-menu">
     <div class="startbar-collapse" id="startbarCollapse" data-simplebar>
       <div class="d-flex align-items-start flex-column w-100">
-        <!-- Navigation -->
+        {% with request.resolver_match.url_name as url_name %}
         <ul class="navbar-nav mb-auto w-100">
           <li class="menu-label pt-0 mt-0">
-            <!--           <small class="label-border">
-                              <div class="border_left hidden-xs"></div>
-                              <div class="border_right"></div>
-                          </small>           -->
             <span>Main Menu</span>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'index' %}">
+            <a class="nav-link {% if url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
               <i class="fas fa-home menu-icon"></i>
               <span>Dashboards</span>
             </a>
           </li>
-          <!-- end nav-item -->
-
           <li class="menu-label mt-2">
             <small class="label-border">
               <div class="border_left hidden-xs"></div>
@@ -43,136 +33,120 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_admin' %}">
+            <a class="nav-link {% if url_name == 'display_admin' %}active{% endif %}" href="{% url 'display_admin' %}">
               <i class="fas fa-user-shield menu-icon"></i>
               <span>View Admins</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_product' %}">
+            <a class="nav-link {% if url_name == 'display_product' %}active{% endif %}" href="{% url 'display_product' %}">
               <i class="fas fa-tshirt menu-icon"></i>
               <span>Products</span>
             </a>
-            <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_brand' %}">
+            <a class="nav-link {% if url_name == 'display_brand' %}active{% endif %}" href="{% url 'display_brand' %}">
               <i class="fas fa-tags menu-icon"></i>
               <span>Brands</span>
             </a>
-            <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_category' %}">
+            <a class="nav-link {% if url_name == 'display_category' %}active{% endif %}" href="{% url 'display_category' %}">
               <i class="icofont-bow menu-icon"></i>
               <span>Categories</span>
             </a>
-            <!-- end startbarForms -->
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_subcategory' %}">
+            <a class="nav-link {% if url_name == 'display_subcategory' %}active{% endif %}" href="{% url 'display_subcategory' %}">
               <i class="fas fa-project-diagram menu-icon"></i>
               <span>Sub Categories</span>
             </a>
-            <!-- end startbarForms -->
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_size' %}">
+            <a class="nav-link {% if url_name == 'display_size' %}active{% endif %}" href="{% url 'display_size' %}">
               <i class="fas fa-ruler-combined menu-icon"></i>
               <span>Size</span>
             </a>
-            <!-- end startbarForms -->
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_material' %}">
+            <a class="nav-link {% if url_name == 'display_material' %}active{% endif %}" href="{% url 'display_material' %}">
               <i class="fas fa-leaf menu-icon"></i>
               <span>Materials</span>
             </a>
-            <!-- end startbarForms -->
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_user' %}">
+            <a class="nav-link {% if url_name == 'display_user' %}active{% endif %}" href="{% url 'display_user' %}">
               <i class="fas fa-users menu-icon"></i>
               <span>Users</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_cart' %}">
+            <a class="nav-link {% if url_name == 'display_cart' %}active{% endif %}" href="{% url 'display_cart' %}">
               <i class="fab fa-opencart menu-icon"></i>
               <span>Cart</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_wishlist' %}">
+            <a class="nav-link {% if url_name == 'display_wishlist' %}active{% endif %}" href="{% url 'display_wishlist' %}">
               <i class="fas fa-heart menu-icon"></i>
               <span>Wishlist</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_orders' %}">
+            <a class="nav-link {% if url_name == 'display_orders' %}active{% endif %}" href="{% url 'display_orders' %}">
               <i class="fas fa-list-alt menu-icon"></i>
               <span>Orders List</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'shipping_management' %}">
+            <a class="nav-link {% if url_name == 'shipping_management' %}active{% endif %}" href="{% url 'shipping_management' %}">
               <i class="fas fa-shipping-fast menu-icon"></i>
               <span>Shipping List</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_payment' %}">
+            <a class="nav-link {% if url_name == 'display_payment' %}active{% endif %}" href="{% url 'display_payment' %}">
               <i class="fas fa-credit-card menu-icon"></i>
               <span>Payment List</span>
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'display_invoice' %}">
+            <a class="nav-link {% if url_name == 'display_invoice' %}active{% endif %}" href="{% url 'display_invoice' %}">
               <i class="fas fa-file-invoice menu-icon"></i>
               <span>Invoice List</span>
             </a>
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#sidebarReports" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarReports">
+            <a class="nav-link {% if url_name == 'report_FBT' or url_name == 'report_customer' or url_name == 'report_sales' %}active{% endif %}" href="#sidebarReports" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarReports">
               <i class="iconoir-reports-solid menu-icon"></i>
               <span>Reports</span>
             </a>
-            <div class="collapse" id="sidebarReports">
+            <div class="collapse {% if url_name == 'report_FBT' or url_name == 'report_customer' or url_name == 'report_sales' %}show{% endif %}" id="sidebarReports">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="{% url 'report_FBT' %}">FBT Report</a>
-                </li>
-                <!-- end nav-item -->
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'report_customer' %}">Customer Report</a>
+                  <a class="nav-link {% if url_name == 'report_FBT' %}active{% endif %}" href="{% url 'report_FBT' %}">FBT Report</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="repor{% url 'report_sales' %}t_sales">Sales Report</a>
+                  <a class="nav-link {% if url_name == 'report_customer' %}active{% endif %}" href="{% url 'report_customer' %}">Customer Report</a>
                 </li>
-                <!-- end nav-item -->
-              </ul>
-              <!-- end nav -->
-            </div>
-            <!-- end startbarTables -->
-          </li>
+                <li class="nav-item">
+                  <a class="nav-link {% if url_name == 'report_sales' %}active{% endif %}" href="{% url 'report_sales' %}">Sales Report</a>
+                </li>
+                </ul>
+              </div>
+            </li>
 
-          <!-- end nav-item -->
-        </ul>
-        <!-- end navbar-nav -->
-      </div>
+          </ul>
+        {% endwith %}
+        </div>
     </div>
-    <!-- end startbar-collapse -->
+    </div>
   </div>
-  <!-- end startbar-menu -->
-</div>
-<!-- end startbar -->
-
 <div class="startbar-overlay d-print-none"></div>
-<!-- end leftbar-tab-menu -->

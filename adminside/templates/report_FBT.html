@@ -5,12 +5,10 @@
 {% endblock %}
 
 {% block css %}
-  <!-- App favicon -->
   <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
 
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
-  <!-- App css -->
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
@@ -18,7 +16,6 @@
 
 {% block content %}
   <div class="page-wrapper">
-    <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
         <div class="row justify-content-center">
@@ -29,82 +26,68 @@
                   <div class="col-auto">
                     <h4 class="card-title">Frequently Bought Together , Product Stats</h4>
                   </div>
-                  <!-- end col -->
-                 
-                  <!-- end col -->
-                </div> <!-- end row -->
-              </div>
-              <!-- end card-header -->
+                  <div class="col text-end">
+                      <a href="{% url 'report_FBT' %}?export=csv" class="btn btn-sm btn-success me-2">
+                          <i class="fas fa-file-csv me-1"></i> Export CSV
+                      </a>
+                      <a href="{% url 'report_FBT' %}?export=pdf" class="btn btn-sm btn-danger">
+                          <i class="fas fa-file-pdf me-1"></i> Export PDF
+                      </a>
+                  </div>
+                  </div> </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
-                    <table class="table">
-                        <thead class="table-light">
-                          <tr>
-                            <th>ID</th>
-                            <th>Primary Product</th>
-                            <th>Bought With</th>
-                            <th>Frequency</th>
-                            <th>Combined Revenue</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>1</td>
-                            <td>White Shirt</td>
-                            <td>Black Trousers</td>
-                            <td>98</td>
-                            <td>₹1,47,000</td>
-                          </tr>
-                          <tr>
-                            <td>2</td>
-                            <td>Denim Jacket</td>
-                            <td>Graphic T-Shirt</td>
-                            <td>84</td>
-                            <td>₹1,00,800</td>
-                          </tr>
-                          <tr>
-                            <td>3</td>
-                            <td>Palazzo Pants</td>
-                            <td>Crop Top</td>
-                            <td>70</td>
-                            <td>₹1,05,000</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      
+                    <table id="datatable" class="table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Primary Product</th>
+                        <th>Bought With</th>
+                        <th>Frequency</th>
+                        <th>Combined Revenue</th>
+                      </tr>
+                    </thead>
+                    
+                    <tbody>
+                      {% for item in fbt_data %}
+                      <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.product_a_id.name }}</td>
+                        <td>{{ item.product_b_id.name }}</td>
+                        <td>{{ item.frequency_count }}</td>
+                        <td>₹{{ item.combined_revenue|floatformat:2 }}</td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="5" class="text-center">No FBT data found.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+
+                  </table>
+                  
                 </div>
               </div>
-              <!-- end card-body -->
-            </div>
-            <!-- end card -->
-          </div> <!-- end col -->
+              </div>
+            </div> </div>
         </div>
-        <!-- end row -->
-      </div>
-      <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
-
       {% include 'footer.html' %}
-      <!-- end footer -->
+      </div>
     </div>
-    <!-- end page content -->
-  </div>
-  <!-- end page-wrapper -->
-{% endblock %}
-
-<!-- Javascript -->
+  {% endblock %}
 
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
-  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
+  <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></_script>
+  
+  <script>
+    // This is a minimal setup for vanilla-dataTables.
+    // Your 'editable.init.js' might do this already, but if it doesn't work
+    // this is the basic way to initialize it.
+    var dataTable = new vanilla.DataTable("#datatable");
+  </script>
+
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
 {% endblock %}
-<!-- end body -->
