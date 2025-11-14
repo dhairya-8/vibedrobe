@@ -80,5 +80,6 @@ urlpatterns = [
         
     # ==================== FBT (Frequently Bought Together) URLs ====================
     path('cart/add-fbt/', add_fbt_to_cart, name='add_fbt_to_cart'),
+    path('image-search/', image_search, name='image_search'),
 
 ]

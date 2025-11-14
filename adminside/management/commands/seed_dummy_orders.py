@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from faker import Faker
 
+from django.db.models import Q
 from adminside.models import (
     User, User_Address, Product, Product_Variants, 
     Order_Master, Order_Details, Order_Address, 
@@ -25,24 +26,43 @@ class Command(BaseCommand):
         fake = Faker('en_IN')
 
         # --- PRODUCT CLUSTERS ---
-        PRODUCT_CLUSTERS = [
-            [791, 766, 763],
-            [790, 788, 786],
-            [789, 787, 783],
-            [785, 784, 778],
-            [781, 775, 774],
+        PRODUCT_CLUSTERS = [         
+            [728, 724, 726],
+            [727, 728, 564],
+            [726, 725, 701],
+            [725, 714, 710],
+            [724, 650, 716],
+            [723, 569, 564],
+            [722, 704, 700],
+            [721, 707, 640],
+            [720, 713, 636],
+            [719, 720, 724],
+            [715, 716, 717],
+            [714, 569, 718],
+            [713, 648, 646],
+            [712, 647, 637],
+            [711, 638, 634],
+            [710, 635, 709],
+            [709, 711, 712, 713],
+            [708, 721, 722],
+            [707, 645, 566],
+            [706, 710, 707],
+            [705, 565, 37],
+            [704, 567, 565],
+            [703, 564, 568, 641],
+            [702, 704, 705],
+            [701, 639, 703],
             [1, 60, 138, 140, 236],
             [2, 62, 63, 67, 71],
             [3, 84, 512, 517, 518],
             [4, 67, 71, 72, 73, 75],
             [5, 68, 69, 70, 74],
-            [6, 7, 101, 104],
             [7, 102, 313, 314, 315],
             [8, 77, 78, 79, 81, 106],
             [9, 236, 237, 238, 239],
             [10, 320, 324, 331, 332],
             [11, 242, 243, 510, 640],
-            [12, 6, 104, 7, 14],
+            [12, 7, 14],
             [13, 143, 244, 15, 14, 7],
             [14, 586, 587, 629, 630],
             [15, 7, 14, 143, 244],
@@ -50,7 +70,7 @@ class Command(BaseCommand):
             [17, 13, 15, 87, 99],
             [18, 23, 106, 130, 137],
             [19, 1, 9, 70, 74, 76],
-            [20, 6, 7, 101, 104],
+            [20, 7, 101],
             [21, 18, 23, 106, 130, 137],
             [22, 4, 106, 130, 139],
             [23, 14, 138, 140, 236],
@@ -60,7 +80,7 @@ class Command(BaseCommand):
             [27, 12, 8, 29, 191],
             [28, 195, 196],
             [29, 200, 201],
-            [30, 16, 23, 6, 13],
+            [30, 16, 23, 13],
             [46, 221, 224, 556, 263],
             [61, 280, 22, 4, 346],
             [62, 8, 531, 530, 529],
@@ -93,9 +113,11 @@ class Command(BaseCommand):
         # --- GENERATION PARAMETERS ---
         NUM_DUMMY_USERS = 50
         NUM_ORDERS_TO_CREATE = 2000
-        # --- NEW: SET YOUR BIAS HERE ---
-        # 75% of orders will be "Cluster Orders" to create strong patterns
-        CLUSTER_ORDER_BIAS = 0.75 
+        # CRITICAL: This ensures ALL products in clusters get FBT rules
+        CLUSTER_ORDER_BIAS = 0.90  # 90% cluster orders
+        
+        # NEW: Build weighted cluster selection to ensure even distribution
+        cluster_weights = [1.0] * len(PRODUCT_CLUSTERS)  # Equal weight for all clusters
 
         # --- HELPER FUNCTIONS ---
         def generate_unique_username(first_name, last_name):
@@ -195,17 +217,81 @@ class Command(BaseCommand):
         
         product_to_variants_map = {p.id: [] for p in Product.objects.all()}
         for variant in all_variants:
-            # Ensure product_id_id exists in the map before appending
             if variant.product_id_id in product_to_variants_map:
                 product_to_variants_map[variant.product_id_id].append(variant)
+                
+        # --- NEW: PRE-FLIGHT CLUSTER VALIDATION ---
+        self.stdout.write("\n🕵️  Validating product clusters against active variants...")
+        all_cluster_pids = set()
+        for cluster in PRODUCT_CLUSTERS:
+            all_cluster_pids.update(cluster)
+
+        bad_pids = []
+        for pid in all_cluster_pids:
+            if pid not in product_to_variants_map:
+                bad_pids.append((pid, "Product ID does not exist in Product table."))
+            elif not product_to_variants_map[pid]:
+                # This is the key check: product exists, but its variant list is empty
+                bad_pids.append((pid, "Product is inactive or has NO active variants."))
+
+        if bad_pids:
+            self.stdout.write(self.style.ERROR("\n" + "="*60))
+            self.stdout.write(self.style.ERROR("❌ ERROR: Cannot seed orders. Some products in your CLUSTERS are invalid."))
+            for pid, reason in bad_pids:
+                self.stdout.write(self.style.ERROR(f"  - Product ID {pid}: {reason}"))
+            self.stdout.write(self.style.ERROR("="*60 + "\n"))
+            self.stdout.write(self.style.NOTICE("Go to your Django Admin, find these Product IDs, and ensure:"))
+            self.stdout.write(self.style.NOTICE("  1. The Product's 'is_active' box is CHECKED."))
+            self.stdout.write(self.style.NOTICE("  2. The Product has at least one Variant, and that Variant's 'is_active' box is CHECKED."))
+            return # Stop the script
+        else:
+            self.stdout.write(self.style.SUCCESS("  ✓ All cluster products are valid and have active variants.\n"))
+        # --- END PRE-FLIGHT CHECK ---
 
         # --- GENERATE REALISTIC ORDERS ---
         self.stdout.write(f"Generating {NUM_ORDERS_TO_CREATE} orders with realistic data...")
         orders_created = 0
         cluster_orders_created = 0
         random_orders_created = 0
+        
+        # --- NEW LOGIC: GUARANTEED CLUSTER USAGE ---
+        
+        # Calculate how many times each cluster *must* be used
+        num_clusters = len(PRODUCT_CLUSTERS)
+        num_cluster_orders = int(NUM_ORDERS_TO_CREATE * CLUSTER_ORDER_BIAS)
+        num_random_orders = NUM_ORDERS_TO_CREATE - num_cluster_orders
+        
+        # Guarantee at least this many orders per cluster
+        min_orders_per_cluster = num_cluster_orders // num_clusters
+        
+        if min_orders_per_cluster == 0:
+            self.stdout.write(self.style.ERROR(
+                f"Too few orders ({num_cluster_orders}) for {num_clusters} clusters. Increase NUM_ORDERS_TO_CREATE."
+            ))
+            return
 
-        for i in range(NUM_ORDERS_TO_CREATE):
+        self.stdout.write(f" 📦 Guaranteeing at least {min_orders_per_cluster} orders for each of the {num_clusters} clusters.")
+        
+        order_generation_plan = []
+        
+        # 1. Add all guaranteed cluster orders
+        for i in range(num_clusters):
+            order_generation_plan.extend([i] * min_orders_per_cluster)
+            
+        # 2. Add all random orders
+        order_generation_plan.extend(['random'] * num_random_orders)
+        
+        # 3. Add remaining orders to fill up (if any)
+        remaining_orders = NUM_ORDERS_TO_CREATE - len(order_generation_plan)
+        for _ in range(remaining_orders):
+            order_generation_plan.append(random.randint(0, num_clusters - 1))
+
+        # Shuffle the plan so they are mixed
+        random.shuffle(order_generation_plan)
+        
+        # --- END NEW LOGIC ---
+
+        for i, order_type in enumerate(order_generation_plan):
             try:
                 with transaction.atomic():
                     order_user = random.choice(users)
@@ -213,48 +299,35 @@ class Command(BaseCommand):
                     if not user_default_address:
                         continue
 
-                    # ######################################################
-                    # ### --- MODIFIED: BUILD SMART CART --- ###
-                    # ######################################################
-                    
+                    # --- IMPROVED CART BUILDING ---
                     cart_variants = []
                     
-                    if random.random() < CLUSTER_ORDER_BIAS:
-                        # --- This is a "Cluster Order" ---
-                        # We will *force* items from a cluster to be bought together
-                        chosen_cluster = random.choice(PRODUCT_CLUSTERS)
+                    if order_type != 'random':
+                        # --- Cluster Order (Guaranteed) ---
+                        cluster_index = order_type
+                        chosen_cluster = PRODUCT_CLUSTERS[cluster_index]
                         
-                        # Pick a "strong" number of items from the cluster
-                        min_items = 2
-                        max_items = min(4, len(chosen_cluster)) # Pick up to 4 items or cluster size
-                        if max_items < min_items:
-                             max_items = min_items # ensure we pick at least 2 if cluster is tiny
-
-                        num_themed_items = random.randint(min_items, max_items)
-                        themed_product_ids = random.sample(chosen_cluster, num_themed_items)
+                        # (The rest of your cluster logic is PERFECT, leave it as-is)
+                        themed_product_ids = chosen_cluster
                         
                         for pid in themed_product_ids:
-                            # Check if product ID is valid and has variants
                             if pid in product_to_variants_map and product_to_variants_map[pid]:
                                 variant = random.choice(product_to_variants_map[pid])
                                 if variant not in cart_variants:
                                     cart_variants.append(variant)
                         
-                        # Add a *small* chance of 1 random item to add a little noise
-                        if random.random() < 0.25: # 25% chance of adding one random item
+                        # (Your noise logic is fine)
+                        if random.random() < 0.05:
                              variant = random.choice(all_variants)
                              if variant not in cart_variants:
-                                 cart_variants.append(variant)
+                                  cart_variants.append(variant)
                         
                         if cart_variants:
                             cluster_orders_created += 1
 
                     else:
-                        # --- This is a "Random Order" ---
-                        # These orders create the "background noise"
-                        # We must ensure they have at least 2 items to be analyzed by FBT
-                        num_random_items = random.randint(2, 5) 
-                        
+                        # --- Random Order ---
+                        num_random_items = random.randint(2, 4)
                         for _ in range(num_random_items):
                             variant = random.choice(all_variants)
                             if variant not in cart_variants:
@@ -262,10 +335,6 @@ class Command(BaseCommand):
                         
                         if cart_variants:
                             random_orders_created += 1
-                    
-                    # ######################################################
-                    # ### --- END OF MODIFICATIONS --- ###
-                    # ######################################################
                     
                     if not cart_variants:
                         continue
@@ -276,7 +345,6 @@ class Command(BaseCommand):
                     
                     for v in cart_variants:
                         quantity = random.randint(1, 3)
-                        # Handle potential None for additional_price
                         additional_price = v.additional_price or Decimal('0')
                         unit_price = v.product_id.price + additional_price
                         total_price = unit_price * quantity
@@ -291,25 +359,19 @@ class Command(BaseCommand):
                             product_sku=v.sku
                         ))
 
-                    # Calculate taxes and shipping
                     tax_amount = calculate_gst(subtotal)
                     shipping_charge = Decimal('69.00')
-                    total_amount = subtotal + shipping_charge # Assuming tax is inclusive, adjust if not
+                    total_amount = subtotal + shipping_charge
                     
-                    # Generate historical order date
                     order_datetime = fake.date_time_between(start_date='-2y', end_date='now', tzinfo=timezone.get_current_timezone())
                     
-                    # Determine order status
                     order_status = random.choices(
                         ['delivered', 'shipped', 'confirmed', 'processing'],
                         weights=[70, 15, 10, 5],
                         k=1
                     )[0]
                     
-                    # Payment method
                     payment_method = random.choice(['cod', 'card', 'upi'])
-                    
-                    # Expected delivery (5-7 days from order date)
                     expected_delivery_date = (order_datetime + timedelta(days=random.randint(5, 7))).date()
                     
                     # --- CREATE ORDER ---
@@ -322,7 +384,6 @@ class Command(BaseCommand):
                         shipping_charge=shipping_charge,
                         total_amount=total_amount,
                         expected_delivery=expected_delivery_date,
-                        # Set created_at and order_date here directly
                         created_at=order_datetime,
                         order_date=order_datetime
                     )
@@ -404,8 +465,12 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error creating order {i+1}: {e}"))
         
+        # --- DETAILED STATISTICS ---
+        self.stdout.write(self.style.SUCCESS(f"\n{'='*60}"))
         self.stdout.write(self.style.SUCCESS(f"--- Seeding Stats ---"))
         self.stdout.write(self.style.SUCCESS(f"Total Orders Created: {orders_created}"))
         self.stdout.write(self.style.SUCCESS(f"Cluster-biased Orders: {cluster_orders_created} (~{cluster_orders_created/orders_created*100:.0f}%)"))
         self.stdout.write(self.style.SUCCESS(f"Random Orders: {random_orders_created} (~{random_orders_created/orders_created*100:.0f}%)"))
-        self.stdout.write(self.style.SUCCESS("✅ Enhanced seeding complete!"))
+        
+        self.stdout.write(self.style.SUCCESS(f"\n✅ Enhanced seeding complete!"))
+        self.stdout.write(self.style.SUCCESS(f"{'='*60}\n"))

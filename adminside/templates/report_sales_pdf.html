@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sales Report</title>
+  <style>
+    @page { size: a4 portrait; @frame { left: 2cm; right: 2cm; top: 2cm; bottom: 2cm; } }
+    body { font-family: "Helvetica", "Arial", sans-serif; font-size: 10pt; }
+    h2 { text-align: center; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; color: #333; font-size: 11pt; }
+  </style>
+</head>
+<body>
+  <h2>Sales Summary Report (Monthly)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Total Orders</th>
+        <th>Revenue</th>
+        <th>Avg Order Value</th>
+        <th>Returns</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sale in sales_data %}
+      <tr>
+        <td>{{ sale.month|date:"F Y" }}</td>
+        <td>{{ sale.total_orders|default:0 }}</td>
+        <td>₹{{ sale.total_revenue|default:0|floatformat:2 }}</td>
+        <td>₹{{ sale.avg_order_value|default:0|floatformat:2 }}</td>
+        <td>{{ sale.total_returns|default:0 }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center;">No sales data available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

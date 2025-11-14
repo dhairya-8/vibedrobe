@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Customer Report</title>
+  <style>
+    @page { size: a4 portrait; @frame { left: 2cm; right: 2cm; top: 2cm; bottom: 2cm; } }
+    body { font-family: "Helvetica", "Arial", sans-serif; font-size: 9pt; }
+    h2 { text-align: center; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #999; padding: 6px; text-align: left; }
+    th { background-color: #f2f2f2; color: #333; font-size: 10pt; }
+  </style>
+</head>
+<body>
+  <h2>Customer Activity Report</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer Name</th>
+        <th>Email</th>
+        <th>Total Orders</th>
+        <th>Total Spent</th>
+        <th>Last Order Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+      <tr>
+        <td>{{ customer.id }}</td>
+        <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+        <td>{{ customer.email }}</td>
+        <td>{{ customer.total_orders|default:0 }}</td>
+        <td>₹{{ customer.total_spent|default:0|floatformat:2 }}</td>
+        <td>{{ customer.last_order_date|date:"Y-m-d"|default:"No orders" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align: center;">No customer data available</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

@@ -5,12 +5,10 @@
 {% endblock %}
 
 {% block css %}
-  <!-- App favicon -->
   <link rel="shortcut icon" href="{% static 'admin/assets/images/logo.png' %}" />
 
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.css' %}" />
   <link rel="stylesheet" href="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.css' %}" />
-  <!-- App css -->
   <link href="{% static 'admin/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
   <link href="{% static 'admin/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
@@ -18,7 +16,6 @@
 
 {% block content %}
   <div class="page-wrapper">
-    <!-- Page Content -->
     <div class="page-content">
       <div class="container-xxl">
         <div class="row justify-content-center">
@@ -29,87 +26,82 @@
                   <div class="col-auto">
                     <h4 class="card-title">Sales Summary Report (Monthly)</h4>
                   </div>
-                  <!-- end col -->
-                 
-                  <!-- end col -->
-                </div> <!-- end row -->
-              </div>
-              <!-- end card-header -->
+                  <div class="col text-end">
+                      <a href="{% url 'report_sales' %}?export=csv" class="btn btn-sm btn-success me-2">
+                          <i class="fas fa-file-csv me-1"></i> Export CSV
+                      </a>
+                      <a href="{% url 'report_sales' %}?export=excel" class="btn btn-sm btn-primary me-2">
+                          <i class="fas fa-file-excel me-1"></i> Export Excel
+                      </a>
+                      <a href="{% url 'report_sales' %}?export=pdf" class="btn btn-sm btn-danger">
+                          <i class="fas fa-file-pdf me-1"></i> Export PDF
+                      </a>
+                  </div>
+                  </div> </div>
               <div class="card-body pt-0">
                 <div class="table-responsive">
-                    <table class="table">
-                        <thead class="table-light">
-                          <tr>
-                            <th>ID</th>
-                            <th>Month</th>
-                            <th>Total Orders</th>
-                            <th>Revenue</th>
-                            <th>Avg Order Value</th>
-                            <th>Returns</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>1</td>
-                            <td>January 2025</td>
-                            <td>1,020</td>
-                            <td>₹12,75,000</td>
-                            <td>₹1,250</td>
-                            <td>32</td>
-                          </tr>
-                          <tr>
-                            <td>2</td>
-                            <td>February 2025</td>
-                            <td>1,215</td>
-                            <td>₹15,20,000</td>
-                            <td>₹1,250</td>
-                            <td>45</td>
-                          </tr>
-                          <tr>
-                            <td>3</td>
-                            <td>March 2025</td>
-                            <td>1,480</td>
-                            <td>₹18,50,000</td>
-                            <td>₹1,250</td>
-                            <td>50</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      
-                      
+                    <table class="table" id="salesReportTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Month</th>
+                        <th>Total Orders</th>
+                        <th>Revenue</th>
+                        <th>Avg Order Value</th>
+                        <th>Returns</th>
+                      </tr>
+                    </thead>
+                    
+                    <tbody>
+                      {% for sale in sales_data %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ sale.month|date:"F Y" }}</td>
+                        <td>{{ sale.total_orders|default:0 }}</td>
+                        <td>₹{{ sale.total_revenue|default:0|floatformat:2 }}</td>
+                        <td>₹{{ sale.avg_order_value|default:0|floatformat:2 }}</td>
+                        <td>{{ sale.total_returns|default:0 }}</td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="6" class="text-center">No sales data available.</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                    
+                  </table>
+                  
                 </div>
               </div>
-              <!-- end card-body -->
-            </div>
-            <!-- end card -->
-          </div> <!-- end col -->
+              </div>
+            </div> </div>
         </div>
-        <!-- end row -->
-      </div>
-      <!-- container -->
-      <!-- Start Rightbar -->
-      <!-- Start Rightbar/offcanvas -->
-   
-      <!-- end Rightbar/offcanvas -->
-      <!-- end Rightbar -->
-      <!-- Start Footer -->
-
       {% include 'footer.html' %}
-      <!-- end footer -->
+      </div>
     </div>
-    <!-- end page content -->
-  </div>
-  <!-- end page-wrapper -->
-{% endblock %}
-
-<!-- Javascript -->
+  {% endblock %}
 
 {% block script %}
   <script src="{% static 'admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/simplebar/simplebar.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables/vanilla-dataTables.min.js' %}"></script>
   <script src="{% static 'admin/assets/libs/vanilla-datatables-editable/datatable.editable.min.js' %}"></script>
-  <script src="{% static 'admin/assets/js/pages/editable.init.js' %}"></script>
   <script src="{% static 'admin/assets/js/app.js' %}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const table = document.getElementById('salesReportTable');
+      if (table) {
+        const dataTable = new vanilla.DataTable(table, {
+          searchable: false, // You can turn off search for a summary report
+          sortable: true,
+          perPage: 12, // Show 12 months by default
+          labels: {
+            noRows: "No sales data found",
+            info: "Showing {start} to {end} of {rows} months"
+          }
+        });
+      }
+    });
+  </script>
 {% endblock %}
-<!-- end body -->

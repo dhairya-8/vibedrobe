@@ -529,7 +529,7 @@
         <h2 class="search-results-title mb-0">
             Results for: <span>"{{ keyword }}"</span>
         </h2>
-    {% elif similar_product_ids %}  <h2 class="search-results-title mb-0">
+    {% elif image_search_status == 'success'%}  <h2 class="search-results-title mb-0">
             Showing products visually similar to your upload
         </h2>
     {% elif image_search_status == 'no_results' %}
@@ -566,7 +566,7 @@
       <option value="date-new" {% if sort == 'date-new' %}selected{% endif %}>Date, new to old</option>
     </select>
 
-    {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort or keyword %}
+    {% if request.GET.category or request.GET.subcategory or request.GET.size or request.GET.brand or request.GET.min_price or request.GET.max_price or request.GET.sort or keyword or image_search_status %}
       <button class="btn btn-link text-danger text-decoration-none fs-6 ms-3 order-2 order-md-1" id="clear-all-filters">
         <i class="fas fa-times me-1"></i>Clear All
       </button>
@@ -1245,6 +1245,28 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.closest('li').classList.add('active-brand');
         }
     });
+
+    // Brand search functionality
+document.getElementById('brand-search')?.addEventListener('keyup', function() {
+    const searchTerm = this.value.toLowerCase();
+    const brandList = document.getElementById('brand-list');
+    
+    if (brandList) {
+        const brands = brandList.getElementsByTagName('li');
+        
+        Array.from(brands).forEach(function(item) {
+            const brandNameElement = item.querySelector('.brand-name');
+            if (brandNameElement) {
+                const brandName = brandNameElement.textContent.toLowerCase();
+                if (brandName.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+    }
+});
     
     // Initialize price slider if it exists
     if (typeof $('.price-range-slider').slider === 'function') {
