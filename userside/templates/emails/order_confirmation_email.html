@@ -1,6 +1,156 @@
-{% extends "base_email.html" %}
+{% extends "emails/base_email.html" %}
 
 {% block title %}Order Invoice - VibeDrobe{% endblock %}
+
+{% block extra_styles %}
+    /* --- Styles for Order Confirmation --- */
+    
+    .order-success {
+        background-color: #e6f7ec; /* Light green */
+        border: 1px solid #b7ebc9;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 30px;
+        text-align: left;
+    }
+    
+    .order-success h3 {
+        color: #2b8a3e; /* Dark green */
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+    
+    .order-success p {
+        color: #343a40;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .order-summary,
+    .order-details {
+        margin-bottom: 30px;
+    }
+
+    .order-summary h3,
+    .order-details h3 {
+        font-size: 22px;
+        color: #2c3e50;
+        border-bottom: 2px solid #eaecee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .order-info-grid {
+        /* Using simple blocks for email compatibility */
+        margin-bottom: 25px;
+    }
+
+    .order-info-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .order-info-item:last-child {
+        border-bottom: none;
+    }
+
+    .order-info-item label {
+        display: block;
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 4px;
+    }
+
+    .order-info-item span {
+        font-size: 16px;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .shipping-address {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 20px;
+        border-radius: 5px;
+    }
+    
+    .shipping-address h4 {
+        font-size: 18px;
+        color: #343a40;
+        margin-bottom: 15px;
+    }
+    
+    .shipping-address p {
+        font-size: 15px;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 5px;
+    }
+    
+    .order-table,
+    .totals-table {
+        width: 100%;
+        border-collapse: collapse; /* Essential for email tables */
+        margin-bottom: 20px;
+    }
+    
+    .order-table th,
+    .order-table td {
+        padding: 15px 0;
+        border-bottom: 1px solid #eaecee;
+        text-align: left;
+    }
+    
+    .order-table th {
+        font-size: 14px;
+        color: #888;
+        text-transform: uppercase;
+    }
+    
+    .product-info {
+        font-size: 16px;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .product-sku {
+        font-size: 13px;
+        color: #777;
+    }
+    
+    .price {
+        text-align: right;
+        font-weight: 600;
+        font-size: 16px;
+    }
+    
+    .totals-table th,
+    .totals-table td {
+        padding: 10px 0;
+        font-size: 16px;
+        text-align: right;
+    }
+    
+    .totals-table th {
+        font-weight: 600;
+        color: #555;
+        text-align: left;
+    }
+    
+    .totals-table td {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .totals-table .total-row th,
+    .totals-table .total-row td {
+        padding-top: 15px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #C32146; /* VibeDrobe accent color */
+        border-top: 2px solid #eaecee;
+    }
+{% endblock %}
+
 
 {% block content %}
 <!-- Greeting -->
@@ -106,3 +256,4 @@
     </table>
 </div>
 {% endblock %}
+
